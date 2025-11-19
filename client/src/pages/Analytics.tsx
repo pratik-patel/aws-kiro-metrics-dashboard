@@ -5,27 +5,48 @@ import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, L
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Activity, Calendar, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
-const performanceData = [
-  { date: "Jan", portfolio: 4.2, benchmark: 3.8, alpha: 0.4 },
-  { date: "Feb", portfolio: 4.5, benchmark: 4.0, alpha: 0.5 },
-  { date: "Mar", portfolio: 3.8, benchmark: 3.2, alpha: 0.6 },
-  { date: "Apr", portfolio: 5.1, benchmark: 4.5, alpha: 0.6 },
-  { date: "May", portfolio: 5.4, benchmark: 4.8, alpha: 0.6 },
-  { date: "Jun", portfolio: 6.2, benchmark: 5.2, alpha: 1.0 },
-  { date: "Jul", portfolio: 6.5, benchmark: 5.5, alpha: 1.0 },
-  { date: "Aug", portfolio: 6.1, benchmark: 5.3, alpha: 0.8 },
-  { date: "Sep", portfolio: 5.8, benchmark: 5.0, alpha: 0.8 },
-  { date: "Oct", portfolio: 6.5, benchmark: 5.6, alpha: 0.9 },
-  { date: "Nov", portfolio: 7.2, benchmark: 6.0, alpha: 1.2 },
-  { date: "Dec", portfolio: 7.8, benchmark: 6.4, alpha: 1.4 },
-];
+// Mock data generator for different views
+const generatePerformanceData = (view: 'YTD' | '1Y' | '3Y') => {
+    const baseData = [
+        { date: "Jan", portfolio: 4.2, benchmark: 3.8, alpha: 0.4 },
+        { date: "Feb", portfolio: 4.5, benchmark: 4.0, alpha: 0.5 },
+        { date: "Mar", portfolio: 3.8, benchmark: 3.2, alpha: 0.6 },
+        { date: "Apr", portfolio: 5.1, benchmark: 4.5, alpha: 0.6 },
+        { date: "May", portfolio: 5.4, benchmark: 4.8, alpha: 0.6 },
+        { date: "Jun", portfolio: 6.2, benchmark: 5.2, alpha: 1.0 },
+        { date: "Jul", portfolio: 6.5, benchmark: 5.5, alpha: 1.0 },
+        { date: "Aug", portfolio: 6.1, benchmark: 5.3, alpha: 0.8 },
+        { date: "Sep", portfolio: 5.8, benchmark: 5.0, alpha: 0.8 },
+        { date: "Oct", portfolio: 6.5, benchmark: 5.6, alpha: 0.9 },
+        { date: "Nov", portfolio: 7.2, benchmark: 6.0, alpha: 1.2 },
+        { date: "Dec", portfolio: 7.8, benchmark: 6.4, alpha: 1.4 },
+    ];
 
-const riskData = [
-  { asset: "Public Equities", vol: 14.2, return: 8.5, size: 45 },
-  { asset: "Fixed Income", vol: 5.1, return: 4.2, size: 30 },
-  { asset: "Private Equity", vol: 18.5, return: 14.2, size: 20 },
-  { asset: "Private Credit", vol: 9.2, return: 9.8, size: 5 },
+    if (view === 'YTD') {
+        return baseData.slice(0, 6); // Simulate current year progress
+    } else if (view === '1Y') {
+        return baseData;
+    } else {
+        // 3Y Simulated view (aggregated quarters for brevity in mockup)
+        return [
+            { date: "2022", portfolio: 12.5, benchmark: 10.2, alpha: 2.3 },
+            { date: "2023", portfolio: 28.4, benchmark: 24.1, alpha: 4.3 },
+            { date: "2024", portfolio: 45.2, benchmark: 38.5, alpha: 6.7 },
+            { date: "2025", portfolio: 52.8, benchmark: 44.9, alpha: 7.9 },
+        ];
+    }
+};
+
+// Risk data filterable by asset class
+const allRiskData = [
+  { asset: "Public Equities", vol: 14.2, return: 8.5, size: 45, type: "Public" },
+  { asset: "Fixed Income", vol: 5.1, return: 4.2, size: 30, type: "Public" },
+  { asset: "Private Equity", vol: 18.5, return: 14.2, size: 20, type: "Private" },
+  { asset: "Private Credit", vol: 9.2, return: 9.8, size: 5, type: "Private" },
+  { asset: "Real Assets", vol: 7.5, return: 6.2, size: 10, type: "Private" }, // Extra data for filtering demo
+  { asset: "Cash", vol: 0.5, return: 3.5, size: 5, type: "Public" },
 ];
 
 const attributionData = [
@@ -37,20 +58,24 @@ const attributionData = [
 ];
 
 export default function Analytics() {
-  const { toast } = useToast();
+  const [timeView, setTimeView] = React.useState<'YTD' | '1Y' | '3Y'>('1Y');
+  const [activeFilter, setActiveFilter] = React.useState<'All' | 'Public' | 'Private'>('All');
+  
+  const performanceData = React.useMemo(() => generatePerformanceData(timeView), [timeView]);
+  
+  const filteredRiskData = React.useMemo(() => {
+      if (activeFilter === 'All') return allRiskData;
+      return allRiskData.filter(item => item.type === activeFilter);
+  }, [activeFilter]);
 
   const handleFilterClick = () => {
-    toast({
-      title: "Filters Updated",
-      description: "Showing data for YTD 2025 across all asset classes.",
-    });
+    const nextFilter = activeFilter === 'All' ? 'Public' : activeFilter === 'Public' ? 'Private' : 'All';
+    setActiveFilter(nextFilter);
   };
 
   const handleYTDClick = () => {
-    toast({
-      title: "Time Period Changed",
-      description: "Dashboard updated to Year-to-Date view.",
-    });
+    const nextView = timeView === '1Y' ? 'YTD' : timeView === 'YTD' ? '3Y' : '1Y';
+    setTimeView(nextView);
   };
 
   return (
@@ -62,18 +87,28 @@ export default function Analytics() {
             <p className="text-muted-foreground mt-2">Attribution, Risk Modeling, and Benchmark Comparison.</p>
           </div>
           <div className="flex gap-2">
-             <Button variant="outline" size="sm" className="gap-2" onClick={handleYTDClick}>
-                <Calendar className="w-4 h-4" /> YTD
+             <Button 
+                variant={timeView === 'YTD' ? "default" : "outline"} 
+                size="sm" 
+                className="gap-2 w-24" 
+                onClick={handleYTDClick}
+             >
+                <Calendar className="w-4 h-4" /> {timeView}
              </Button>
-             <Button variant="outline" size="sm" className="gap-2" onClick={handleFilterClick}>
-                <Filter className="w-4 h-4" /> Filters
+             <Button 
+                variant={activeFilter !== 'All' ? "default" : "outline"} 
+                size="sm" 
+                className="gap-2 w-24" 
+                onClick={handleFilterClick}
+             >
+                <Filter className="w-4 h-4" /> {activeFilter}
              </Button>
           </div>
         </div>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-           <AnalyticsCard title="Total Return (YTD)" value="+7.8%" trend="up" sub="+1.4% vs Benchmark" />
+           <AnalyticsCard title={`Total Return (${timeView})`} value={timeView === '3Y' ? "+52.8%" : timeView === 'YTD' ? "+6.2%" : "+7.8%"} trend="up" sub="+1.4% vs Benchmark" />
            <AnalyticsCard title="Sharpe Ratio" value="1.85" trend="up" sub="Top Decile" />
            <AnalyticsCard title="Portfolio Volatility" value="9.2%" trend="down" sub="-0.5% vs Target" inverse />
            <AnalyticsCard title="Max Drawdown" value="-4.2%" trend="neutral" sub="Last 12 Months" />
@@ -138,7 +173,7 @@ export default function Analytics() {
            <Card className="lg:col-span-3 border-border/50 bg-card/50 backdrop-blur-sm">
               <CardHeader>
                  <CardTitle className="text-sm font-medium">Risk vs Return Profile</CardTitle>
-                 <CardDescription>Bubble size represents allocation weight</CardDescription>
+                 <CardDescription>Bubble size represents allocation weight • Showing: {activeFilter}</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
                  <ResponsiveContainer width="100%" height="100%">
@@ -147,9 +182,9 @@ export default function Analytics() {
                        <YAxis type="number" dataKey="return" name="Return" unit="%" label={{ value: 'Return', angle: -90, position: 'left' }} />
                        <ZAxis type="number" dataKey="size" range={[100, 1000]} name="Weight" unit="%" />
                        <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))' }} />
-                       <Scatter name="Assets" data={riskData} fill="hsl(var(--primary))">
-                          {riskData.map((entry, index) => (
-                             <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${index + 1}))`} />
+                       <Scatter name="Assets" data={filteredRiskData} fill="hsl(var(--primary))">
+                          {filteredRiskData.map((entry, index) => (
+                             <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
                           ))}
                        </Scatter>
                     </ScatterChart>

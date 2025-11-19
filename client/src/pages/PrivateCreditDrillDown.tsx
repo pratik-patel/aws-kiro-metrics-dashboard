@@ -7,28 +7,66 @@ import { ArrowLeft, Download, Calendar } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 export default function PrivateCreditDrillDown() {
   const { toast } = useToast();
+  const [isExporting, setIsExporting] = React.useState(false);
 
-  const handleExport = () => {
-    toast({
-      title: "Export Started",
-      description: "Generating PDF report for Private Credit Fund IV...",
-    });
-    setTimeout(() => {
-        toast({
-            title: "Export Complete",
-            description: "The report has been downloaded successfully.",
-            variant: "default",
-            className: "bg-green-500 text-white border-none"
-        });
-    }, 2000);
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      toast({
+        title: "Export Started",
+        description: "Generating PDF report...",
+      });
+
+      const element = document.getElementById("report-content");
+      if (!element) throw new Error("Report element not found");
+
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher resolution
+        logging: false,
+        useCORS: true,
+        backgroundColor: '#0f172a' // Match dark theme background
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "px",
+        format: "a4",
+      });
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("Private_Credit_Fund_IV_Report.pdf");
+
+      toast({
+        title: "Export Complete",
+        description: "Report downloaded successfully.",
+        variant: "default",
+        className: "bg-green-500 text-white border-none"
+      });
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast({
+        title: "Export Failed",
+        description: "Could not generate PDF report.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
     <Layout>
-      <div className="space-y-6 pb-20">
+      <div className="space-y-6 pb-20" id="report-content">
         {/* Header with Breadcrumb */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -47,9 +85,19 @@ export default function PrivateCreditDrillDown() {
           </div>
           <button 
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md shadow-md hover:bg-primary/90 transition-colors text-sm font-medium"
+            disabled={isExporting}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md shadow-md hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download className="w-4 h-4" /> Export PDF
+            {isExporting ? (
+              <span className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Generating...
+              </span>
+            ) : (
+              <>
+                <Download className="w-4 h-4" /> Export PDF
+              </>
+            )}
           </button>
         </div>
 
