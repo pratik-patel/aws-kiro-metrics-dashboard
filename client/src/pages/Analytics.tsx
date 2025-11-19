@@ -65,6 +65,7 @@ export default function Analytics() {
   const [activeFilter, setActiveFilter] = React.useState<'All' | 'Public' | 'Private'>('All');
   const { toast } = useToast();
   const [isExporting, setIsExporting] = React.useState(false);
+  const contentRef = React.useRef<HTMLDivElement>(null);
   
   const performanceData = React.useMemo(() => generatePerformanceData(timeView), [timeView]);
   
@@ -74,6 +75,8 @@ export default function Analytics() {
   }, [activeFilter]);
 
   const handleExport = async () => {
+    if (isExporting) return;
+
     try {
       setIsExporting(true);
       toast({
@@ -81,14 +84,22 @@ export default function Analytics() {
         description: "Generating PDF report...",
       });
 
-      const element = document.getElementById("analytics-content");
-      if (!element) throw new Error("Analytics element not found");
+      // Use ref instead of getElementById for better React integration
+      const element = contentRef.current;
+      if (!element) throw new Error("Analytics content not found");
+
+      // Small delay to ensure UI is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(element, {
         scale: 2, // Higher resolution
         logging: false,
         useCORS: true,
-        backgroundColor: '#0f172a' // Match dark theme background
+        backgroundColor: '#0f172a', // Match dark theme background
+        // Ignore elements that might cause issues
+        ignoreElements: (element) => {
+            return element.classList.contains('no-print');
+        }
       });
 
       const imgData = canvas.toDataURL("image/png");
@@ -115,7 +126,7 @@ export default function Analytics() {
       console.error("Export failed:", error);
       toast({
         title: "Export Failed",
-        description: "Could not generate PDF report.",
+        description: "Could not generate PDF report. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -125,13 +136,16 @@ export default function Analytics() {
 
   return (
     <Layout>
-      <div className="space-y-6 pb-20" id="analytics-content">
+      {/* Attach ref to the container we want to capture */}
+      <div className="space-y-6 pb-20" ref={contentRef}>
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold tracking-tight text-foreground">Performance Analytics</h1>
             <p className="text-muted-foreground mt-2">Attribution, Risk Modeling, and Benchmark Comparison.</p>
           </div>
           
+          {/* Add no-print class to controls so they don't appear in PDF if desired, 
+              or keep them. For now, let's keep them as context is useful. */}
           <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto items-center">
              {/* Time Range Segmented Control */}
              <div className="bg-card/50 border border-border/50 p-1 rounded-lg flex items-center backdrop-blur-sm">
@@ -185,13 +199,13 @@ export default function Analytics() {
                 ))}
              </div>
 
-             {/* Export Button */}
+             {/* Export Button - Marked as no-print to avoid capturing the spinner state if active */}
              <Button 
                onClick={handleExport} 
                disabled={isExporting}
                variant="outline"
                size="sm"
-               className="gap-2 h-9"
+               className="gap-2 h-9 no-print"
              >
                {isExporting ? (
                  <span className="flex items-center gap-2">
