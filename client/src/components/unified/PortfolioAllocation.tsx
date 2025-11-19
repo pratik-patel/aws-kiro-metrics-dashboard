@@ -1,8 +1,7 @@
 import * as React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { portfolioAllocationData } from "@/lib/mockData";
+import { portfolioAllocation } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
 interface PortfolioAllocationProps {
@@ -17,6 +16,8 @@ export function PortfolioAllocation({ onSelectSegment, selectedSegment }: Portfo
     setActiveIndex(index);
   };
 
+  const totalValueB = (portfolioAllocation.total_value / 1000000000).toFixed(1) + "B";
+
   return (
     <Card className="h-full border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden relative">
       <CardHeader>
@@ -28,36 +29,33 @@ export function PortfolioAllocation({ onSelectSegment, selectedSegment }: Portfo
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={portfolioAllocationData}
+              data={portfolioAllocation.allocation}
               cx="50%"
               cy="50%"
               innerRadius={60}
               outerRadius={100}
               paddingAngle={5}
-              dataKey="value"
+              dataKey="weight"
+              nameKey="asset_class"
               onMouseEnter={onPieEnter}
               onClick={(data) => {
-                if (data.name === "Private Credit") {
-                  onSelectSegment(data.name);
-                } else {
-                  onSelectSegment(data.name); // Select others too for basic highlighting
-                }
+                onSelectSegment(data.asset_class);
               }}
               className="cursor-pointer focus:outline-none"
             >
-              {portfolioAllocationData.map((entry, index) => (
+              {portfolioAllocation.allocation.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.fill} 
-                  strokeWidth={selectedSegment === entry.name ? 2 : 0}
+                  strokeWidth={selectedSegment === entry.asset_class ? 2 : 0}
                   stroke="#fff"
                   className={cn(
                     "transition-all duration-300 ease-out",
-                    selectedSegment === entry.name ? "opacity-100 scale-105" : "opacity-80 hover:opacity-100"
+                    selectedSegment === entry.asset_class ? "opacity-100 scale-105" : "opacity-80 hover:opacity-100"
                   )}
                   style={{
                     transformOrigin: 'center',
-                    transform: selectedSegment === entry.name ? 'scale(1.05)' : 'scale(1)'
+                    transform: selectedSegment === entry.asset_class ? 'scale(1.05)' : 'scale(1)'
                   }}
                 />
               ))}
@@ -70,6 +68,7 @@ export function PortfolioAllocation({ onSelectSegment, selectedSegment }: Portfo
                 color: 'hsl(var(--popover-foreground))'
               }}
               itemStyle={{ color: 'hsl(var(--foreground))' }}
+              formatter={(value: number) => `${value}%`}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -78,7 +77,7 @@ export function PortfolioAllocation({ onSelectSegment, selectedSegment }: Portfo
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             <div className="text-2xl font-bold tabular-nums tracking-tight">
-              $2.4B
+              ${totalValueB}
             </div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider">AUM</div>
           </div>
@@ -87,21 +86,21 @@ export function PortfolioAllocation({ onSelectSegment, selectedSegment }: Portfo
       
       {/* Legend */}
       <div className="px-6 pb-6 grid grid-cols-2 gap-2">
-        {portfolioAllocationData.map((item) => (
+        {portfolioAllocation.allocation.map((item) => (
           <div 
-            key={item.name} 
+            key={item.asset_class} 
             className={cn(
               "flex items-center gap-2 text-sm cursor-pointer transition-colors p-1 rounded hover:bg-white/5",
-              selectedSegment === item.name ? "text-foreground font-medium" : "text-muted-foreground"
+              selectedSegment === item.asset_class ? "text-foreground font-medium" : "text-muted-foreground"
             )}
-            onClick={() => onSelectSegment(item.name)}
+            onClick={() => onSelectSegment(item.asset_class)}
           >
             <div 
               className="w-3 h-3 rounded-full" 
               style={{ backgroundColor: item.fill }} 
             />
-            <span>{item.name}</span>
-            <span className="ml-auto font-mono text-xs opacity-70">{item.value}%</span>
+            <span>{item.asset_class}</span>
+            <span className="ml-auto font-mono text-xs opacity-70">{item.weight}%</span>
           </div>
         ))}
       </div>

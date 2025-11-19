@@ -1,14 +1,16 @@
 import * as React from "react";
-import { legacyData } from "@/lib/mockData";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle, Clock } from "lucide-react";
+import { legacyReport } from "@/lib/mockData";
+import { AlertTriangle, Clock } from "lucide-react";
 
 export function LegacyView() {
   const [loading, setLoading] = React.useState(true);
   const [progress, setProgress] = React.useState(0);
 
   React.useEffect(() => {
-    // Simulate slow loading
+    // Simulate slow loading using the JSON load time
+    const loadTimeMs = legacyReport.load_time_seconds * 1000;
+    const increment = 100 / (loadTimeMs / 100); // steps of 100ms
+
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -16,9 +18,9 @@ export function LegacyView() {
           setLoading(false);
           return 100;
         }
-        return prev + 2; // Slow increment
+        return prev + increment;
       });
-    }, 100); // 5 seconds total approx
+    }, 100);
     return () => clearInterval(interval);
   }, []);
 
@@ -28,7 +30,7 @@ export function LegacyView() {
         <span className="font-bold text-sm uppercase tracking-wider">Legacy Trade Reconciliation System v4.2</span>
         <div className="flex items-center gap-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 border border-yellow-300">
           <Clock className="w-3 h-3" />
-          Status: Delayed (T+2)
+          Status: {legacyReport.data_status}
         </div>
       </div>
 
@@ -55,9 +57,9 @@ export function LegacyView() {
               </tr>
             </thead>
             <tbody>
-              {legacyData.map((row) => (
-                <tr key={row.id} className="hover:bg-blue-50">
-                  <td className="border border-gray-400 p-1 font-mono">{row.id}</td>
+              {legacyReport.trades.map((row) => (
+                <tr key={row.trade_id} className="hover:bg-blue-50">
+                  <td className="border border-gray-400 p-1 font-mono">{row.trade_id}</td>
                   <td className="border border-gray-400 p-1">{row.asset}</td>
                   <td className="border border-gray-400 p-1 text-right">{row.quantity.toLocaleString()}</td>
                   <td className="border border-gray-400 p-1">
@@ -69,7 +71,7 @@ export function LegacyView() {
                       row.status
                     )}
                   </td>
-                  <td className="border border-gray-400 p-1">{row.date}</td>
+                  <td className="border border-gray-400 p-1">{row.settlement_date}</td>
                 </tr>
               ))}
             </tbody>

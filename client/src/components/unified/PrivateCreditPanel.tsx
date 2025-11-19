@@ -1,10 +1,15 @@
 import { motion } from "framer-motion";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, BarChart, Bar, YAxis } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { privateCreditMetrics } from "@/lib/mockData";
-import { ArrowUpRight, TrendingUp, DollarSign, Layers } from "lucide-react";
+import { TrendingUp, DollarSign, Layers } from "lucide-react";
 
 export function PrivateCreditPanel() {
+  const drawnMillions = (privateCreditMetrics.capital_breakdown.drawn / 1000000).toFixed(0);
+  const undrawnMillions = (privateCreditMetrics.capital_breakdown.undrawn / 1000000).toFixed(0);
+  const totalCapital = privateCreditMetrics.capital_breakdown.drawn + privateCreditMetrics.capital_breakdown.undrawn;
+  const drawnPercent = (privateCreditMetrics.capital_breakdown.drawn / totalCapital) * 100;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -33,11 +38,11 @@ export function PrivateCreditPanel() {
         {/* NAV Movement Chart */}
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm col-span-1 md:col-span-2 lg:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">NAV Movement (L12M)</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">NAV Movement (Monthly)</CardTitle>
           </CardHeader>
           <CardContent className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={privateCreditMetrics.navMovement}>
+              <AreaChart data={privateCreditMetrics.nav_movement_monthly}>
                 <defs>
                   <linearGradient id="colorNav" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--color-chart-4)" stopOpacity={0.3} />
@@ -50,6 +55,7 @@ export function PrivateCreditPanel() {
                   tickLine={false} 
                   tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} 
                   interval={2}
+                  tickFormatter={(val) => val.split('-')[1]} // Show only month
                 />
                 <Tooltip
                   contentStyle={{
@@ -60,7 +66,7 @@ export function PrivateCreditPanel() {
                 />
                 <Area
                   type="monotone"
-                  dataKey="value"
+                  dataKey="nav"
                   stroke="var(--color-chart-4)"
                   fillOpacity={1}
                   fill="url(#colorNav)"
@@ -82,19 +88,19 @@ export function PrivateCreditPanel() {
             <CardContent>
               <div className="flex items-end gap-4 mb-2">
                 <div>
-                  <div className="text-2xl font-bold text-mono-nums">${privateCreditMetrics.capitalBreakdown.drawn}M</div>
+                  <div className="text-2xl font-bold text-mono-nums">${drawnMillions}M</div>
                   <div className="text-xs text-muted-foreground">Drawn Capital</div>
                 </div>
                 <div className="h-8 w-[1px] bg-border" />
                 <div>
-                  <div className="text-2xl font-bold text-muted-foreground text-mono-nums">${privateCreditMetrics.capitalBreakdown.undrawn}M</div>
+                  <div className="text-2xl font-bold text-muted-foreground text-mono-nums">${undrawnMillions}M</div>
                   <div className="text-xs text-muted-foreground">Undrawn</div>
                 </div>
               </div>
               <div className="w-full bg-muted/50 rounded-full h-2 mt-2 overflow-hidden">
                 <div 
                   className="bg-chart-4 h-full rounded-full" 
-                  style={{ width: `${(privateCreditMetrics.capitalBreakdown.drawn / (privateCreditMetrics.capitalBreakdown.drawn + privateCreditMetrics.capitalBreakdown.undrawn)) * 100}%` }}
+                  style={{ width: `${drawnPercent}%` }}
                 />
               </div>
             </CardContent>
@@ -108,11 +114,14 @@ export function PrivateCreditPanel() {
             </CardHeader>
             <CardContent className="h-[100px]">
                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={privateCreditMetrics.vintageYearMix} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                  <BarChart data={privateCreditMetrics.vintage_year_mix} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
                     <XAxis type="number" hide />
-                    <YAxis dataKey="year" type="category" hide width={30} tick={{ fontSize: 10 }} />
-                    <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))' }} />
-                    <Bar dataKey="percentage" fill="var(--color-chart-4)" radius={[0, 4, 4, 0]} barSize={12} background={{ fill: 'hsl(var(--muted))' }} />
+                    <YAxis dataKey="vintage" type="category" hide width={30} tick={{ fontSize: 10 }} />
+                    <Tooltip 
+                      cursor={{fill: 'transparent'}} 
+                      contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }} 
+                    />
+                    <Bar dataKey="percent" fill="var(--color-chart-4)" radius={[0, 4, 4, 0]} barSize={12} background={{ fill: 'hsl(var(--muted))' }} />
                   </BarChart>
                </ResponsiveContainer>
             </CardContent>

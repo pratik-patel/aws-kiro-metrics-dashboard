@@ -1,76 +1,136 @@
 import { ChartConfig } from "@/components/ui/chart";
 
-// Use Case 1: Unified Portfolio Data
-
-export const portfolioAllocationData = [
-  { name: "Public Equities", value: 45, fill: "var(--color-chart-1)" },
-  { name: "Fixed Income", value: 30, fill: "var(--color-chart-2)" },
-  { name: "Private Equity", value: 15, fill: "var(--color-chart-3)" },
-  { name: "Private Credit", value: 10, fill: "var(--color-chart-4)", isInteractive: true },
-];
-
-export const privateCreditMetrics = {
-  navMovement: [
-    { month: "Jan", value: 240 },
-    { month: "Feb", value: 242 },
-    { month: "Mar", value: 245 },
-    { month: "Apr", value: 244 },
-    { month: "May", value: 248 },
-    { month: "Jun", value: 252 },
-    { month: "Jul", value: 255 },
-    { month: "Aug", value: 258 },
-    { month: "Sep", value: 260 },
-    { month: "Oct", value: 262 },
-    { month: "Nov", value: 265 },
-    { month: "Dec", value: 270 },
-  ],
-  capitalBreakdown: {
-    drawn: 180,
-    undrawn: 70,
-  },
-  vintageYearMix: [
-    { year: "2018", percentage: 25 },
-    { year: "2019", percentage: 20 },
-    { year: "2020", percentage: 30 },
-    { year: "2021", percentage: 25 },
+// 📁 portfolio_allocation.json
+export const portfolioAllocation = {
+  "as_of": "2025-01-31",
+  "total_value": 2500000000,
+  "allocation": [
+    { "asset_class": "Public Equities", "weight": 45, "fill": "var(--color-chart-1)" },
+    { "asset_class": "Fixed Income", "weight": 30, "fill": "var(--color-chart-2)" },
+    { "asset_class": "Private Equity", "weight": 15, "fill": "var(--color-chart-3)" },
+    { "asset_class": "Private Credit", "weight": 10, "fill": "var(--color-chart-4)", "isInteractive": true }
   ]
 };
 
-export const initialPublicTicks = [
-  { symbol: "SPX", price: 4120.50, change: 0.45 },
-  { symbol: "NDX", price: 13400.20, change: 0.82 },
-  { symbol: "VIX", price: 18.50, change: -2.10 },
-  { symbol: "US10Y", price: 3.45, change: 0.05 },
-  { symbol: "AAPL", price: 172.40, change: 1.20 },
-  { symbol: "MSFT", price: 308.10, change: 0.95 },
-];
-
-// Use Case 2: Data Migration Data
-
-export type TradeRecord = {
-  id: string;
-  asset: string;
-  quantity: number;
-  status: "Settled" | "Pending" | "Failed" | "Mismatch";
-  date: string;
-  latency: string;
+// 📁 private_credit_metrics.json
+export const privateCreditMetrics = {
+  "nav_movement_monthly": [
+    { "month": "2024-02", "nav": 210 },
+    { "month": "2024-03", "nav": 212 },
+    { "month": "2024-04", "nav": 215 },
+    { "month": "2024-05", "nav": 218 },
+    { "month": "2024-06", "nav": 220 },
+    { "month": "2024-07", "nav": 223 },
+    { "month": "2024-08", "nav": 226 },
+    { "month": "2024-09", "nav": 229 },
+    { "month": "2024-10", "nav": 231 },
+    { "month": "2024-11", "nav": 234 },
+    { "month": "2024-12", "nav": 238 },
+    { "month": "2025-01", "nav": 241 }
+  ],
+  "capital_breakdown": {
+    "drawn": 180000000,
+    "undrawn": 70000000
+  },
+  "vintage_year_mix": [
+    { "vintage": 2018, "percent": 25 },
+    { "vintage": 2019, "percent": 20 },
+    { "vintage": 2020, "percent": 30 },
+    { "vintage": 2021, "percent": 25 }
+  ]
 };
 
-export const legacyData: TradeRecord[] = [
-  { id: "TRD-9921", asset: "US Treasury 10Y", quantity: 500000, status: "Pending", date: "T+2", latency: "Delayed" },
-  { id: "TRD-9922", asset: "Corp Bond AAPL", quantity: 12000, status: "Mismatch", date: "T+1", latency: "Unknown" },
-  { id: "TRD-9923", asset: "Muni Bond NY", quantity: 250000, status: "Settled", date: "T+3", latency: "Delayed" },
-  { id: "TRD-9924", asset: "ABS Auto Loan", quantity: 1000000, status: "Failed", date: "T+2", latency: "Error" },
-  { id: "TRD-9925", asset: "High Yield ETF", quantity: 5000, status: "Pending", date: "T+2", latency: "Delayed" },
-];
+// 📁 public_market_ticks.json
+export const publicMarketTicks = {
+  "timestamp": "2025-01-31T12:00:00Z",
+  "tickers": [
+    { "symbol": "AAPL", "price": 195.23, "change": 0.12 },
+    { "symbol": "MSFT", "price": 412.10, "change": -0.05 },
+    { "symbol": "TSLA", "price": 258.40, "change": 0.88 }
+  ],
+  "bond_yields": [
+    { "tenor": "2Y", "yield": 3.88 },
+    { "tenor": "10Y", "yield": 4.21 },
+    { "tenor": "30Y", "yield": 4.33 }
+  ]
+};
 
-export const modernData: TradeRecord[] = [
-  { id: "TRD-9921", asset: "US Treasury 10Y", quantity: 500000, status: "Settled", date: "Real-time", latency: "<50ms" },
-  { id: "TRD-9922", asset: "Corp Bond AAPL", quantity: 12000, status: "Settled", date: "Real-time", latency: "<45ms" },
-  { id: "TRD-9923", asset: "Muni Bond NY", quantity: 250000, status: "Settled", date: "Real-time", latency: "<60ms" },
-  { id: "TRD-9924", asset: "ABS Auto Loan", quantity: 1000000, status: "Settled", date: "Real-time", latency: "<55ms" },
-  { id: "TRD-9925", asset: "High Yield ETF", quantity: 5000, status: "Settled", date: "Real-time", latency: "<40ms" },
-];
+// 📁 legacy_report.json
+export const legacyReport = {
+  "data_status": "Delayed (T+2)",
+  "load_time_seconds": 5,
+  "trades": [
+    {
+      "trade_id": "T-1001",
+      "asset": "AAPL",
+      "quantity": 1200,
+      "status": "Pending",
+      "settlement_date": "2025-01-27" 
+    },
+    {
+      "trade_id": "T-1002",
+      "asset": "MSFT",
+      "quantity": 800,
+      "status": "Mismatch",
+      "settlement_date": "2025-01-26"
+    },
+    {
+      "trade_id": "T-1003",
+      "asset": "TSLA",
+      "quantity": 150,
+      "status": "Pending",
+      "settlement_date": "2025-01-28"
+    }
+  ]
+};
+
+// 📁 modern_report.json
+export const modernReport = {
+  "data_status": "Live",
+  "latency_ms": 420,
+  "heatmap_summary": {
+    "clean": 12,
+    "pending": 2,
+    "exceptions": 1
+  },
+  "trades": [
+    {
+      "trade_id": "T-1001",
+      "asset": "AAPL",
+      "quantity": 1200,
+      "status": "Settled",
+      "settlement_date": "2025-01-31"
+    },
+    {
+      "trade_id": "T-1002",
+      "asset": "MSFT",
+      "quantity": 800,
+      "status": "Settled",
+      "settlement_date": "2025-01-31"
+    },
+    {
+      "trade_id": "T-1003",
+      "asset": "TSLA",
+      "quantity": 150,
+      "status": "Pending",
+      "settlement_date": "2025-01-31"
+    },
+    {
+       "trade_id": "T-1004",
+       "asset": "NVDA",
+       "quantity": 500,
+       "status": "Settled",
+       "settlement_date": "2025-01-31"
+    },
+    {
+       "trade_id": "T-1005",
+       "asset": "GOOGL",
+       "quantity": 1000,
+       "status": "Settled",
+       "settlement_date": "2025-01-31"
+    }
+  ]
+};
 
 export const chartConfig = {
   value: {
