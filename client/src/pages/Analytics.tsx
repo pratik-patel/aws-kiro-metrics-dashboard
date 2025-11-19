@@ -2,10 +2,13 @@ import * as React from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, Area, AreaChart, ScatterChart, Scatter, ZAxis, BarChart, Cell } from "recharts";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Activity, Calendar, Filter, Layers } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Activity, Calendar, Filter, Layers, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 // Mock data generator for different views
 const generatePerformanceData = (view: 'YTD' | '1Y' | '3Y') => {
@@ -60,6 +63,8 @@ const attributionData = [
 export default function Analytics() {
   const [timeView, setTimeView] = React.useState<'YTD' | '1Y' | '3Y'>('1Y');
   const [activeFilter, setActiveFilter] = React.useState<'All' | 'Public' | 'Private'>('All');
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = React.useState(false);
   
   const performanceData = React.useMemo(() => generatePerformanceData(timeView), [timeView]);
   
@@ -68,16 +73,66 @@ export default function Analytics() {
       return allRiskData.filter(item => item.type === activeFilter);
   }, [activeFilter]);
 
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      toast({
+        title: "Export Started",
+        description: "Generating PDF report...",
+      });
+
+      const element = document.getElementById("analytics-content");
+      if (!element) throw new Error("Analytics element not found");
+
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher resolution
+        logging: false,
+        useCORS: true,
+        backgroundColor: '#0f172a' // Match dark theme background
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "px",
+        format: "a4",
+      });
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Performance_Analytics_${timeView}.pdf`);
+
+      toast({
+        title: "Export Complete",
+        description: "Report downloaded successfully.",
+        variant: "default",
+        className: "bg-green-500 text-white border-none"
+      });
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast({
+        title: "Export Failed",
+        description: "Could not generate PDF report.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <Layout>
-      <div className="space-y-6 pb-20">
+      <div className="space-y-6 pb-20" id="analytics-content">
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold tracking-tight text-foreground">Performance Analytics</h1>
             <p className="text-muted-foreground mt-2">Attribution, Risk Modeling, and Benchmark Comparison.</p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
+          <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto items-center">
              {/* Time Range Segmented Control */}
              <div className="bg-card/50 border border-border/50 p-1 rounded-lg flex items-center backdrop-blur-sm">
                 <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-2 border-r border-border/50 mr-2">
@@ -129,6 +184,26 @@ export default function Analytics() {
                     </button>
                 ))}
              </div>
+
+             {/* Export Button */}
+             <Button 
+               onClick={handleExport} 
+               disabled={isExporting}
+               variant="outline"
+               size="sm"
+               className="gap-2 h-9"
+             >
+               {isExporting ? (
+                 <span className="flex items-center gap-2">
+                   <div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                   Exporting...
+                 </span>
+               ) : (
+                 <>
+                   <Download className="w-4 h-4" /> PDF
+                 </>
+               )}
+             </Button>
           </div>
         </div>
 
