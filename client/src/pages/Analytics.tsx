@@ -2,10 +2,10 @@ import * as React from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, Area, AreaChart, ScatterChart, Scatter, ZAxis, BarChart, Cell } from "recharts";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Activity, Calendar, Filter } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Activity, Calendar, Filter, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Mock data generator for different views
 const generatePerformanceData = (view: 'YTD' | '1Y' | '3Y') => {
@@ -68,41 +68,67 @@ export default function Analytics() {
       return allRiskData.filter(item => item.type === activeFilter);
   }, [activeFilter]);
 
-  const handleFilterClick = () => {
-    const nextFilter = activeFilter === 'All' ? 'Public' : activeFilter === 'Public' ? 'Private' : 'All';
-    setActiveFilter(nextFilter);
-  };
-
-  const handleYTDClick = () => {
-    const nextView = timeView === '1Y' ? 'YTD' : timeView === 'YTD' ? '3Y' : '1Y';
-    setTimeView(nextView);
-  };
-
   return (
     <Layout>
       <div className="space-y-6 pb-20">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold tracking-tight text-foreground">Performance Analytics</h1>
             <p className="text-muted-foreground mt-2">Attribution, Risk Modeling, and Benchmark Comparison.</p>
           </div>
-          <div className="flex gap-2">
-             <Button 
-                variant={timeView === 'YTD' ? "default" : "outline"} 
-                size="sm" 
-                className="gap-2 w-24" 
-                onClick={handleYTDClick}
-             >
-                <Calendar className="w-4 h-4" /> {timeView}
-             </Button>
-             <Button 
-                variant={activeFilter !== 'All' ? "default" : "outline"} 
-                size="sm" 
-                className="gap-2 w-24" 
-                onClick={handleFilterClick}
-             >
-                <Filter className="w-4 h-4" /> {activeFilter}
-             </Button>
+          
+          <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
+             {/* Time Range Segmented Control */}
+             <div className="bg-card/50 border border-border/50 p-1 rounded-lg flex items-center backdrop-blur-sm">
+                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-2 border-r border-border/50 mr-2">
+                    <Calendar className="w-3.5 h-3.5" /> Period
+                </div>
+                {(['YTD', '1Y', '3Y'] as const).map((period) => (
+                    <button
+                        key={period}
+                        onClick={() => setTimeView(period)}
+                        className={cn(
+                            "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 relative",
+                            timeView === period ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                    >
+                        {timeView === period && (
+                            <motion.div
+                                layoutId="activePeriod"
+                                className="absolute inset-0 bg-primary rounded-md shadow-sm"
+                                transition={{ type: "spring", duration: 0.5 }}
+                            />
+                        )}
+                        <span className="relative z-10">{period}</span>
+                    </button>
+                ))}
+             </div>
+
+             {/* Asset Class Filter Segmented Control */}
+             <div className="bg-card/50 border border-border/50 p-1 rounded-lg flex items-center backdrop-blur-sm">
+                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-2 border-r border-border/50 mr-2">
+                    <Layers className="w-3.5 h-3.5" /> View
+                </div>
+                {(['All', 'Public', 'Private'] as const).map((filter) => (
+                    <button
+                        key={filter}
+                        onClick={() => setActiveFilter(filter)}
+                        className={cn(
+                            "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 relative min-w-[60px]",
+                            activeFilter === filter ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                    >
+                         {activeFilter === filter && (
+                            <motion.div
+                                layoutId="activeFilter"
+                                className="absolute inset-0 bg-primary rounded-md shadow-sm"
+                                transition={{ type: "spring", duration: 0.5 }}
+                            />
+                        )}
+                        <span className="relative z-10">{filter}</span>
+                    </button>
+                ))}
+             </div>
           </div>
         </div>
 
@@ -139,8 +165,25 @@ export default function Analytics() {
                           contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))' }}
                        />
                        <Legend />
-                       <Area type="monotone" dataKey="portfolio" name="Portfolio" stroke="hsl(var(--primary))" fill="url(#colorPortfolio)" strokeWidth={2} />
-                       <Line type="monotone" dataKey="benchmark" name="Benchmark (60/40)" stroke="hsl(var(--muted-foreground))" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                       <Area 
+                          type="monotone" 
+                          dataKey="portfolio" 
+                          name="Portfolio" 
+                          stroke="hsl(var(--primary))" 
+                          fill="url(#colorPortfolio)" 
+                          strokeWidth={2} 
+                          animationDuration={1000}
+                       />
+                       <Line 
+                          type="monotone" 
+                          dataKey="benchmark" 
+                          name="Benchmark (60/40)" 
+                          stroke="hsl(var(--muted-foreground))" 
+                          strokeWidth={2} 
+                          strokeDasharray="5 5" 
+                          dot={false} 
+                          animationDuration={1000}
+                       />
                     </ComposedChart>
                  </ResponsiveContainer>
               </CardContent>
