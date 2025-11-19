@@ -29,8 +29,8 @@ export default function PrivateCreditDrillDown() {
       const element = contentRef.current;
       if (!element) throw new Error("Report content not found");
 
-      // Small delay to ensure UI is stable
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Small delay to ensure UI is stable and animations have completed
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(element, {
         scale: 2, // Higher resolution
@@ -39,6 +39,13 @@ export default function PrivateCreditDrillDown() {
         backgroundColor: '#0f172a', // Match dark theme background
         ignoreElements: (element) => {
             return element.classList.contains('no-print');
+        },
+        onclone: (clonedDoc) => {
+           // Ensure background colors are preserved in the clone if needed
+           const clonedElement = clonedDoc.body.querySelector('.space-y-6');
+           if (clonedElement) {
+               // Force specific styles if necessary
+           }
         }
       });
 
@@ -64,9 +71,12 @@ export default function PrivateCreditDrillDown() {
       });
     } catch (error) {
       console.error("Export failed:", error);
+      // More descriptive error for the user if possible
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred during PDF generation";
+      
       toast({
         title: "Export Failed",
-        description: "Could not generate PDF report. Please try again.",
+        description: `Could not generate PDF report: ${errorMessage}`,
         variant: "destructive"
       });
     } finally {
@@ -81,10 +91,8 @@ export default function PrivateCreditDrillDown() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-               <Link href="/unified-portfolio">
-                 <a className="hover:text-foreground transition-colors flex items-center gap-1">
+               <Link href="/unified-portfolio" className="hover:text-foreground transition-colors flex items-center gap-1">
                    <ArrowLeft className="w-3 h-3" /> Back to Dashboard
-                 </a>
                </Link>
                <span>/</span>
                <span className="text-foreground font-medium">Private Credit Fund IV</span>

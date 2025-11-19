@@ -71,8 +71,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           
           <div className="flex items-center gap-8">
             {/* Brand */}
-            <Link href="/unified-portfolio">
-              <a className="flex items-center gap-2 group">
+            <Link href="/unified-portfolio" className="flex items-center gap-2 group">
                 <div className="w-8 h-8 rounded bg-gradient-to-tr from-primary to-blue-400 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
                   <span className="font-bold text-white text-lg">U</span>
                 </div>
@@ -84,25 +83,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     Platform
                   </span>
                 </div>
-              </a>
             </Link>
 
             {/* Main Menu */}
             <nav className="hidden md:flex items-center gap-1">
               {mainNav.map((item) => (
                 // Removed disabled check entirely
-                <Link key={item.path} href={item.path}>
-                  <a
+                <Link 
+                    key={item.path} 
+                    href={item.path}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                       item.active
                         ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
-                  >
+                >
                     {item.icon}
                     {item.label}
-                  </a>
                 </Link>
               ))}
             </nav>
@@ -138,16 +136,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <ChevronRight className="w-3 h-3 text-muted-foreground mr-2 flex-shrink-0" />
                 
                 {migrationSteps.map((step) => (
-                  <Link key={step.path} href={step.path}>
-                    <a className={cn(
+                  <Link 
+                    key={step.path} 
+                    href={step.path}
+                    className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
                       location === step.path 
                         ? "bg-background text-foreground shadow-sm ring-1 ring-border" 
                         : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                    )}>
+                    )}
+                  >
                       {step.icon}
                       {step.label}
-                    </a>
                   </Link>
                 ))}
               </div>

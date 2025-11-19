@@ -88,8 +88,8 @@ export default function Analytics() {
       const element = contentRef.current;
       if (!element) throw new Error("Analytics content not found");
 
-      // Small delay to ensure UI is ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Small delay to ensure UI is ready and animations complete
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(element, {
         scale: 2, // Higher resolution
@@ -124,9 +124,10 @@ export default function Analytics() {
       });
     } catch (error) {
       console.error("Export failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast({
         title: "Export Failed",
-        description: "Could not generate PDF report. Please try again.",
+        description: `Could not generate PDF report: ${errorMessage}`,
         variant: "destructive"
       });
     } finally {
