@@ -1,60 +1,99 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Database, PieChart, BookOpen, BarChart3 } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  PieChart, 
+  BarChart3, 
+  Database, 
+  BookOpen, 
+  ArrowRightLeft, 
+  GitBranch, 
+  ShieldCheck, 
+  FileText, 
+  Play,
+  Settings2,
+  Briefcase
+} from "lucide-react";
+import * as React from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
-  const navItems = [
-    {
-      label: "Portfolio",
-      path: "/unified-portfolio",
-      icon: <LayoutDashboard className="w-4 h-4 mr-2" />,
-    },
-    {
-      label: "Private Markets",
-      path: "/private-credit",
-      icon: <PieChart className="w-4 h-4 mr-2" />,
-    },
-    {
-      label: "Analytics",
-      path: "/analytics",
-      icon: <BarChart3 className="w-4 h-4 mr-2" />,
-      disabled: true
-    },
-    {
-      label: "Migration Demo",
-      path: "/data-migration",
-      icon: <Database className="w-4 h-4 mr-2" />,
-    },
-    {
-      label: "Data Dictionary",
-      path: "/data-dictionary",
-      icon: <BookOpen className="w-4 h-4 mr-2" />,
-    },
+  // Determine current context (Investment vs Operations) based on URL
+  const isOpsContext = location.startsWith("/migration") || location === "/data-dictionary";
+
+  const investmentNav = [
+    { label: "Portfolio", path: "/unified-portfolio", icon: <LayoutDashboard className="w-4 h-4 mr-2" /> },
+    { label: "Private Markets", path: "/private-credit", icon: <PieChart className="w-4 h-4 mr-2" /> },
+    { label: "Analytics", path: "/analytics", icon: <BarChart3 className="w-4 h-4 mr-2" />, disabled: true },
+  ];
+
+  const opsNav = [
+    { label: "Workspace", path: "/migration-workspace", icon: <Briefcase className="w-4 h-4 mr-2" /> },
+    { label: "Designer", path: "/migration-designer", icon: <Settings2 className="w-4 h-4 mr-2" /> },
+    { label: "Execution", path: "/migration-execution", icon: <Play className="w-4 h-4 mr-2" /> },
+    { label: "Validation", path: "/migration-validation", icon: <ShieldCheck className="w-4 h-4 mr-2" /> },
+    { label: "Lineage", path: "/migration-lineage", icon: <GitBranch className="w-4 h-4 mr-2" /> },
+    { label: "Impact Report", path: "/migration-summary", icon: <FileText className="w-4 h-4 mr-2" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 flex flex-col">
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          
           <div className="flex items-center gap-8">
+            {/* Logo / Brand */}
             <Link href="/unified-portfolio">
-              <a className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-gradient-to-tr from-primary to-blue-400 flex items-center justify-center shadow-lg shadow-primary/20">
-                  <span className="font-bold text-white text-lg">U</span>
+              <a className="flex items-center gap-2 group">
+                <div className={cn(
+                  "w-8 h-8 rounded flex items-center justify-center shadow-lg transition-colors duration-500",
+                  isOpsContext ? "bg-gradient-to-tr from-emerald-600 to-teal-400" : "bg-gradient-to-tr from-primary to-blue-400"
+                )}>
+                  <span className="font-bold text-white text-lg">
+                    {isOpsContext ? "D" : "U"}
+                  </span>
                 </div>
-                <span className="font-display font-bold text-lg tracking-tight">
-                  Unified Markets <span className="text-muted-foreground font-normal">Platform</span>
-                </span>
+                <div className="flex flex-col">
+                  <span className="font-display font-bold text-lg tracking-tight leading-none">
+                    {isOpsContext ? "DataOps" : "Unified Markets"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">
+                    {isOpsContext ? "Modernization Suite" : "Investment Platform"}
+                  </span>
+                </div>
               </a>
             </Link>
 
+            {/* Module Switcher (Context Toggle) */}
+            <div className="hidden lg:flex items-center bg-muted/30 p-1 rounded-lg border border-border/50">
+               <Link href="/unified-portfolio">
+                 <a className={cn(
+                   "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                   !isOpsContext ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
+                 )}>
+                   Investment Office
+                 </a>
+               </Link>
+               <Link href="/migration-workspace">
+                 <a className={cn(
+                   "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                   isOpsContext ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
+                 )}>
+                   Data Operations
+                 </a>
+               </Link>
+            </div>
+
+            {/* Divider */}
+            <div className="h-6 w-[1px] bg-border/50 hidden md:block" />
+
+            {/* Contextual Navigation */}
             <nav className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => (
+              {(isOpsContext ? opsNav : investmentNav).map((item: any) => (
                 item.disabled ? (
-                   <span key={item.path} className="flex items-center px-4 py-2 rounded-md text-sm font-medium text-muted-foreground/50 cursor-not-allowed">
+                   <span key={item.path} className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-muted-foreground/50 cursor-not-allowed">
                       {item.icon}
                       {item.label}
                    </span>
@@ -62,7 +101,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <Link key={item.path} href={item.path}>
                     <a
                       className={cn(
-                        "flex items-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                        "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                         location === item.path
                           ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -77,20 +116,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
 
+          {/* Right Side User/Status */}
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-full border border-border/50">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              System Operational
+              <span className={cn("w-2 h-2 rounded-full animate-pulse", isOpsContext ? "bg-emerald-500" : "bg-green-500")}></span>
+              {isOpsContext ? "Migration Active" : "System Operational"}
             </div>
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-300 border border-white/20 flex items-center justify-center text-xs font-bold text-gray-600 shadow-inner">
-              CIO
+              {isOpsContext ? "OPS" : "CIO"}
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 animate-in fade-in duration-500">
+      <main className="flex-1 container mx-auto px-4 py-8 animate-in fade-in duration-500">
         {children}
       </main>
     </div>
