@@ -51,6 +51,70 @@ export default function MigrationDesigner() {
     setMappings(prev => prev.filter(m => m.id !== id));
   };
 
+  // Drag and Drop Handlers
+  const handleDragStart = (e: React.DragEvent, fieldName: string) => {
+    e.dataTransfer.setData("text/plain", fieldName);
+    e.dataTransfer.effectAllowed = "copy";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Necessary to allow dropping
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const sourceField = e.dataTransfer.getData("text/plain");
+    
+    if (sourceField) {
+        addMapping(sourceField);
+    }
+  };
+
+  const handleManualAdd = () => {
+    // Simulate adding a placeholder mapping
+    const unmappedField = sourceSchema.find(s => !mappings.find(m => m.source === s.field));
+    if (unmappedField) {
+        addMapping(unmappedField.field);
+    } else {
+        toast({
+            title: "All Fields Mapped",
+            description: "There are no more source fields to map.",
+            variant: "destructive"
+        });
+    }
+  };
+
+  const addMapping = (sourceField: string) => {
+      // Find a potential target or default to "UNMAPPED"
+      const existing = mappings.find(m => m.source === sourceField);
+      if (existing) {
+          toast({
+              title: "Duplicate Mapping",
+              description: `Field '${sourceField}' is already mapped.`,
+              variant: "destructive"
+          });
+          return;
+      }
+
+      const newId = Math.max(...mappings.map(m => m.id)) + 1;
+      const targetMatch = targetSchema.find(t => t.field.toLowerCase().includes(sourceField.toLowerCase().replace(/_/g, '')));
+      
+      const newRule = {
+          id: newId,
+          source: sourceField,
+          target: targetMatch ? targetMatch.field : "SELECT_TARGET",
+          rule: "DIRECT_COPY",
+          status: "Draft"
+      };
+
+      setMappings(prev => [...prev, newRule]);
+      toast({
+          title: "Mapping Created",
+          description: `Added rule for '${sourceField}'`,
+      });
+  };
+
   return (
     <Layout>
       <div className="space-y-6 pb-20 h-[calc(100vh-140px)] flex flex-col">
@@ -88,7 +152,12 @@ export default function MigrationDesigner() {
              </CardHeader>
              <CardContent className="flex-1 overflow-auto p-2 space-y-2">
                 {sourceSchema.map((field, i) => (
-                   <div key={i} className="p-3 bg-background border border-border rounded text-sm flex justify-between items-center group hover:border-primary/50 cursor-grab active:cursor-grabbing transition-colors">
+                   <div 
+                        key={i} 
+                        className="p-3 bg-background border border-border rounded text-sm flex justify-between items-center group hover:border-primary/50 cursor-grab active:cursor-grabbing transition-colors"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, field.field)}
+                   >
                       <div>
                          <div className="font-mono font-bold text-xs">{field.field}</div>
                          <div className="text-[10px] text-muted-foreground">{field.type}</div>
@@ -128,7 +197,9 @@ export default function MigrationDesigner() {
                         
                         <div className="flex items-center gap-2 ml-2">
                            <Badge variant="outline" className={`text-[10px] border-opacity-50 ${
-                              rule.status === 'Valid' ? 'bg-green-500/10 text-green-500 border-green-500' : 'bg-blue-500/10 text-blue-500 border-blue-500'
+                              rule.status === 'Valid' ? 'bg-green-500/10 text-green-500 border-green-500' : 
+                              rule.status === 'Draft' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500' :
+                              'bg-blue-500/10 text-blue-500 border-blue-500'
                            }`}>
                               {rule.status}
                            </Badge>
@@ -146,9 +217,14 @@ export default function MigrationDesigner() {
                 </AnimatePresence>
 
                 {/* Empty State / Drop Target */}
-                <div className="h-16 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center text-xs text-muted-foreground bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer">
+                <div 
+                    className="h-16 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center text-xs text-muted-foreground bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer"
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onClick={handleManualAdd}
+                >
                    <Plus className="w-4 h-4 mb-1 opacity-50" />
-                   <span>Drag source fields here to create new mapping</span>
+                   <span>Drag source fields here or click to create new mapping</span>
                 </div>
              </CardContent>
           </Card>
