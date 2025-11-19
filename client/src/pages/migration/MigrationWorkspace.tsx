@@ -1,7 +1,7 @@
 import * as React from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { migrationProjects } from "@/lib/migrationMockData";
+import { migrationProjects as initialMockProjects } from "@/lib/migrationMockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Plus, Clock, Database, Server, Loader2 } from "lucide-react";
@@ -28,25 +28,48 @@ import { useToast } from "@/hooks/use-toast";
 export default function MigrationWorkspace() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [projects, setProjects] = React.useState(initialMockProjects);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Form refs to capture data without controlled inputs for simplicity
+  const nameRef = React.useRef<HTMLInputElement>(null);
+  const [sourceSystem, setSourceSystem] = React.useState("legacy_db2");
+  const [targetSystem, setTargetSystem] = React.useState("snowflake");
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
+    const newProject = {
+      id: `MP-2025-00${projects.length + 1}`,
+      name: nameRef.current?.value || "New Migration Project",
+      status: "Planning", // Initial status
+      progress: 0,
+      source: sourceSystem === "legacy_db2" ? "Legacy Mainframe (Db2)" : 
+              sourceSystem === "oracle_ebs" ? "Oracle EBS" :
+              sourceSystem === "sap_ecc" ? "SAP ECC" : "Flat File (CSV)",
+      target: targetSystem === "snowflake" ? "Snowflake Cloud Data Platform" : 
+              targetSystem === "databricks" ? "Databricks Lakehouse" :
+              targetSystem === "bigquery" ? "Google BigQuery" : "PostgreSQL",
+      owner: "Alexandra Chen",
+      lastUpdated: "Just now"
+    };
+
+    setProjects([...projects, newProject]);
     setIsLoading(false);
     setIsDialogOpen(false);
     
     toast({
       title: "Project Created Successfully",
-      description: "Initializing new migration workspace...",
+      description: `${newProject.name} has been initialized.`,
     });
 
-    setLocation("/migration-designer");
+    // Optional: Auto-navigate or let user see it
+    // setLocation("/migration-designer");
   };
 
   return (
@@ -64,7 +87,7 @@ export default function MigrationWorkspace() {
 
         {/* Active Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {migrationProjects.map((project) => (
+          {projects.map((project) => (
             <Card key={project.id} className="group hover:border-primary/50 transition-all duration-300 cursor-pointer bg-card/50 backdrop-blur-sm border-border/50">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start mb-2">
@@ -149,12 +172,17 @@ export default function MigrationWorkspace() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Project Name</Label>
-                <Input id="name" placeholder="e.g. Q1 2025 Private Credit Migration" required />
+                <Input 
+                  id="name" 
+                  ref={nameRef}
+                  placeholder="e.g. Q1 2025 Private Credit Migration" 
+                  required 
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="source">Source System</Label>
-                  <Select defaultValue="legacy_db2">
+                  <Select value={sourceSystem} onValueChange={setSourceSystem}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
@@ -168,7 +196,7 @@ export default function MigrationWorkspace() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="target">Target System</Label>
-                  <Select defaultValue="snowflake">
+                  <Select value={targetSystem} onValueChange={setTargetSystem}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select target" />
                     </SelectTrigger>
