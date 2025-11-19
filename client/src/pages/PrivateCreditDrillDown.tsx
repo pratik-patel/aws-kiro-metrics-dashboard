@@ -13,23 +13,33 @@ import jsPDF from "jspdf";
 export default function PrivateCreditDrillDown() {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = React.useState(false);
+  const contentRef = React.useRef<HTMLDivElement>(null);
 
   const handleExport = async () => {
+    if (isExporting) return;
+
     try {
       setIsExporting(true);
       toast({
         title: "Export Started",
-        description: "Generating PDF report...",
+        description: "Generating PDF report for Private Credit Fund IV...",
       });
 
-      const element = document.getElementById("report-content");
-      if (!element) throw new Error("Report element not found");
+      // Use ref instead of getElementById
+      const element = contentRef.current;
+      if (!element) throw new Error("Report content not found");
+
+      // Small delay to ensure UI is stable
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(element, {
         scale: 2, // Higher resolution
         logging: false,
         useCORS: true,
-        backgroundColor: '#0f172a' // Match dark theme background
+        backgroundColor: '#0f172a', // Match dark theme background
+        ignoreElements: (element) => {
+            return element.classList.contains('no-print');
+        }
       });
 
       const imgData = canvas.toDataURL("image/png");
@@ -48,7 +58,7 @@ export default function PrivateCreditDrillDown() {
 
       toast({
         title: "Export Complete",
-        description: "Report downloaded successfully.",
+        description: "The report has been downloaded successfully.",
         variant: "default",
         className: "bg-green-500 text-white border-none"
       });
@@ -56,7 +66,7 @@ export default function PrivateCreditDrillDown() {
       console.error("Export failed:", error);
       toast({
         title: "Export Failed",
-        description: "Could not generate PDF report.",
+        description: "Could not generate PDF report. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -66,7 +76,7 @@ export default function PrivateCreditDrillDown() {
 
   return (
     <Layout>
-      <div className="space-y-6 pb-20" id="report-content">
+      <div className="space-y-6 pb-20" ref={contentRef}>
         {/* Header with Breadcrumb */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -86,7 +96,7 @@ export default function PrivateCreditDrillDown() {
           <button 
             onClick={handleExport}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md shadow-md hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md shadow-md hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed no-print"
           >
             {isExporting ? (
               <span className="flex items-center gap-2">
