@@ -1,0 +1,89 @@
+import * as React from "react";
+import Layout from "@/components/Layout";
+import { PortfolioAllocation } from "@/components/unified/PortfolioAllocation";
+import { PrivateCreditPanel } from "@/components/unified/PrivateCreditPanel";
+import { SimulationPanel } from "@/components/unified/SimulationPanel";
+import { PublicMarketsStrip } from "@/components/unified/PublicMarketsStrip";
+import { Card, CardContent } from "@/components/ui/card";
+import { AnimatePresence, motion } from "framer-motion";
+
+export default function UnifiedPortfolio() {
+  const [selectedSegment, setSelectedSegment] = React.useState<string | null>("Private Credit");
+
+  return (
+    <Layout>
+      <div className="space-y-6 pb-20">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-display font-bold tracking-tight text-foreground">
+              Unified Allocation View
+            </h1>
+            <p className="text-muted-foreground mt-1 max-w-2xl">
+              Holistic cross-asset portfolio management combining public markets and alternative investments.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground border border-border/50 px-3 py-1 rounded-full bg-card/30">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Real-time Pricing Active
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left: Allocation Chart */}
+          <div className="lg:col-span-4 xl:col-span-3 h-[400px] lg:h-auto">
+            <PortfolioAllocation 
+              selectedSegment={selectedSegment} 
+              onSelectSegment={setSelectedSegment} 
+            />
+          </div>
+
+          {/* Right: Deep Dive or Placeholder */}
+          <div className="lg:col-span-8 xl:col-span-6 h-[500px] lg:h-auto relative">
+            <AnimatePresence mode="wait">
+              {selectedSegment === "Private Credit" ? (
+                <PrivateCreditPanel key="pc-panel" />
+              ) : (
+                <motion.div 
+                  key="placeholder"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="h-full flex items-center justify-center border border-dashed border-border rounded-xl bg-card/20"
+                >
+                  <div className="text-center text-muted-foreground">
+                    <p>Select <strong>Private Credit</strong> to view detailed metrics</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+           {/* Far Right: Simulation */}
+           <div className="lg:col-span-12 xl:col-span-3">
+              <SimulationPanel />
+           </div>
+        </div>
+
+        {/* Ticker Strip */}
+        <div className="fixed bottom-0 left-0 right-0 z-40">
+          <PublicMarketsStrip />
+        </div>
+
+        {/* CIO Message */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-12 mb-20"
+        >
+          <Card className="bg-gradient-to-r from-primary/10 via-background to-background border-l-4 border-l-primary border-y-border/50 border-r-border/50">
+            <CardContent className="p-6">
+              <p className="text-lg font-medium text-foreground italic">
+                "This prototype demonstrates the platform’s ability to unify public and private assets, handle non-liquid data structures, and run real-time simulations — a structural differentiator in alternative investments infrastructure."
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    </Layout>
+  );
+}
