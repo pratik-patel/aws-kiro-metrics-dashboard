@@ -6,8 +6,26 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, Refere
 import { ArrowLeft, Download, Calendar } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PrivateCreditDrillDown() {
+  const { toast } = useToast();
+
+  const handleExport = () => {
+    toast({
+      title: "Export Started",
+      description: "Generating PDF report for Private Credit Fund IV...",
+    });
+    setTimeout(() => {
+        toast({
+            title: "Export Complete",
+            description: "The report has been downloaded successfully.",
+            variant: "default",
+            className: "bg-green-500 text-white border-none"
+        });
+    }, 2000);
+  };
+
   return (
     <Layout>
       <div className="space-y-6 pb-20">
@@ -27,7 +45,10 @@ export default function PrivateCreditDrillDown() {
                Private Credit • North America Direct Lending
              </h1>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md shadow-md hover:bg-primary/90 transition-colors text-sm font-medium">
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md shadow-md hover:bg-primary/90 transition-colors text-sm font-medium"
+          >
             <Download className="w-4 h-4" /> Export PDF
           </button>
         </div>

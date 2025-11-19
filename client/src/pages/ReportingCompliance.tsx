@@ -16,8 +16,39 @@ import {
   FileCheck
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ReportingCompliance() {
+  const { toast } = useToast();
+
+  const handleGenerateReport = () => {
+    toast({
+        title: "Report Generation Started",
+        description: "Compiling monthly data. This may take a few moments.",
+    });
+    setTimeout(() => {
+        toast({
+            title: "Report Ready",
+            description: "Monthly CIO Pack (Feb 2025) is ready for download.",
+            className: "bg-blue-500 text-white border-none"
+        });
+    }, 2500);
+  };
+
+  const handleFilter = () => {
+    toast({
+        title: "Filters Applied",
+        description: "Showing only high-priority compliance rules.",
+    });
+  };
+
+  const handleDownload = (name: string) => {
+    toast({
+        title: "Downloading...",
+        description: `Downloading ${name}`,
+    });
+  };
+
   return (
     <Layout>
       <div className="space-y-6 pb-20">
@@ -34,7 +65,10 @@ export default function ReportingCompliance() {
              <Button variant="outline" size="sm" className="gap-2">
                 <Calendar className="w-4 h-4" /> Feb 2025
              </Button>
-             <Button className="gap-2 bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+             <Button 
+                className="gap-2 bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                onClick={handleGenerateReport}
+             >
                 <FileCheck className="w-4 h-4" /> Generate New Report
              </Button>
           </div>
@@ -85,7 +119,12 @@ export default function ReportingCompliance() {
             <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-lg font-medium">Active Compliance Rules</CardTitle>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={handleFilter}
+                  >
                      <Filter className="w-3 h-3 mr-1" /> Filter
                   </Button>
                </CardHeader>
@@ -187,7 +226,12 @@ export default function ReportingCompliance() {
                                      </div>
                                   </div>
                                </div>
-                               <Button size="icon" variant="ghost" className="h-8 w-8 opacity-50 group-hover:opacity-100 transition-opacity">
+                               <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-8 w-8 opacity-50 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleDownload(report.name)}
+                               >
                                   <Download className="w-4 h-4" />
                                </Button>
                             </div>

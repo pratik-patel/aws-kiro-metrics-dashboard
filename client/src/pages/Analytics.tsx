@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, Area, AreaChart, ScatterChart, Scatter, ZAxis, BarChart, Cell } from "recharts";
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Activity, Calendar, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const performanceData = [
   { date: "Jan", portfolio: 4.2, benchmark: 3.8, alpha: 0.4 },
@@ -36,6 +37,22 @@ const attributionData = [
 ];
 
 export default function Analytics() {
+  const { toast } = useToast();
+
+  const handleFilterClick = () => {
+    toast({
+      title: "Filters Updated",
+      description: "Showing data for YTD 2025 across all asset classes.",
+    });
+  };
+
+  const handleYTDClick = () => {
+    toast({
+      title: "Time Period Changed",
+      description: "Dashboard updated to Year-to-Date view.",
+    });
+  };
+
   return (
     <Layout>
       <div className="space-y-6 pb-20">
@@ -45,10 +62,10 @@ export default function Analytics() {
             <p className="text-muted-foreground mt-2">Attribution, Risk Modeling, and Benchmark Comparison.</p>
           </div>
           <div className="flex gap-2">
-             <Button variant="outline" size="sm" className="gap-2">
+             <Button variant="outline" size="sm" className="gap-2" onClick={handleYTDClick}>
                 <Calendar className="w-4 h-4" /> YTD
              </Button>
-             <Button variant="outline" size="sm" className="gap-2">
+             <Button variant="outline" size="sm" className="gap-2" onClick={handleFilterClick}>
                 <Filter className="w-4 h-4" /> Filters
              </Button>
           </div>
