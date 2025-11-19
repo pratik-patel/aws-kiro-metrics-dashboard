@@ -9,6 +9,7 @@ import DataMigration from "@/pages/DataMigration";
 import PrivateCreditDrillDown from "@/pages/PrivateCreditDrillDown";
 import DataDictionary from "@/pages/DataDictionary";
 import Analytics from "@/pages/Analytics";
+import ReportingCompliance from "@/pages/ReportingCompliance";
 
 // New Migration Module Pages
 import MigrationWorkspace from "@/pages/migration/MigrationWorkspace";
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/unified-portfolio" component={UnifiedPortfolio} />
       <Route path="/private-credit" component={PrivateCreditDrillDown} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/reporting-compliance" component={ReportingCompliance} />
       
       {/* Shared / Demo */}
       <Route path="/data-migration" component={DataMigration} />

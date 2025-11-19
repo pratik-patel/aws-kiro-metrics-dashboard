@@ -11,7 +11,8 @@ import {
   GitBranch,
   FileText,
   Database,
-  ChevronRight
+  ChevronRight,
+  FileCheck2
 } from "lucide-react";
 import * as React from "react";
 
@@ -38,6 +39,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       path: "/analytics", 
       icon: <BarChart3 className="w-4 h-4" />,
       active: location === "/analytics"
+    },
+    { 
+      label: "Reporting & Compliance", 
+      path: "/reporting-compliance", 
+      icon: <FileCheck2 className="w-4 h-4" />,
+      active: location === "/reporting-compliance"
     },
     { 
       label: "Data Migration", 
