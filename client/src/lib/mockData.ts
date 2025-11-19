@@ -7,38 +7,56 @@ export const portfolioAllocation = {
   "allocation": [
     { "asset_class": "Public Equities", "weight": 45, "fill": "var(--color-chart-1)" },
     { "asset_class": "Fixed Income", "weight": 30, "fill": "var(--color-chart-2)" },
-    { "asset_class": "Private Equity", "weight": 15, "fill": "var(--color-chart-3)" },
-    { "asset_class": "Private Credit", "weight": 10, "fill": "var(--color-chart-4)", "isInteractive": true }
+    { "asset_class": "Private Equity", "weight": 20, "fill": "var(--color-chart-3)" },
+    { "asset_class": "Private Credit", "weight": 5, "fill": "var(--color-chart-4)", "isInteractive": true }
   ]
 };
 
 // 📁 private_credit_metrics.json
 export const privateCreditMetrics = {
   "nav_movement_monthly": [
-    { "month": "2024-02", "nav": 210 },
-    { "month": "2024-03", "nav": 212 },
-    { "month": "2024-04", "nav": 215 },
-    { "month": "2024-05", "nav": 218 },
-    { "month": "2024-06", "nav": 220 },
-    { "month": "2024-07", "nav": 223 },
-    { "month": "2024-08", "nav": 226 },
-    { "month": "2024-09", "nav": 229 },
-    { "month": "2024-10", "nav": 231 },
-    { "month": "2024-11", "nav": 234 },
-    { "month": "2024-12", "nav": 238 },
-    { "month": "2025-01", "nav": 241 }
+    { "month": "2024-02", "nav": 120 },
+    { "month": "2024-03", "nav": 122 },
+    { "month": "2024-04", "nav": 125 },
+    { "month": "2024-05", "nav": 130 },
+    { "month": "2024-06", "nav": 131 },
+    { "month": "2024-07", "nav": 133 },
+    { "month": "2024-08", "nav": 135 },
+    { "month": "2024-09", "nav": 138 },
+    { "month": "2024-10", "nav": 140 },
+    { "month": "2024-11", "nav": 142 },
+    { "month": "2024-12", "nav": 145 },
+    { "month": "2025-01", "nav": 148 }
   ],
   "capital_breakdown": {
-    "drawn": 180000000,
-    "undrawn": 70000000
+    "drawn": 80000000,
+    "undrawn": 20000000
   },
   "vintage_year_mix": [
-    { "vintage": 2018, "percent": 25 },
-    { "vintage": 2019, "percent": 20 },
-    { "vintage": 2020, "percent": 30 },
+    { "vintage": 2015, "percent": 10 },
+    { "vintage": 2017, "percent": 25 },
+    { "vintage": 2019, "percent": 40 },
     { "vintage": 2021, "percent": 25 }
   ]
 };
+
+// NEW: Underlying Funds for Table
+export const privateCreditFunds = [
+  { name: "North America Direct Lending IV", vintage: 2019, commitment: 45000000, nav: 42000000, irr: 11.2 },
+  { name: "European Senior Debt II", vintage: 2021, commitment: 25000000, nav: 12000000, irr: 9.8 },
+  { name: "Asia Pacific Special Situations", vintage: 2017, commitment: 15000000, nav: 18500000, irr: 14.5 },
+  { name: "Global Mezzanine Fund VI", vintage: 2015, commitment: 15000000, nav: 7500000, irr: 10.1 },
+];
+
+// NEW: Waterfall Data
+export const cashFlowWaterfall = [
+  { category: "Commitment", value: 100, type: "total" },
+  { category: "Called", value: -80, type: "negative" },
+  { category: "Fees", value: -5, type: "negative" },
+  { category: "Distributions", value: 15, type: "positive" },
+  { category: "Appreciation", value: 25, type: "positive" },
+  { category: "Ending NAV", value: 55, type: "total" }, // Calculated result
+];
 
 // 📁 public_market_ticks.json
 export const publicMarketTicks = {
