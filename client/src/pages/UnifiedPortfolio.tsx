@@ -2,12 +2,41 @@ import * as React from "react";
 import Layout from "@/components/Layout";
 import { PortfolioAllocation } from "@/components/unified/PortfolioAllocation";
 import { PrivateCreditPanel } from "@/components/unified/PrivateCreditPanel";
+import { PublicEquitiesPanel } from "@/components/unified/PublicEquitiesPanel";
+import { FixedIncomePanel } from "@/components/unified/FixedIncomePanel";
+import { PrivateEquityPanel } from "@/components/unified/PrivateEquityPanel";
 import { SimulationPanel } from "@/components/unified/SimulationPanel";
 import { PublicMarketsStrip } from "@/components/unified/PublicMarketsStrip";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function UnifiedPortfolio() {
   const [selectedSegment, setSelectedSegment] = React.useState<string | null>("Private Credit");
+
+  const renderPanel = () => {
+    switch (selectedSegment) {
+      case "Private Credit":
+        return <PrivateCreditPanel key="pc-panel" />;
+      case "Public Equities":
+        return <PublicEquitiesPanel key="pe-panel" />;
+      case "Fixed Income":
+        return <FixedIncomePanel key="fi-panel" />;
+      case "Private Equity":
+        return <PrivateEquityPanel key="peq-panel" />;
+      default:
+        return (
+          <motion.div 
+            key="placeholder"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="h-full flex items-center justify-center border border-dashed border-border rounded-xl bg-card/20"
+          >
+            <div className="text-center text-muted-foreground">
+              <p>Select an asset class to view detailed metrics</p>
+            </div>
+          </motion.div>
+        );
+    }
+  };
 
   return (
     <Layout>
@@ -36,23 +65,10 @@ export default function UnifiedPortfolio() {
             />
           </div>
 
-          {/* Right: Deep Dive or Placeholder */}
+          {/* Right: Deep Dive Panels */}
           <div className="lg:col-span-8 xl:col-span-6 h-[500px] lg:h-auto relative">
             <AnimatePresence mode="wait">
-              {selectedSegment === "Private Credit" ? (
-                <PrivateCreditPanel key="pc-panel" />
-              ) : (
-                <motion.div 
-                  key="placeholder"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="h-full flex items-center justify-center border border-dashed border-border rounded-xl bg-card/20"
-                >
-                  <div className="text-center text-muted-foreground">
-                    <p>Select <strong>Private Credit</strong> to view detailed metrics</p>
-                  </div>
-                </motion.div>
-              )}
+              {renderPanel()}
             </AnimatePresence>
           </div>
 
