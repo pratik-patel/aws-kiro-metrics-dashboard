@@ -4,7 +4,6 @@ import { PortfolioAllocation } from "@/components/unified/PortfolioAllocation";
 import { PrivateCreditPanel } from "@/components/unified/PrivateCreditPanel";
 import { SimulationPanel } from "@/components/unified/SimulationPanel";
 import { PublicMarketsStrip } from "@/components/unified/PublicMarketsStrip";
-import { Card, CardContent } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function UnifiedPortfolio() {
@@ -67,22 +66,6 @@ export default function UnifiedPortfolio() {
         <div className="fixed bottom-0 left-0 right-0 z-40">
           <PublicMarketsStrip />
         </div>
-
-        {/* CIO Message */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-12 mb-20"
-        >
-          <Card className="bg-gradient-to-r from-primary/10 via-background to-background border-l-4 border-l-primary border-y-border/50 border-r-border/50">
-            <CardContent className="p-6">
-              <p className="text-lg font-medium text-foreground italic">
-                "This prototype demonstrates the platform’s ability to unify public and private assets, handle non-liquid data structures, and run real-time simulations — a structural differentiator in alternative investments infrastructure."
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
     </Layout>
   );
