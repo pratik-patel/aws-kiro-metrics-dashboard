@@ -37,7 +37,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       label: "Analytics", 
       path: "/analytics", 
       icon: <BarChart3 className="w-4 h-4" />,
-      disabled: true 
+      active: location === "/analytics"
     },
     { 
       label: "Data Migration", 
@@ -83,26 +83,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {/* Main Menu */}
             <nav className="hidden md:flex items-center gap-1">
               {mainNav.map((item) => (
-                item.disabled ? (
-                   <span key={item.path} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground/50 cursor-not-allowed">
-                      {item.icon}
-                      {item.label}
-                   </span>
-                ) : (
-                  <Link key={item.path} href={item.path}>
-                    <a
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                        item.active
-                          ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                      )}
-                    >
-                      {item.icon}
-                      {item.label}
-                    </a>
-                  </Link>
-                )
+                // Removed disabled check entirely
+                <Link key={item.path} href={item.path}>
+                  <a
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                      item.active
+                        ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </a>
+                </Link>
               ))}
             </nav>
           </div>
