@@ -25,10 +25,11 @@ export function PrivateCreditPanel() {
           </h2>
           <p className="text-muted-foreground text-xs">Fund IV • North America • Direct Lending</p>
         </div>
-        <Link href="/private-credit">
-          <a className="text-xs flex items-center gap-1 text-primary hover:underline cursor-pointer">
-            View Full Details <ArrowRight className="w-3 h-3" />
-          </a>
+        <Link 
+          href="/private-credit"
+          className="text-xs flex items-center gap-1 text-primary hover:underline cursor-pointer"
+        >
+          View Full Details <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
 
