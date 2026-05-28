@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Download, AlertTriangle, Eye, Settings2, User, GitCommit, Play, Plus, BookOpen, Clock, Activity, X, ChevronRight } from "lucide-react";
+import { Download, AlertTriangle, Eye, Settings2, User, GitCommit, Play, Plus, BookOpen, Clock, Activity, X, ChevronRight, Code2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, BarChart, Bar, Legend, Treemap, ScatterChart, Scatter } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, BarChart, Bar, Legend, Treemap, ScatterChart, Scatter, LineChart, Line } from "recharts";
 import { MOCK_DATA } from "@/lib/mock-data";
 import { Link, useParams } from "wouter";
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
@@ -88,6 +88,198 @@ export default function DetailWorkspace() {
     setSelectedInteraction(id);
     setDrawerOpen(true);
   };
+
+  const engineerTrendData = Array.from({length: 28}).map((_, i) => ({
+    day: i + 1,
+    val: Math.floor(Math.random() * 80) + 10 + (Math.sin(i) * 15)
+  }));
+
+  if (entityType === 'engineer') {
+    return (
+      <div className="flex flex-col h-full animate-in fade-in duration-500 bg-[#0a0f18] overflow-y-auto">
+        <EvidenceDrawer 
+          open={drawerOpen} 
+          onOpenChange={setDrawerOpen} 
+          interactionId={selectedInteraction} 
+        />
+        
+        <div className="flex items-center gap-4 px-8 py-3 border-b border-white/5 bg-[#0c1220]">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400 text-sm">Focus:</span>
+            
+            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded text-sm text-slate-200">
+              <span className="text-slate-400">Cost Center:</span>
+              <span className="font-medium">Platform Reliability</span>
+              <Link href="/explorer"><button className="text-slate-500 hover:text-slate-300 ml-1"><X className="w-3 h-3" /></button></Link>
+            </div>
+            
+            <ChevronRight className="w-4 h-4 text-slate-500" />
+            
+            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded text-sm text-slate-200">
+              <span className="text-slate-400">Team:</span>
+              <span className="font-medium">Platform Reliability Engineering</span>
+              <Link href="/explorer"><button className="text-slate-500 hover:text-slate-300 ml-1"><X className="w-3 h-3" /></button></Link>
+            </div>
+
+            <ChevronRight className="w-4 h-4 text-slate-500" />
+            
+            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded text-sm text-slate-200 border border-blue-500/20">
+              <span className="text-slate-400">Engineer:</span>
+              <span className="font-medium">{entityId}</span>
+              <Link href="/explorer"><button className="text-slate-500 hover:text-slate-300 ml-1"><X className="w-3 h-3" /></button></Link>
+            </div>
+          </div>
+
+          <Link href="/explorer">
+            <Button variant="ghost" className="text-slate-400 hover:text-slate-200 h-8 px-3 ml-2">
+              Clear All
+            </Button>
+          </Link>
+          
+          <div className="ml-auto flex items-center gap-3">
+            <Button variant="outline" className="bg-transparent border-white/10 text-slate-300 hover:bg-white/5 h-9">
+              <Activity className="w-4 h-4 mr-2" />
+              AI Advisor
+            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-500 text-white h-9">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Strategic Report
+            </Button>
+          </div>
+        </div>
+
+        <div className="p-8">
+          <div className="max-w-[1600px] mx-auto space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Trend */}
+              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-5 flex flex-col shadow-sm h-[320px]">
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-slate-200">Daily Activity Trend</h3>
+                  <p className="text-slate-400 text-xs mt-1">Per-engineer daily consumption.</p>
+                </div>
+                <div className="flex-1 min-h-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={engineerTrendData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={true} horizontal={true} />
+                      <XAxis dataKey="day" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickFormatter={(v) => (v % 3 === 0 ? '' : v.toString().padStart(2, '0'))} />
+                      <YAxis stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} domain={[0, 120]} tickCount={5} />
+                      <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <Line type="monotone" dataKey="val" stroke="#60a5fa" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Top Use Cases */}
+              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-5 flex flex-col shadow-sm h-[320px]">
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-slate-200">Top Use Cases</h3>
+                  <p className="text-slate-400 text-xs mt-1">Click a use case to scope further.</p>
+                </div>
+                <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+                  <div className="space-y-6 mt-2">
+                    <div>
+                      <div className="flex justify-between text-xs mb-2">
+                        <span className="text-slate-200 font-medium">platform-hardening</span>
+                        <span className="text-slate-400">793.7</span>
+                      </div>
+                      <div className="w-full bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-blue-600 h-full w-[100%] rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Model Mix */}
+              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-5 flex flex-col shadow-sm h-[320px]">
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-slate-200">Model Mix</h3>
+                  <p className="text-slate-400 text-xs mt-1">Distribution across model tiers.</p>
+                </div>
+                <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+                  <div className="space-y-4 mt-2">
+                    {[
+                      {name: 'Claude Sonnet 4.6', val: 29},
+                      {name: 'Auto', val: 25},
+                      {name: 'Qwen3 Coder Next', val: 20},
+                      {name: 'DeepSeek V3.2', val: 19},
+                      {name: 'Claude Opus 4.6', val: 8}
+                    ].map(m => (
+                      <div key={m.name}>
+                        <div className="flex justify-between text-xs mb-2">
+                          <span className="text-slate-200 font-medium">{m.name}</span>
+                          <span className="text-slate-400">{m.val}%</span>
+                        </div>
+                        <div className="w-full bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-slate-600 h-full rounded-full" style={{width: `${m.val}%`}}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div className="border border-white/10 rounded-lg bg-[#0e1526] shadow-sm overflow-hidden">
+              <div className="p-5 border-b border-white/10">
+                <h3 className="text-sm font-medium text-slate-200">High-Cost Interactions for this Engineer</h3>
+                <p className="text-slate-400 text-xs mt-1">Each surfaced row will open evidence on inspection.</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-[10px] uppercase tracking-wider text-slate-500 bg-transparent border-b border-white/10">
+                    <tr>
+                      <th className="px-6 py-4 font-medium">Time (UTC)</th>
+                      <th className="px-6 py-4 font-medium">Use Case</th>
+                      <th className="px-6 py-4 font-medium">Model</th>
+                      <th className="px-6 py-4 font-medium">Source</th>
+                      <th className="px-6 py-4 font-medium">Evidence</th>
+                      <th className="px-6 py-4 font-medium text-right">Credits</th>
+                      <th className="px-6 py-4 font-medium"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-slate-300 font-mono text-xs">
+                    {[
+                      { time: '2026-05-19 10:51', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'cli-chat', cr: '16.4' },
+                      { time: '2026-05-13 16:03', uc: 'platform-hardening', mod: 'Auto', src: 'hook', cr: '15.1' },
+                      { time: '2026-05-18 12:25', uc: 'platform-hardening', mod: 'Auto', src: 'mcp-tool', cr: '14.9' },
+                      { time: '2026-05-26 12:47', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'cli-chat', cr: '14.6' },
+                      { time: '2026-05-13 09:29', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'hook', cr: '13.8' },
+                      { time: '2026-05-21 18:38', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'review', cr: '13.7' },
+                      { time: '2026-05-19 17:31', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'review', cr: '13.6' },
+                      { time: '2026-05-14 14:56', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'hook', cr: '13.4' },
+                      { time: '2026-05-25 09:57', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'review', cr: '13.3' },
+                      { time: '2026-05-22 17:26', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'hook', cr: '13.2' },
+                    ].map((row, i) => (
+                      <tr key={i} className="hover:bg-[#151e32] transition-colors cursor-pointer group" onClick={(e) => openEvidence(e, `req-${i}`)}>
+                        <td className="px-6 py-4 text-slate-400">{row.time}</td>
+                        <td className="px-6 py-4 font-sans">{row.uc}</td>
+                        <td className="px-6 py-4 font-sans text-slate-400">{row.mod}</td>
+                        <td className="px-6 py-4 text-slate-400">{row.src}</td>
+                        <td className="px-6 py-4 font-sans">
+                          <div className="flex items-center gap-3 text-slate-400">
+                            <div className="flex items-center gap-1"><FileText className="w-3 h-3 text-slate-500" /> <span className="text-[10px]">2</span></div>
+                            <div className="flex items-center gap-1"><Code2 className="w-3 h-3 text-slate-500" /> <span className="text-[10px]">1</span></div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right text-slate-300 font-medium">{row.cr}</td>
+                        <td className="px-6 py-4 text-right font-sans">
+                           <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">Inspect</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 bg-[#0a0f18] overflow-y-auto">
