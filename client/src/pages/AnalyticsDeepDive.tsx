@@ -103,10 +103,10 @@ export default function AnalyticsDeepDive() {
               </div>
               <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={[{name: 'Platform Reliability Engineering', val: 2850}]} layout="vertical" margin={{ left: 100, top: 20 }}>
+                  <BarChart data={[{name: 'QA & Automation Team', val: 2850}]} layout="vertical" margin={{ left: 100, top: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
                     <XAxis type="number" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} tickFormatter={(v) => v === 0 ? '0' : v} domain={[0, 3000]} tickCount={5} />
-                    <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickFormatter={() => 'Platform Reliability...'} />
+                    <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickFormatter={() => 'QA & Automation...'} />
                     <RechartsTooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                     <Bar dataKey="val" fill="#60a5fa" />
                   </BarChart>
@@ -216,7 +216,7 @@ export default function AnalyticsDeepDive() {
                       <tr className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-4 font-medium text-white">Elena Garcia</td>
                         <td className="px-6 py-4">Platform Reliability</td>
-                        <td className="px-6 py-4">Platform Reliability Engineering</td>
+                        <td className="px-6 py-4">QA &amp; Automation Team</td>
                         <td className="px-6 py-4">Power</td>
                         <td className="px-6 py-4"><span className="text-blue-400 text-xs font-medium bg-blue-500/10 px-2 py-0.5 rounded">ACTIVE</span></td>
                         <td className="px-6 py-4 text-right">18</td>
@@ -227,7 +227,7 @@ export default function AnalyticsDeepDive() {
                       <tr className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-4 font-medium text-white">Victor Chen</td>
                         <td className="px-6 py-4">Platform Reliability</td>
-                        <td className="px-6 py-4">Platform Reliability Engineering</td>
+                        <td className="px-6 py-4">QA &amp; Automation Team</td>
                         <td className="px-6 py-4">ProPlus</td>
                         <td className="px-6 py-4"><span className="text-blue-400 text-xs font-medium bg-blue-500/10 px-2 py-0.5 rounded">ACTIVE</span></td>
                         <td className="px-6 py-4 text-right">17</td>
@@ -238,7 +238,7 @@ export default function AnalyticsDeepDive() {
                       <tr className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-4 font-medium text-white">Sam Walker</td>
                         <td className="px-6 py-4">Platform Reliability</td>
-                        <td className="px-6 py-4">Platform Reliability Engineering</td>
+                        <td className="px-6 py-4">QA &amp; Automation Team</td>
                         <td className="px-6 py-4">Pro</td>
                         <td className="px-6 py-4"><span className="text-blue-400 text-xs font-medium bg-blue-500/10 px-2 py-0.5 rounded">ACTIVE</span></td>
                         <td className="px-6 py-4 text-right">12</td>
@@ -249,7 +249,7 @@ export default function AnalyticsDeepDive() {
                       <tr className="hover:bg-white/[0.02] transition-colors border-l-2 border-l-red-500">
                         <td className="px-6 py-4 font-medium text-white">Lucy Chen</td>
                         <td className="px-6 py-4">Platform Reliability</td>
-                        <td className="px-6 py-4">Platform Reliability Engineering</td>
+                        <td className="px-6 py-4">QA &amp; Automation Team</td>
                         <td className="px-6 py-4">ProPlus</td>
                         <td className="px-6 py-4"><span className="text-red-400 text-xs font-medium bg-red-500/10 px-2 py-0.5 rounded">CANCELED</span></td>
                         <td className="px-6 py-4 text-right">5</td>

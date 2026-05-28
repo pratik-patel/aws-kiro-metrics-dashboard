@@ -14,16 +14,16 @@ export const MOCK_DATA = {
     { id: "cc-4204", name: "Retail Intelligence", consumption: "185K", overrun: "14K", activeEngineers: 402, topUseCase: "retail-analytics", lastActive: "5m ago" }
   ],
   teams: [
-    { id: "t-1", name: "Payments Modernization Team", costCenter: "Payments Transformation", consumption: "542K", activeEngineers: 145, topEngineer: "Priya Nair", topChannel: "KIRO_IDE" },
+    { id: "t-1", name: "Backend API Team", costCenter: "Payments Transformation", consumption: "542K", activeEngineers: 145, topEngineer: "Priya Nair", topChannel: "KIRO_IDE" },
     { id: "t-2", name: "AI SDLC Enablement Team", costCenter: "AI Delivery Acceleration", consumption: "480K", activeEngineers: 210, topEngineer: "Aisha Khan", topChannel: "KIRO_IDE" },
-    { id: "t-3", name: "Platform Reliability Engineering", costCenter: "Platform Reliability", consumption: "245K", activeEngineers: 85, topEngineer: "Elena Garcia", topChannel: "KIRO_CLI" },
-    { id: "t-4", name: "Retail Analytics Team", costCenter: "Retail Intelligence", consumption: "185K", activeEngineers: 402, topEngineer: "Nina Patel", topChannel: "PLUGIN" }
+    { id: "t-3", name: "QA & Automation Team", costCenter: "Platform Reliability", consumption: "245K", activeEngineers: 85, topEngineer: "Elena Garcia", topChannel: "KIRO_CLI" },
+    { id: "t-4", name: "Frontend Web Team", costCenter: "Retail Intelligence", consumption: "185K", activeEngineers: 402, topEngineer: "Nina Patel", topChannel: "PLUGIN" }
   ],
   engineers: [
     { id: "e-1", name: "Aisha Khan", team: "AI SDLC Enablement Team", costCenter: "AI Delivery Acceleration", consumption: "12.4K", activeDays: 27, status: "Active", clientMix: { ide: 65, cli: 20, plugin: 15 } },
-    { id: "e-2", name: "Priya Nair", team: "Payments Modernization Team", costCenter: "Payments Transformation", consumption: "11.2K", activeDays: 27, status: "Active", clientMix: { ide: 80, cli: 10, plugin: 10 } },
-    { id: "e-3", name: "Elena Garcia", team: "Platform Reliability Engineering", costCenter: "Platform Reliability", consumption: "8.5K", activeDays: 23, status: "Active", clientMix: { ide: 40, cli: 55, plugin: 5 } },
-    { id: "e-4", name: "Marco Silva", team: "Payments Modernization Team", costCenter: "Payments Transformation", consumption: "7.8K", activeDays: 20, status: "Active", clientMix: { ide: 70, cli: 20, plugin: 10 } },
+    { id: "e-2", name: "Priya Nair", team: "Backend API Team", costCenter: "Payments Transformation", consumption: "11.2K", activeDays: 27, status: "Active", clientMix: { ide: 80, cli: 10, plugin: 10 } },
+    { id: "e-3", name: "Elena Garcia", team: "QA & Automation Team", costCenter: "Platform Reliability", consumption: "8.5K", activeDays: 23, status: "Active", clientMix: { ide: 40, cli: 55, plugin: 5 } },
+    { id: "e-4", name: "Marco Silva", team: "Backend API Team", costCenter: "Payments Transformation", consumption: "7.8K", activeDays: 20, status: "Active", clientMix: { ide: 70, cli: 20, plugin: 10 } },
     { id: "e-5", name: "Ben Foster", team: "AI SDLC Enablement Team", costCenter: "AI Delivery Acceleration", consumption: "7.2K", activeDays: 24, status: "Active", clientMix: { ide: 60, cli: 25, plugin: 15 } }
   ],
   interactions: [
@@ -72,9 +72,9 @@ export const MOCK_DATA = {
   ],
   findings: [
     { id: "f-1", title: "High Spend Concentration", severity: "High", scope: "Cost Center", description: "Top 5% of engineers drive 45% of AI consumption in Payments Transformation.", category: "Spend Concentration" },
-    { id: "f-2", title: "Low Seat Utilization", severity: "Medium", scope: "Team", description: "12 engineers in Retail Analytics Team have < 3 active days this month.", category: "Low-Utilization Seats" },
+    { id: "f-2", title: "Low Seat Utilization", severity: "Medium", scope: "Team", description: "12 engineers in Frontend Web Team have < 3 active days this month.", category: "Low-Utilization Seats" },
     { id: "f-3", title: "Expensive Model Usage", severity: "High", scope: "Engineer", description: "Frequent use of Opus 4.6 for basic code generation tasks by Aisha Khan.", category: "Model Routing Opportunity" },
-    { id: "f-4", title: "Unusual Usage Spike", severity: "Low", scope: "Team", description: "Platform Reliability Engineering CLI usage spiked 300% on April 8th.", category: "Unusual Usage Spike" },
+    { id: "f-4", title: "Unusual Usage Spike", severity: "Low", scope: "Team", description: "QA & Automation Team CLI usage spiked 300% on April 8th.", category: "Unusual Usage Spike" },
     { id: "f-5", title: "Overage Risk Detected", severity: "High", scope: "Cost Center", description: "Retail Intelligence projected to hit overage cap in 4 days.", category: "Overrun Risk" }
   ]
 };

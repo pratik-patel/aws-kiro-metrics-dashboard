@@ -10,11 +10,9 @@ import Layout from "@/components/layout/Layout";
 import GovernanceOverview from "@/pages/GovernanceOverview";
 import UsageExplorer from "@/pages/UsageExplorer";
 import DetailWorkspace from "@/pages/DetailWorkspace";
-import GovernanceFindings from "@/pages/GovernanceFindings";
 import PolicySimulationStudio from "@/pages/PolicySimulationStudio";
-import ExecutionMonitor from "@/pages/ExecutionMonitor";
-import AnalyticsDeepDive from "@/pages/AnalyticsDeepDive";
 import ReportEvidenceConsole from "@/pages/ReportEvidenceConsole";
+import Recommendations from "@/pages/Recommendations";
 
 function Router() {
   return (
@@ -23,11 +21,18 @@ function Router() {
         <Route path="/" component={GovernanceOverview} />
         <Route path="/explorer" component={UsageExplorer} />
         <Route path="/detail/:entityType/:entityId" component={DetailWorkspace} />
-        <Route path="/findings" component={GovernanceFindings} />
+        <Route path="/recommendations" component={Recommendations} />
         <Route path="/studio" component={PolicySimulationStudio} />
-        <Route path="/execution" component={ExecutionMonitor} />
-        <Route path="/analytics" component={AnalyticsDeepDive} />
         <Route path="/reports" component={ReportEvidenceConsole} />
+        <Route path="/findings">
+          <Redirect to="/recommendations" />
+        </Route>
+        <Route path="/execution">
+          <Redirect to="/recommendations" />
+        </Route>
+        <Route path="/analytics">
+          <Redirect to="/explorer" />
+        </Route>
         <Route component={NotFound} />
       </Switch>
     </Layout>

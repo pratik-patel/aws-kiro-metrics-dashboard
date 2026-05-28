@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Command } from "lucide-react";
 import { useLocation } from "wouter";
-import { MOCK_DATA } from "@/lib/mock-data";
+import { KIRO_DATA } from "@/lib/kiro-data";
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -27,6 +27,17 @@ export function CommandPalette() {
 
   if (!open) return null;
 
+  const query = search.toLowerCase();
+  const matchingCostCenters = KIRO_DATA.costCenters.filter((item) => item.name.toLowerCase().includes(query));
+  const matchingTeams = KIRO_DATA.teams.filter((item) => item.name.toLowerCase().includes(query));
+  const matchingEngineers = KIRO_DATA.engineers.filter((item) => item.name.toLowerCase().includes(query));
+  const matchingInteractions = KIRO_DATA.interactions.filter(
+    (item) =>
+      item.id.toLowerCase().includes(query) ||
+      item.useCaseLabel.toLowerCase().includes(query) ||
+      item.engineerName.toLowerCase().includes(query),
+  );
+
   return (
     <>
       <div className="fixed inset-0 bg-[#0B1120]/80 backdrop-blur-sm z-50 transition-opacity" onClick={() => setOpen(false)} />
@@ -47,16 +58,58 @@ export function CommandPalette() {
         <div className="max-h-[300px] overflow-y-auto p-2">
           {search ? (
             <div className="p-2 space-y-4">
-              {/* Fake search results based on mock data */}
-              <div>
-                <h4 className="text-xs font-medium text-[#7D8AA3] mb-2 px-2 uppercase tracking-wider">Cost Centers</h4>
-                {MOCK_DATA.costCenters.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).map(c => (
-                  <div key={c.id} onClick={() => { setLocation(`/detail/cost-center/${c.id}`); setOpen(false); }} className="px-2 py-2 text-sm text-[#F3F7FF] hover:bg-[#182235] rounded-lg cursor-pointer flex justify-between">
-                    {c.name}
-                    <span className="text-[#A8B3C7]">{c.consumption}</span>
-                  </div>
-                ))}
-              </div>
+              <CommandGroup
+                title="Cost Centers"
+                items={matchingCostCenters.map((item) => ({
+                  id: item.id,
+                  label: item.name,
+                  meta: `${item.activeEngineers} engineers · ${Math.round(item.totalConsumption)} credits`,
+                  href: `/detail/cost-center/${item.id}`,
+                }))}
+                onSelect={(href) => {
+                  setLocation(href);
+                  setOpen(false);
+                }}
+              />
+              <CommandGroup
+                title="Teams"
+                items={matchingTeams.map((item) => ({
+                  id: item.id,
+                  label: item.name,
+                  meta: `${item.costCenterName} · ${Math.round(item.totalConsumption)} credits`,
+                  href: `/detail/team/${item.id}`,
+                }))}
+                onSelect={(href) => {
+                  setLocation(href);
+                  setOpen(false);
+                }}
+              />
+              <CommandGroup
+                title="Engineers"
+                items={matchingEngineers.map((item) => ({
+                  id: item.id,
+                  label: item.name,
+                  meta: `${item.teamName} · ${item.activeDays} active days`,
+                  href: `/detail/engineer/${item.id}`,
+                }))}
+                onSelect={(href) => {
+                  setLocation(href);
+                  setOpen(false);
+                }}
+              />
+              <CommandGroup
+                title="Interactions"
+                items={matchingInteractions.slice(0, 6).map((item) => ({
+                  id: item.id,
+                  label: item.id,
+                  meta: `${item.useCaseLabel} · ${item.modelName}`,
+                  href: `/detail/interaction/${item.id}`,
+                }))}
+                onSelect={(href) => {
+                  setLocation(href);
+                  setOpen(false);
+                }}
+              />
             </div>
           ) : (
             <div className="p-4 text-center text-sm text-[#7D8AA3]">
@@ -66,5 +119,34 @@ export function CommandPalette() {
         </div>
       </div>
     </>
+  );
+}
+
+function CommandGroup({
+  title,
+  items,
+  onSelect,
+}: {
+  title: string;
+  items: Array<{ id: string; label: string; meta: string; href: string }>;
+  onSelect: (href: string) => void;
+}) {
+  if (!items.length) return null;
+
+  return (
+    <div>
+      <h4 className="text-xs font-medium text-[#7D8AA3] mb-2 px-2 uppercase tracking-wider">{title}</h4>
+      {items.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => onSelect(item.href)}
+          className="w-full px-2 py-2 text-sm text-[#F3F7FF] hover:bg-[#182235] rounded-lg cursor-pointer flex items-start justify-between gap-4 text-left"
+        >
+          <span>{item.label}</span>
+          <span className="text-[#A8B3C7] text-xs">{item.meta}</span>
+        </button>
+      ))}
+    </div>
   );
 }

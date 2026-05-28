@@ -1,20 +1,21 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { 
+  Activity,
   LayoutDashboard, 
   Compass, 
   AlertTriangle, 
   Beaker, 
-  Activity, 
-  BarChart3, 
   FileText,
   Search,
   Bell,
   User,
-  Menu
+  Menu,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/CommandPalette";
+import { KIRO_DATA } from "@/lib/kiro-data";
 
 interface LayoutProps {
   children: ReactNode;
@@ -23,11 +24,9 @@ interface LayoutProps {
 const navItems = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/explorer", label: "Explorer", icon: Compass },
-  { href: "/findings", label: "Findings", icon: AlertTriangle },
+  { href: "/recommendations", label: "Recommendations", icon: Sparkles },
   { href: "/studio", label: "Studio", icon: Beaker },
-  { href: "/execution", label: "Execution", icon: Activity },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/reports", label: "Reports & Evidence", icon: FileText },
 ];
 
 export default function Layout({ children }: LayoutProps) {
@@ -42,7 +41,7 @@ export default function Layout({ children }: LayoutProps) {
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600/20 text-blue-500 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
               <Activity className="w-4 h-4" />
             </div>
-            <span className="font-semibold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Kiro AI Governance</span>
+            <span className="font-semibold text-lg tracking-tight whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Kiro AI Governance</span>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
@@ -88,15 +87,15 @@ export default function Layout({ children }: LayoutProps) {
           </Button>
 
           {/* Badges */}
-          <div className="hidden xl:flex items-center gap-2">
-            <div className="flex items-center px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 animate-pulse" />
-              Connected Mode
+            <div className="hidden xl:flex items-center gap-2">
+              <div className="flex items-center px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 animate-pulse" />
+                {KIRO_DATA.meta.mode}
+              </div>
+              <div className="flex items-center px-2.5 py-1 rounded-full bg-slate-800 border border-white/5 text-slate-300 text-xs font-medium">
+                {KIRO_DATA.meta.freshness}
+              </div>
             </div>
-            <div className="flex items-center px-2.5 py-1 rounded-full bg-slate-800 border border-white/5 text-slate-300 text-xs font-medium">
-              Near Real-Time
-            </div>
-          </div>
 
           <div className="flex items-center gap-1">
             <Button 

@@ -1,791 +1,730 @@
-import { useState } from "react";
-import { Download, AlertTriangle, Eye, Settings2, User, GitCommit, Play, Plus, BookOpen, Clock, Activity, X, ChevronRight, Code2, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, BarChart, Bar, Legend, Treemap, ScatterChart, Scatter, LineChart, Line } from "recharts";
-import { MOCK_DATA } from "@/lib/mock-data";
-import { Link, useParams } from "wouter";
+import { useMemo, useState } from "react";
+import { useParams, Link } from "wouter";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Eye,
+  Layers3,
+  Sparkles,
+  Zap,
+} from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
-
-// Custom Treemap Content to ensure text visibility
-const CustomizedTreemapContent = (props: any) => {
-  const { depth, x, y, width, height, name, fill, payload } = props;
-
-  const nodeFill = fill || payload?.fill || "rgba(255,255,255,0.05)";
-  const displayName = name || payload?.name;
-
-  return (
-    <g>
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        style={{
-          fill: depth === 1 ? nodeFill : "transparent",
-          stroke: '#0c1220',
-          strokeWidth: 3,
-        }}
-      />
-      {
-        depth === 1 && width > 50 && height > 30 && displayName && displayName !== "root" && (
-          <text x={x + width / 2} y={y + height / 2} textAnchor="middle" fill="#0f172a" fontSize={13} fontWeight="600">
-            {displayName}
-          </text>
-        )
-      }
-    </g>
-  );
-};
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  formatConsumption,
+  formatPercent,
+  getCostCenterById,
+  getEngineerBySlug,
+  getEngineersForTeam,
+  getInteractionById,
+  getInteractionsForScope,
+  getRecommendationsForScope,
+  getTeamById,
+  getTeamsForCostCenter,
+  getUseCaseSummariesForScope,
+} from "@/lib/kiro-data";
 
 export default function DetailWorkspace() {
-  const { entityType, entityId } = useParams();
+  const params = useParams<{ entityType: string; entityId: string }>();
+  const [evidenceInteractionId, setEvidenceInteractionId] = useState<string | null>(null);
 
-  // Try to find the entity in mock data
-  let entityName = "Platform Reliability";
-  
-  if (entityType === 'cost-center') {
-    const cc = MOCK_DATA.costCenters.find(c => c.id === entityId);
-    if (cc) entityName = cc.name;
-  } else if (entityType === 'team') {
-    const t = MOCK_DATA.teams.find(t => t.id === entityId);
-    if (t) entityName = t.name;
-  } else if (entityType === 'engineer') {
-    const e = MOCK_DATA.engineers.find(e => e.id === entityId);
-    if (e) entityName = e.name;
-  }
+  const entityType = params.entityType;
+  const entityId = params.entityId;
 
-  const scatterData = MOCK_DATA.engineers.map(e => ({
-    name: e.name,
-    consumption: parseFloat(e.consumption.replace('K', '')),
-    days: e.activeDays
-  }));
+  const resolved = useMemo(() => resolveScope(entityType, entityId), [entityId, entityType]);
+  const interactions = useMemo(() => getInteractionsForScope(resolved.scope), [resolved.scope]);
+  const useCases = useMemo(() => getUseCaseSummariesForScope(resolved.scope), [resolved.scope]);
+  const recommendations = useMemo(
+    () => getRecommendationsForScope(resolved.recommendationScopeType, resolved.recommendationScopeId),
+    [resolved.recommendationScopeId, resolved.recommendationScopeType],
+  );
 
-  // Mock data for the prompt/response size vs consumption charts
-  const generateSizeData = (count: number, correlation: number) => {
-    return Array.from({ length: count }).map(() => {
-      const size = Math.floor(Math.random() * 8000) + 1000;
-      const baseConsumption = (size / 1000) * correlation;
-      const variance = Math.random() * 20 - 10;
-      const consumption = Math.max(1, baseConsumption + variance);
-      return { size, consumption };
+  const modelsAndTools = useMemo(() => {
+    const modelMap = new Map<string, number>();
+    const pluginMap = new Map<string, number>();
+    const mcpMap = new Map<string, number>();
+    const channelMap = new Map<string, number>();
+
+    interactions.forEach((interaction) => {
+      modelMap.set(interaction.modelName, (modelMap.get(interaction.modelName) || 0) + interaction.estimatedCredits);
+      if (interaction.pluginName !== "Direct Kiro") {
+        pluginMap.set(interaction.pluginName, (pluginMap.get(interaction.pluginName) || 0) + interaction.estimatedCredits);
+      }
+      if (interaction.mcpServer !== "No MCP Invoked") {
+        mcpMap.set(interaction.mcpServer, (mcpMap.get(interaction.mcpServer) || 0) + interaction.estimatedCredits);
+      }
+      channelMap.set(interaction.requestSource, (channelMap.get(interaction.requestSource) || 0) + interaction.estimatedCredits);
     });
-  };
 
-  const promptSizeData = generateSizeData(100, 4);
-  const responseSizeData = generateSizeData(100, 3.5);
+    return {
+      models: Array.from(modelMap.entries()).sort((a, b) => b[1] - a[1]),
+      plugins: Array.from(pluginMap.entries()).sort((a, b) => b[1] - a[1]),
+      mcps: Array.from(mcpMap.entries()).sort((a, b) => b[1] - a[1]),
+      channels: Array.from(channelMap.entries()).sort((a, b) => b[1] - a[1]),
+    };
+  }, [interactions]);
 
-  const monthlyTrendData = [
-    { month: '2026-04', payments: 2800, ai: 2450, platform: 2800, retail: 1100 },
-    { month: '2026-05', payments: 2750, ai: 2500, platform: 2850, retail: 1550 },
-  ];
+  const scatterData = useMemo(
+    () =>
+      interactions.map((interaction) => ({
+        x: interaction.promptChars,
+        y: interaction.estimatedCredits,
+        z: interaction.responseChars,
+        name: interaction.useCaseLabel,
+      })),
+    [interactions],
+  );
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedInteraction, setSelectedInteraction] = useState<string | null>(null);
+  return (
+    <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
+      <EvidenceDrawer
+        open={Boolean(evidenceInteractionId)}
+        onOpenChange={(open) => !open && setEvidenceInteractionId(null)}
+        interactionId={evidenceInteractionId}
+      />
 
-  const openEvidence = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setSelectedInteraction(id);
-    setDrawerOpen(true);
-  };
+      <div className="flex items-center gap-3 text-sm text-slate-500">
+        <Link href="/explorer" className="hover:text-white transition-colors flex items-center gap-2">
+          <ArrowLeft className="w-4 h-4" />
+          Explorer
+        </Link>
+        <span>/</span>
+        <span className="capitalize text-slate-300">{resolved.entityLabel}</span>
+      </div>
 
-  const engineerTrendData = Array.from({length: 28}).map((_, i) => ({
-    day: i + 1,
-    val: Math.floor(Math.random() * 80) + 10 + (Math.sin(i) * 15)
-  }));
-
-  if (entityType === 'engineer') {
-    return (
-      <div className="flex flex-col h-full animate-in fade-in duration-500 bg-[#0a0f18] overflow-y-auto">
-        <EvidenceDrawer 
-          open={drawerOpen} 
-          onOpenChange={setDrawerOpen} 
-          interactionId={selectedInteraction} 
-        />
-        
-        <div className="flex items-center gap-4 px-8 py-3 border-b border-white/5 bg-[#0c1220]">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400 text-sm">Focus:</span>
-            
-            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded text-sm text-slate-200">
-              <span className="text-slate-400">Cost Center:</span>
-              <span className="font-medium">Platform Reliability</span>
-              <Link href="/explorer"><button className="text-slate-500 hover:text-slate-300 ml-1"><X className="w-3 h-3" /></button></Link>
-            </div>
-            
-            <ChevronRight className="w-4 h-4 text-slate-500" />
-            
-            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded text-sm text-slate-200">
-              <span className="text-slate-400">Team:</span>
-              <span className="font-medium">Platform Reliability Engineering</span>
-              <Link href="/explorer"><button className="text-slate-500 hover:text-slate-300 ml-1"><X className="w-3 h-3" /></button></Link>
-            </div>
-
-            <ChevronRight className="w-4 h-4 text-slate-500" />
-            
-            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded text-sm text-slate-200 border border-blue-500/20">
-              <span className="text-slate-400">Engineer:</span>
-              <span className="font-medium">{entityId}</span>
-              <Link href="/explorer"><button className="text-slate-500 hover:text-slate-300 ml-1"><X className="w-3 h-3" /></button></Link>
-            </div>
+      <div className="flex flex-col xl:flex-row justify-between xl:items-start gap-5">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Badge className="bg-white/5 text-slate-300 border-white/10">{resolved.entityLabel}</Badge>
+            {resolved.scopeLabel ? <Badge className="bg-blue-500/10 text-blue-300 border-blue-500/20">{resolved.scopeLabel}</Badge> : null}
           </div>
-
-          <Link href="/explorer">
-            <Button variant="ghost" className="text-slate-400 hover:text-slate-200 h-8 px-3 ml-2">
-              Clear All
+          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">{resolved.title}</h1>
+          <p className="text-slate-400 text-lg">{resolved.description}</p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/recommendations">
+            <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
+              <Sparkles className="w-4 h-4 mr-2 text-indigo-300" />
+              View Recommendations
             </Button>
           </Link>
-          
-          <div className="ml-auto flex items-center gap-3">
-            <Button variant="outline" className="bg-transparent border-white/10 text-slate-300 hover:bg-white/5 h-9">
-              <Activity className="w-4 h-4 mr-2" />
-              AI Advisor
+          <Link href="/studio">
+            <Button className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40">
+              <Zap className="w-4 h-4 mr-2" />
+              Run Advisor on Scope
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-500 text-white h-9">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Strategic Report
-            </Button>
-          </div>
+          </Link>
         </div>
+      </div>
 
-        <div className="p-8">
-          <div className="max-w-[1600px] mx-auto space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              {/* Trend */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-5 flex flex-col shadow-sm h-[320px]">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">Daily Activity Trend</h3>
-                  <p className="text-slate-400 text-xs mt-1">Per-engineer daily consumption.</p>
-                </div>
-                <div className="flex-1 min-h-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={engineerTrendData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={true} horizontal={true} />
-                      <XAxis dataKey="day" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickFormatter={(v) => (v % 3 === 0 ? '' : v.toString().padStart(2, '0'))} />
-                      <YAxis stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} domain={[0, 120]} tickCount={5} />
-                      <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Line type="monotone" dataKey="val" stroke="#60a5fa" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {resolved.metrics.map((metric) => (
+          <MetricCard key={metric.label} {...metric} />
+        ))}
+      </div>
 
-              {/* Top Use Cases */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-5 flex flex-col shadow-sm h-[320px]">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">Top Use Cases</h3>
-                  <p className="text-slate-400 text-xs mt-1">Click a use case to scope further.</p>
-                </div>
-                <div className="flex-1 min-h-0 overflow-y-auto pr-2">
-                  <div className="space-y-6 mt-2">
-                    <div>
-                      <div className="flex justify-between text-xs mb-2">
-                        <span className="text-slate-200 font-medium">platform-hardening</span>
-                        <span className="text-slate-400">793.7</span>
+      <Tabs defaultValue={resolved.defaultTab} className="w-full">
+        <TabsList className="bg-[#111827] border border-white/5 p-1 flex flex-wrap h-auto">
+          {resolved.tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className="data-[state=active]:bg-blue-600/20 data-[state=active]:text-blue-400"
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="summary" className="mt-6 space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
+            <Card className="bg-[#111827] border-white/5 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg font-medium text-slate-200">Top Use Cases</CardTitle>
+                <CardDescription className="text-slate-400">Where this scope is spending the most AI consumption today.</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[320px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={useCases.slice(0, 6).map((item) => ({ name: item.label, consumption: Number(item.totalConsumption.toFixed(2)) }))}
+                    layout="vertical"
+                    margin={{ left: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal vertical={false} />
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="name" width={150} stroke="#cbd5e1" fontSize={11} />
+                    <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "8px" }} />
+                    <Bar dataKey="consumption" fill="#3b82f6" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[#111827] border-white/5 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg font-medium text-slate-200">Scope Recommendations</CardTitle>
+                <CardDescription className="text-slate-400">The most relevant actions for this exact slice.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-5">
+                {recommendations.slice(0, 4).map((recommendation) => (
+                  <div key={recommendation.id} className="rounded-2xl border border-white/5 bg-black/20 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-slate-100">{recommendation.title}</p>
+                        <p className="text-sm text-slate-400 mt-2 leading-relaxed">{recommendation.whyItMatters}</p>
                       </div>
-                      <div className="w-full bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-blue-600 h-full w-[100%] rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"></div>
-                      </div>
+                      <Badge
+                        className={
+                          recommendation.severity === "High"
+                            ? "bg-red-500/10 text-red-300 border-red-500/20"
+                            : recommendation.severity === "Medium"
+                              ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                              : "bg-blue-500/10 text-blue-300 border-blue-500/20"
+                        }
+                      >
+                        {recommendation.severity}
+                      </Badge>
                     </div>
                   </div>
-                </div>
-              </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-              {/* Model Mix */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-5 flex flex-col shadow-sm h-[320px]">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">Model Mix</h3>
-                  <p className="text-slate-400 text-xs mt-1">Distribution across model tiers.</p>
-                </div>
-                <div className="flex-1 min-h-0 overflow-y-auto pr-2">
-                  <div className="space-y-4 mt-2">
-                    {[
-                      {name: 'Claude Sonnet 4.6', val: 29},
-                      {name: 'Auto', val: 25},
-                      {name: 'Qwen3 Coder Next', val: 20},
-                      {name: 'DeepSeek V3.2', val: 19},
-                      {name: 'Claude Opus 4.6', val: 8}
-                    ].map(m => (
-                      <div key={m.name}>
-                        <div className="flex justify-between text-xs mb-2">
-                          <span className="text-slate-200 font-medium">{m.name}</span>
-                          <span className="text-slate-400">{m.val}%</span>
-                        </div>
-                        <div className="w-full bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-slate-600 h-full rounded-full" style={{width: `${m.val}%`}}></div>
-                        </div>
+        <TabsContent value="ownership" className="mt-6">
+          <OwnershipPanel resolved={resolved} />
+        </TabsContent>
+
+        <TabsContent value="use-cases" className="mt-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {useCases.map((useCase) => (
+              <Card key={useCase.key} className="bg-[#111827] border-white/5 shadow-lg">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-lg font-medium text-slate-200">{useCase.label}</CardTitle>
+                      <CardDescription className="text-slate-400">{useCase.category}</CardDescription>
+                    </div>
+                    <Badge className="bg-white/5 text-slate-300 border-white/10">
+                      {formatConsumption(useCase.totalConsumption)} credits
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 border-t border-white/5 bg-[#0c1220]/50 pt-5">
+                  <p className="text-sm text-slate-300 leading-relaxed">{useCase.summary}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <MiniMetric label="Avg Prompt" value={`${useCase.avgPromptChars.toLocaleString()} chars`} />
+                    <MiniMetric label="Avg Response" value={`${useCase.avgResponseChars.toLocaleString()} chars`} />
+                    <MiniMetric label="Dominant Model" value={useCase.dominantModel} />
+                    <MiniMetric label="Recommended Tier" value={useCase.recommendedModelTier} />
+                    <MiniMetric label="Top Source" value={useCase.topRequestSource} />
+                    <MiniMetric label="Execution Pattern" value={useCase.executionPattern} />
+                    <MiniMetric label="Deterministic Share" value={formatPercent(useCase.deterministicShare)} />
+                    <MiniMetric label="High-Reasoning Share" value={formatPercent(useCase.highReasoningShare)} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="models-tools" className="mt-6 space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-6">
+            <RankingCard
+              title="Model Mix"
+              description="Most expensive models in this scope."
+              items={modelsAndTools.models.map(([label, value]) => ({ label, value: `${formatConsumption(value)} credits` }))}
+            />
+            <RankingCard
+              title="Interaction Source"
+              description="Which channels are contributing most to AI consumption."
+              items={modelsAndTools.channels.map(([label, value]) => ({ label, value: `${formatConsumption(value)} credits` }))}
+            />
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-6">
+            <RankingCard
+              title="Plugin Impact"
+              description="Named plugins only, excluding Direct Kiro."
+              items={modelsAndTools.plugins.map(([label, value]) => ({ label, value: `${formatConsumption(value)} credits` }))}
+            />
+            <RankingCard
+              title="MCP Impact"
+              description="Named MCP servers only, excluding No MCP Invoked."
+              items={modelsAndTools.mcps.map(([label, value]) => ({ label, value: `${formatConsumption(value)} credits` }))}
+            />
+          </div>
+          <Card className="bg-[#111827] border-white/5 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-lg font-medium text-slate-200">Prompt Size vs AI Consumption</CardTitle>
+              <CardDescription className="text-slate-400">Use this to spot prompt-heavy interactions that are expensive relative to their output.</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[320px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart margin={{ top: 16, right: 16, bottom: 16, left: 16 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis type="number" dataKey="x" name="Prompt Chars" stroke="#cbd5e1" fontSize={12} />
+                  <YAxis type="number" dataKey="y" name="AI Consumption" stroke="#cbd5e1" fontSize={12} />
+                  <Tooltip
+                    cursor={{ strokeDasharray: "3 3", stroke: "#cbd5e1" }}
+                    contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "8px" }}
+                  />
+                  <Scatter data={scatterData} fill="#f59e0b" />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="recommendations" className="mt-6">
+          <Card className="bg-[#111827] border-white/5 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-lg font-medium text-slate-200">Recommendations in Scope</CardTitle>
+              <CardDescription className="text-slate-400">Actions tied to this entity plus enterprise recommendations that still apply here.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-5">
+              {recommendations.map((recommendation) => (
+                <div key={recommendation.id} className="rounded-2xl border border-white/5 bg-black/20 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge
+                          className={
+                            recommendation.severity === "High"
+                              ? "bg-red-500/10 text-red-300 border-red-500/20"
+                              : recommendation.severity === "Medium"
+                                ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                                : "bg-blue-500/10 text-blue-300 border-blue-500/20"
+                          }
+                        >
+                          {recommendation.severity}
+                        </Badge>
+                        <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
                       </div>
-                    ))}
+                      <p className="text-lg font-medium text-slate-100">{recommendation.title}</p>
+                      <p className="text-sm text-slate-400 mt-2 leading-relaxed">{recommendation.whyItMatters}</p>
+                      <p className="text-sm text-slate-200 mt-3">{recommendation.recommendedAction}</p>
+                    </div>
+                    <span className="text-xs text-slate-500">{recommendation.scopeLabel}</span>
                   </div>
                 </div>
-              </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            </div>
-
-            <div className="border border-white/10 rounded-lg bg-[#0e1526] shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-white/10">
-                <h3 className="text-sm font-medium text-slate-200">High-Cost Interactions for this Engineer</h3>
-                <p className="text-slate-400 text-xs mt-1">Each surfaced row will open evidence on inspection.</p>
-              </div>
+        <TabsContent value="evidence" className="mt-6">
+          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+            <CardHeader className="bg-black/20 border-b border-white/5">
+              <CardTitle className="text-lg font-medium text-slate-200">Interaction Evidence</CardTitle>
+              <CardDescription className="text-slate-400">High-cost interactions with direct access to prompt and inline evidence.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="text-[10px] uppercase tracking-wider text-slate-500 bg-transparent border-b border-white/10">
+                  <thead className="text-xs text-slate-400 bg-black/40 uppercase border-b border-white/5">
                     <tr>
-                      <th className="px-6 py-4 font-medium">Time (UTC)</th>
+                      <th className="px-6 py-4 font-medium">Request ID</th>
                       <th className="px-6 py-4 font-medium">Use Case</th>
                       <th className="px-6 py-4 font-medium">Model</th>
-                      <th className="px-6 py-4 font-medium">Source</th>
-                      <th className="px-6 py-4 font-medium">Evidence</th>
-                      <th className="px-6 py-4 font-medium text-right">Credits</th>
-                      <th className="px-6 py-4 font-medium"></th>
+                      <th className="px-6 py-4 font-medium text-right">Prompt</th>
+                      <th className="px-6 py-4 font-medium text-right">Response</th>
+                      <th className="px-6 py-4 font-medium text-right">Evidence</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5 text-slate-300 font-mono text-xs">
-                    {[
-                      { time: '2026-05-19 10:51', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'cli-chat', cr: '16.4' },
-                      { time: '2026-05-13 16:03', uc: 'platform-hardening', mod: 'Auto', src: 'hook', cr: '15.1' },
-                      { time: '2026-05-18 12:25', uc: 'platform-hardening', mod: 'Auto', src: 'mcp-tool', cr: '14.9' },
-                      { time: '2026-05-26 12:47', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'cli-chat', cr: '14.6' },
-                      { time: '2026-05-13 09:29', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'hook', cr: '13.8' },
-                      { time: '2026-05-21 18:38', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'review', cr: '13.7' },
-                      { time: '2026-05-19 17:31', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'review', cr: '13.6' },
-                      { time: '2026-05-14 14:56', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'hook', cr: '13.4' },
-                      { time: '2026-05-25 09:57', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'review', cr: '13.3' },
-                      { time: '2026-05-22 17:26', uc: 'platform-hardening', mod: 'Claude Sonnet 4.6', src: 'hook', cr: '13.2' },
-                    ].map((row, i) => (
-                      <tr key={i} className="hover:bg-[#151e32] transition-colors cursor-pointer group" onClick={(e) => openEvidence(e, `req-${i}`)}>
-                        <td className="px-6 py-4 text-slate-400">{row.time}</td>
-                        <td className="px-6 py-4 font-sans">{row.uc}</td>
-                        <td className="px-6 py-4 font-sans text-slate-400">{row.mod}</td>
-                        <td className="px-6 py-4 text-slate-400">{row.src}</td>
-                        <td className="px-6 py-4 font-sans">
-                          <div className="flex items-center gap-3 text-slate-400">
-                            <div className="flex items-center gap-1"><FileText className="w-3 h-3 text-slate-500" /> <span className="text-[10px]">2</span></div>
-                            <div className="flex items-center gap-1"><Code2 className="w-3 h-3 text-slate-500" /> <span className="text-[10px]">1</span></div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right text-slate-300 font-medium">{row.cr}</td>
-                        <td className="px-6 py-4 text-right font-sans">
-                           <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">Inspect</span>
+                  <tbody className="divide-y divide-white/5">
+                    {interactions.slice(0, 10).map((interaction) => (
+                      <tr key={interaction.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="px-6 py-4 font-mono text-xs text-blue-300">{interaction.id.slice(0, 14)}…</td>
+                        <td className="px-6 py-4 text-slate-300">{interaction.useCaseLabel}</td>
+                        <td className="px-6 py-4 text-slate-400">{interaction.modelName}</td>
+                        <td className="px-6 py-4 text-right text-slate-300">{interaction.promptChars.toLocaleString()}</td>
+                        <td className="px-6 py-4 text-right text-slate-300">{interaction.responseChars.toLocaleString()}</td>
+                        <td className="px-6 py-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-teal-300 hover:text-teal-200 hover:bg-teal-500/10"
+                            onClick={() => setEvidenceInteractionId(interaction.id)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            {interaction.evidence.chatCount} / {interaction.evidence.inlineCount}
+                          </Button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reports" className="mt-6">
+          <Card className="bg-[#111827] border-white/5 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-lg font-medium text-slate-200">Reports & Exports</CardTitle>
+              <CardDescription className="text-slate-400">Generate a report for this scope or jump to the evidence console.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-5">
+              <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  This scope can be summarized into an executive report that includes top cost drivers, use-case findings,
+                  model/tool observations, and the caveats around observed versus estimated input contributors.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/reports">
+                  <Button className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Open Reports & Evidence
+                  </Button>
+                </Link>
+                <Link href="/studio">
+                  <Button variant="outline" className="bg-transparent border-white/10 hover:bg-white/5 hover:text-white">
+                    <Zap className="w-4 h-4 mr-2" />
+                    Generate from Studio
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  compact?: boolean;
+}) {
+  return (
+    <Card className="bg-[#111827] border-white/5 shadow-lg">
+      <CardContent className="pt-5">
+        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
+        <p className={`mt-3 ${compact ? "text-sm" : "text-2xl"} font-semibold text-white`}>{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/5 bg-black/20 px-3 py-3">
+      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="text-sm font-medium text-slate-100 mt-2">{value}</p>
+    </div>
+  );
+}
+
+function RankingCard({
+  title,
+  description,
+  items,
+}: {
+  title: string;
+  description: string;
+  items: Array<{ label: string; value: string }>;
+}) {
+  return (
+    <Card className="bg-[#111827] border-white/5 shadow-lg">
+      <CardHeader>
+        <CardTitle className="text-lg font-medium text-slate-200">{title}</CardTitle>
+        <CardDescription className="text-slate-400">{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-5">
+        {items.length ? (
+          items.slice(0, 6).map((item, index) => (
+            <div key={`${item.label}-${index}`} className="flex items-center justify-between gap-4 rounded-xl border border-white/5 bg-black/20 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-xs text-blue-300">
+                  {index + 1}
+                </div>
+                <span className="text-sm text-slate-100">{item.label}</span>
+              </div>
+              <span className="text-sm text-slate-400">{item.value}</span>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center text-sm text-slate-500">
+            No ranked items were present in this scope.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function OwnershipPanel({
+  resolved,
+}: {
+  resolved: ReturnType<typeof resolveScope>;
+}) {
+  if (resolved.entityType === "cost-center") {
+    const teams = resolved.costCenter ? getTeamsForCostCenter(resolved.costCenter.id) : [];
+    return (
+      <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+        <CardHeader className="bg-black/20 border-b border-white/5">
+          <CardTitle className="text-lg font-medium text-slate-200">Teams in Scope</CardTitle>
+          <CardDescription className="text-slate-400">Ownership view for the selected cost center.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-5">
+          {teams.map((team) => (
+            <div key={team.id} className="rounded-2xl border border-white/5 bg-black/20 p-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-slate-100 font-medium">{team.name}</p>
+                <p className="text-sm text-slate-400 mt-1">{team.activeEngineers} engineers · {team.topUseCase}</p>
+              </div>
+              <Link href={`/detail/team/${team.id}`}>
+                <Button variant="ghost" size="icon" className="text-slate-500 hover:text-white hover:bg-white/10">
+                  <ArrowUpRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (resolved.entityType === "team") {
+    const engineers = resolved.team ? getEngineersForTeam(resolved.team.id) : [];
+    return (
+      <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+        <CardHeader className="bg-black/20 border-b border-white/5">
+          <CardTitle className="text-lg font-medium text-slate-200">Engineers in Scope</CardTitle>
+          <CardDescription className="text-slate-400">Ownership view for the selected team.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-5">
+          {engineers.map((engineer) => (
+            <div key={engineer.userId} className="rounded-2xl border border-white/5 bg-black/20 p-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-slate-100 font-medium">{engineer.name}</p>
+                <p className="text-sm text-slate-400 mt-1">{engineer.activeDays} active days · {engineer.topUseCase}</p>
+              </div>
+              <Link href={`/detail/engineer/${engineer.id}`}>
+                <Button variant="ghost" size="icon" className="text-slate-500 hover:text-white hover:bg-white/10">
+                  <ArrowUpRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (resolved.entityType === "engineer" && resolved.engineer) {
+    return (
+      <Card className="bg-[#111827] border-white/5 shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-lg font-medium text-slate-200">Engineer Activity Snapshot</CardTitle>
+          <CardDescription className="text-slate-400">Useful context before investigating interactions or input drivers.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-6 pt-5">
+          <div className="grid grid-cols-2 gap-4">
+            <MiniMetric label="Subscription Tier" value={resolved.engineer.subscriptionTier} />
+            <MiniMetric label="Plan Source" value={resolved.engineer.planSource} />
+            <MiniMetric label="Top Model" value={resolved.engineer.topModel} />
+            <MiniMetric label="Top Plugin" value={resolved.engineer.topPlugin} />
+          </div>
+          <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
+            <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-3">Client Mix</h3>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(resolved.engineer.clientMix).map(([key, value]) => (
+                <Badge key={key} className="bg-white/5 text-slate-300 border-white/10">
+                  {key.replace("KIRO_", "")}: {formatPercent(value)}
+                </Badge>
+              ))}
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 bg-[#0a0f18] overflow-y-auto">
-      <EvidenceDrawer 
-        open={drawerOpen} 
-        onOpenChange={setDrawerOpen} 
-        interactionId={selectedInteraction} 
-      />
-      {/* Top Filter Bar - Added to match the screenshot */}
-      <div className="flex items-center gap-4 px-8 py-3 border-b border-white/5 bg-[#0c1220]">
-        <div className="flex items-center gap-2">
-          <Link href="/explorer" className="text-slate-400 hover:text-white transition-colors text-sm">Explorer</Link>
-          <ChevronRight className="w-4 h-4 text-slate-500 mx-1" />
-          <span className="text-slate-400 text-sm capitalize">{entityType?.replace('-', ' ')} Focus:</span>
-          <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded text-sm text-slate-200">
-            <span className="font-medium">{entityName}</span>
-            <Link href="/explorer">
-              <button className="text-slate-500 hover:text-slate-300 ml-1">
-                <X className="w-3 h-3" />
-              </button>
-            </Link>
-          </div>
-        </div>
-        <Link href="/explorer">
-          <Button variant="ghost" className="text-slate-400 hover:text-slate-200 h-8 px-3">
-            Clear All
-          </Button>
-        </Link>
-        
-        <div className="ml-auto flex items-center gap-3">
-          <Button variant="outline" className="bg-transparent border-white/10 text-slate-300 hover:bg-white/5 h-9">
-            <Activity className="w-4 h-4 mr-2" />
-            AI Advisor
-          </Button>
-          <Button className="bg-blue-600 hover:bg-blue-500 text-white h-9">
-            <BookOpen className="w-4 h-4 mr-2" />
-            Strategic Report
-          </Button>
-        </div>
-      </div>
-
-      <div className="p-8">
-        <div className="max-w-[1600px] mx-auto space-y-12">
-          
-          {/* TOP SECTION: Team Contribution & Daily Consumption */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-            <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm h-[320px]">
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-slate-200">Team Contribution</h3>
-                <p className="text-slate-400 text-xs mt-1">Click a bar to scope to a team.</p>
-              </div>
-              <div className="flex-1 min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={[{name: 'Platform Reliability Engineering', val: 2850}]} layout="vertical" margin={{ left: 100, top: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
-                    <XAxis type="number" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} tickFormatter={(v) => v === 0 ? '0' : v} domain={[0, 3000]} tickCount={5} />
-                    <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickFormatter={() => 'Platform Reliability...'} />
-                    <RechartsTooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                    <Bar dataKey="val" fill="#60a5fa" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm h-[320px]">
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-slate-200">Daily AI Consumption</h3>
-                <p className="text-slate-400 text-xs mt-1">Trend across the selected period for this cost center.</p>
-              </div>
-              <div className="flex-1 min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={Array.from({length: 26}).map((_, i) => ({
-                    date: `${(i+1).toString().padStart(2, '0')}`,
-                    val: Math.floor(Math.random() * 250) + 20 + (Math.sin(i/2) * 20)
-                  }))} margin={{ top: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} horizontal={true} />
-                    <XAxis dataKey="date" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} />
-                    <YAxis stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickCount={5} domain={[0, 280]} />
-                    <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                    <Area type="monotone" dataKey="val" stroke="#60a5fa" strokeWidth={2} fill="none" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 1: Ownership & Chargeback */}
-          <section>
-            <div className="border-b border-white/10 pb-2 mb-6">
-              <h2 className="text-xl font-semibold text-slate-200">Who is consuming, and where is the risk?</h2>
-              <p className="text-sm text-slate-400">Engineer-level distribution, outlier detection, and license hygiene watchlist for the selected scope.</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* Active Days vs Consumption */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm h-[320px]">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">Active Days vs AI Consumption</h3>
-                  <p className="text-slate-400 text-xs mt-1">Outliers consume disproportionately for their activity level. Click a point to scope.</p>
-                </div>
-                <div className="flex-1 min-h-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis type="number" dataKey="days" name="Active days" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickCount={5} domain={[0, 20]} />
-                      <YAxis type="number" dataKey="consumption" name="Credits" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickCount={5} domain={[0, 1400]} />
-                      <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Scatter name="Engineers" data={[
-                        { days: 5, consumption: 50 },
-                        { days: 12, consumption: 720 },
-                        { days: 17, consumption: 900 },
-                        { days: 18, consumption: 1200 }
-                      ]} fill="#60a5fa" />
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* License Hygiene Watchlist */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm h-[320px]">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">License Hygiene Watchlist</h3>
-                  <p className="text-slate-400 text-xs mt-1">1 signal in scope</p>
-                </div>
-                <div className="flex-1 min-h-0 pt-2">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
-                     <div className="flex items-center gap-2">
-                        <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded text-[10px] uppercase font-medium flex items-center">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          Canceled with usage
-                        </span>
-                     </div>
-                     <span className="text-xs text-slate-400">1 seat</span>
-                  </div>
-                  <div className="text-sm text-slate-300">
-                    <span className="font-medium text-white">Lucy Chen</span> · Seat canceled but 26 credits used in selected period.
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Chargeback Detail Table */}
-            <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-sm font-medium text-slate-200">Chargeback Detail</CardTitle>
-                  <CardDescription className="text-slate-400 text-xs">Per-engineer rollup for budget allocation and review.</CardDescription>
-                </CardHeader>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-[10px] uppercase tracking-wider text-slate-500 bg-[#0c1220]/80">
-                      <tr>
-                        <th className="px-6 py-3 font-medium">Engineer</th>
-                        <th className="px-6 py-3 font-medium">Cost Center</th>
-                        <th className="px-6 py-3 font-medium">Team</th>
-                        <th className="px-6 py-3 font-medium">Tier</th>
-                        <th className="px-6 py-3 font-medium">Status</th>
-                        <th className="px-6 py-3 font-medium text-right">Active Days</th>
-                        <th className="px-6 py-3 font-medium text-right">Messages</th>
-                        <th className="px-6 py-3 font-medium text-right">Credits</th>
-                        <th className="px-6 py-3 font-medium text-right">Overrun</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 text-slate-300">
-                      <tr className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-6 py-4 font-medium text-white">Elena Garcia</td>
-                        <td className="px-6 py-4">Platform Reliability</td>
-                        <td className="px-6 py-4">Platform Reliability Engineering</td>
-                        <td className="px-6 py-4">Power</td>
-                        <td className="px-6 py-4"><span className="text-blue-400 text-xs font-medium bg-blue-500/10 px-2 py-0.5 rounded">ACTIVE</span></td>
-                        <td className="px-6 py-4 text-right">18</td>
-                        <td className="px-6 py-4 text-right">2,828</td>
-                        <td className="px-6 py-4 text-right">1,200</td>
-                        <td className="px-6 py-4 text-right">0</td>
-                      </tr>
-                      <tr className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-6 py-4 font-medium text-white">Victor Chen</td>
-                        <td className="px-6 py-4">Platform Reliability</td>
-                        <td className="px-6 py-4">Platform Reliability Engineering</td>
-                        <td className="px-6 py-4">ProPlus</td>
-                        <td className="px-6 py-4"><span className="text-blue-400 text-xs font-medium bg-blue-500/10 px-2 py-0.5 rounded">ACTIVE</span></td>
-                        <td className="px-6 py-4 text-right">17</td>
-                        <td className="px-6 py-4 text-right">2,257</td>
-                        <td className="px-6 py-4 text-right">900</td>
-                        <td className="px-6 py-4 text-right">0</td>
-                      </tr>
-                      <tr className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-6 py-4 font-medium text-white">Sam Walker</td>
-                        <td className="px-6 py-4">Platform Reliability</td>
-                        <td className="px-6 py-4">Platform Reliability Engineering</td>
-                        <td className="px-6 py-4">Pro</td>
-                        <td className="px-6 py-4"><span className="text-blue-400 text-xs font-medium bg-blue-500/10 px-2 py-0.5 rounded">ACTIVE</span></td>
-                        <td className="px-6 py-4 text-right">12</td>
-                        <td className="px-6 py-4 text-right">1,974</td>
-                        <td className="px-6 py-4 text-right">720</td>
-                        <td className="px-6 py-4 text-right">0</td>
-                      </tr>
-                      <tr className="hover:bg-white/[0.02] transition-colors border-l-2 border-l-red-500">
-                        <td className="px-6 py-4 font-medium text-white">Lucy Chen</td>
-                        <td className="px-6 py-4">Platform Reliability</td>
-                        <td className="px-6 py-4">Platform Reliability Engineering</td>
-                        <td className="px-6 py-4">ProPlus</td>
-                        <td className="px-6 py-4"><span className="text-red-400 text-xs font-medium bg-red-500/10 px-2 py-0.5 rounded">CANCELED</span></td>
-                        <td className="px-6 py-4 text-right">5</td>
-                        <td className="px-6 py-4 text-right">67</td>
-                        <td className="px-6 py-4 text-right">26</td>
-                        <td className="px-6 py-4 text-right">0</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-            </Card>
-          </section>
-
-            {/* SECTION 2: Governance & Optimization */}
-          <section>
-            <div className="border-b border-white/10 pb-2 mb-6">
-              <h2 className="text-xl font-semibold text-slate-200">Where credits go, and why</h2>
-              <p className="text-sm text-slate-400">Model routing, use-case x model hotspots, request-source mix, plugin and MCP impact, and prompt-size outliers.</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* Model Mix */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm h-[320px]">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">Model Mix by Cost Center</h3>
-                  <p className="text-slate-400 text-xs mt-1">Premium vs efficient routing balance per cost center.</p>
-                </div>
-                <div className="flex-1 min-h-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={MOCK_DATA.clientMix} maxBarSize={60} margin={{ bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => val.split(' ')[0]} />
-                      <YAxis stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
-                      <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Legend iconType="square" wrapperStyle={{ fontSize: '10px', bottom: -10 }} />
-                      <Bar dataKey="ide" stackId="a" fill="#eab308" name="Auto" />
-                      <Bar dataKey="cli" stackId="a" fill="#60a5fa" name="Claude Opus 4.6" />
-                      <Bar dataKey="plugin" stackId="a" fill="#a855f7" name="Claude Sonnet 4.6" />
-                      <Bar dataKey="ide" stackId="a" fill="#34d399" name="DeepSeek V3.2" />
-                      <Bar dataKey="cli" stackId="a" fill="#4ade80" name="Qwen 2 Coder Next" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Source Mix */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm h-[320px]">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">AI Consumption by Interaction Source</h3>
-                  <p className="text-slate-400 text-xs mt-1">Where requests originate — chat, spec, plugin action, hook, etc.</p>
-                </div>
-                <div className="flex-1 min-h-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[
-                      { name: 'chat', val: 780 },
-                      { name: 'ui-chat', val: 560 },
-                      { name: 'mcp-tool', val: 420 },
-                      { name: 'inline', val: 390 }
-                    ]} layout="vertical" barSize={24} margin={{ left: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} vertical={true} />
-                      <XAxis type="number" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
-                      <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
-                      <Bar dataKey="val" fill="#60a5fa" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* Heatmap */}
-            <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm mb-6">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">Use Case × Model Heatmap</h3>
-                  <p className="text-slate-400 text-xs mt-1">Most expensive workflow/model combinations. Darker = higher credits.</p>
-                </div>
-                <div className="flex-1 min-h-0 overflow-x-auto">
-                   <table className="w-full text-sm text-left border-collapse">
-                      <thead className="text-[10px] uppercase tracking-wider text-slate-500 border-b border-white/10">
-                        <tr>
-                          <th className="py-3 font-medium w-1/4">Use Case / Model →</th>
-                          <th className="py-3 font-medium text-center">Auto</th>
-                          <th className="py-3 font-medium text-center">Opus 4.6</th>
-                          <th className="py-3 font-medium text-center">Sonnet 4.6</th>
-                          <th className="py-3 font-medium text-center">DS V3.2</th>
-                          <th className="py-3 font-medium text-center">Qwen Coder Next</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5 text-slate-300">
-                        <tr>
-                          <td className="py-3 font-medium text-xs">platform-hardening</td>
-                          <td className="py-2 px-1 text-center"><div className="bg-blue-600/90 text-white text-xs py-1.5 rounded">747.9</div></td>
-                          <td className="py-2 px-1 text-center"><div className="bg-blue-600/30 text-white text-xs py-1.5 rounded">125.1</div></td>
-                          <td className="py-2 px-1 text-center"><div className="bg-blue-600/70 text-white text-xs py-1.5 rounded">590.2</div></td>
-                          <td className="py-2 px-1 text-center"><div className="bg-blue-600/30 text-white text-xs py-1.5 rounded">117.5</div></td>
-                          <td className="py-2 px-1 text-center"><div className="bg-blue-600/30 text-white text-xs py-1.5 rounded">119.8</div></td>
-                        </tr>
-                      </tbody>
-                   </table>
-                   <div className="flex items-center gap-2 mt-4 text-[10px] text-slate-500 uppercase">
-                     <span>Low</span>
-                     <div className="w-32 h-1.5 bg-gradient-to-r from-blue-600/20 to-blue-600/90 rounded-full"></div>
-                     <span>High (Credits)</span>
-                   </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* Plugin Impact */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">Plugin Usage Impact</h3>
-                  <p className="text-slate-400 text-xs mt-1">Ranked named plugins. "Direct Kiro" shown as metadata only.</p>
-                </div>
-                <div className="flex-1 min-h-0 space-y-4">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-200 font-medium">AWS Docs</span>
-                      <span className="text-slate-400">446.8 cr · 25%</span>
-                    </div>
-                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full w-[25%] rounded-full"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-200 font-medium">GitHub</span>
-                      <span className="text-slate-400">378.6 cr · 22%</span>
-                    </div>
-                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full w-[22%] rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="pt-4 border-t border-white/5 mt-4">
-                     <div className="text-[10px] uppercase text-slate-500 font-medium mb-2">Metadata - Not Ranked</div>
-                     <div className="text-xs text-slate-400">Direct Kiro <span className="text-slate-500">(912.5 cr)</span></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* MCP Impact */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">MCP Usage Impact</h3>
-                  <p className="text-slate-400 text-xs mt-1">Ranked named MCP servers. "No MCP Invoked" shown as metadata only.</p>
-                </div>
-                <div className="flex-1 min-h-0 space-y-4">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-200 font-medium">aws-docs</span>
-                      <span className="text-slate-400">459.5 cr · 26%</span>
-                    </div>
-                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full w-[26%] rounded-full"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-200 font-medium">github</span>
-                      <span className="text-slate-400">423 cr · 24%</span>
-                    </div>
-                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full w-[24%] rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="pt-4 border-t border-white/5 mt-4">
-                     <div className="text-[10px] uppercase text-slate-500 font-medium mb-2">Metadata - Not Ranked</div>
-                     <div className="text-xs text-slate-400">No MCP Invoked <span className="text-slate-500">(889.4 cr)</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* Prompt chars vs Consumption */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm h-[320px]">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">Prompt Chars vs AI Consumption</h3>
-                  <p className="text-slate-400 text-xs mt-1">Outliers in the upper-right are prompt-size driven expensive calls.</p>
-                </div>
-                <div className="flex-1 min-h-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis type="number" dataKey="size" name="Prompt chars" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} />
-                      <YAxis type="number" dataKey="consumption" name="Credits" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} />
-                      <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Scatter data={promptSizeData} fill="#34d399" opacity={0.6} />
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Response chars vs Consumption */}
-              <div className="border border-white/10 rounded-lg bg-[#0e1526] p-4 flex flex-col shadow-sm h-[320px]">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-200">Response Chars vs AI Consumption</h3>
-                  <p className="text-slate-400 text-xs mt-1">Outliers in the upper-right indicate verbose or interupted workflows.</p>
-                </div>
-                <div className="flex-1 min-h-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis type="number" dataKey="size" name="Response chars" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} />
-                      <YAxis type="number" dataKey="consumption" name="Credits" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} />
-                      <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Scatter data={responseSizeData} fill="#34d399" opacity={0.6} />
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* High Cost Interactions Table */}
-            <div className="border border-white/10 rounded-lg bg-[#0e1526] shadow-sm overflow-hidden mb-6">
-                <div className="p-4 border-b border-white/10">
-                  <h3 className="text-sm font-medium text-slate-200">High-Cost Interactions</h3>
-                  <p className="text-slate-400 text-xs mt-1">Click any row to inspect prompt evidence. Surfaced rows always reveal evidence.</p>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-[10px] uppercase tracking-wider text-slate-500 bg-[#0c1220]/80 border-b border-white/10">
-                      <tr>
-                        <th className="px-6 py-3 font-medium">Request</th>
-                        <th className="px-6 py-3 font-medium">Engineer</th>
-                        <th className="px-6 py-3 font-medium">Use Case</th>
-                        <th className="px-6 py-3 font-medium">Model</th>
-                        <th className="px-6 py-3 font-medium">Plugin</th>
-                        <th className="px-6 py-3 font-medium">MCP</th>
-                        <th className="px-6 py-3 font-medium text-center">Evidence</th>
-                        <th className="px-6 py-3 font-medium text-right">Credits</th>
-                        <th className="px-6 py-3 font-medium"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 text-slate-300">
-                      <tr className="hover:bg-white/[0.02] transition-colors cursor-pointer group" onClick={(e) => openEvidence(e, 'req-02cfc857f13f')}>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-white font-mono text-xs">req-02cfc857f13f</div>
-                          <div className="text-[10px] text-slate-500 font-mono mt-1">conv-996f54b983</div>
-                        </td>
-                        <td className="px-6 py-4">Sam Walker</td>
-                        <td className="px-6 py-4 text-slate-400">platform-hardening</td>
-                        <td className="px-6 py-4 text-slate-400">DeepSeek V3.2</td>
-                        <td className="px-6 py-4 text-slate-400">GitHub</td>
-                        <td className="px-6 py-4 text-slate-400">github</td>
-                        <td className="px-6 py-4">
-                           <div className="flex items-center justify-center gap-2 text-slate-400 bg-white/5 rounded px-2 py-1 w-fit mx-auto border border-white/5">
-                             <div className="flex items-center gap-1"><BookOpen className="w-3 h-3 text-slate-500" /> <span className="text-xs">2</span></div>
-                             <div className="flex items-center gap-1"><Settings2 className="w-3 h-3 text-slate-500" /> <span className="text-xs">1</span></div>
-                           </div>
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-white">39.3</td>
-                        <td className="px-6 py-4 text-right">
-                           <span className="text-blue-400 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">Inspect</span>
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-white/[0.02] transition-colors cursor-pointer group" onClick={(e) => openEvidence(e, 'req-4b92f2b245f7')}>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-white font-mono text-xs">req-4b92f2b245f7</div>
-                          <div className="text-[10px] text-slate-500 font-mono mt-1">conv-35e4b4e418</div>
-                        </td>
-                        <td className="px-6 py-4">Sam Walker</td>
-                        <td className="px-6 py-4 text-slate-400">platform-hardening</td>
-                        <td className="px-6 py-4 text-slate-400">Claude Sonnet 4.6</td>
-                        <td className="px-6 py-4 text-slate-400">Direct Kiro</td>
-                        <td className="px-6 py-4 text-slate-400">No MCP</td>
-                        <td className="px-6 py-4">
-                           <div className="flex items-center justify-center gap-2 text-slate-400 bg-white/5 rounded px-2 py-1 w-fit mx-auto border border-white/5">
-                             <div className="flex items-center gap-1"><BookOpen className="w-3 h-3 text-slate-500" /> <span className="text-xs">1</span></div>
-                             <div className="flex items-center gap-1"><Settings2 className="w-3 h-3 text-slate-500" /> <span className="text-xs">1</span></div>
-                           </div>
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-white">30.9</td>
-                        <td className="px-6 py-4 text-right">
-                           <span className="text-blue-400 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">Inspect</span>
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-white/[0.02] transition-colors cursor-pointer group" onClick={(e) => openEvidence(e, 'req-46a249637fbf')}>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-white font-mono text-xs">req-46a249637fbf</div>
-                          <div className="text-[10px] text-slate-500 font-mono mt-1">conv-996f54b983</div>
-                        </td>
-                        <td className="px-6 py-4">Sam Walker</td>
-                        <td className="px-6 py-4 text-slate-400">platform-hardening</td>
-                        <td className="px-6 py-4 text-slate-400">Auto</td>
-                        <td className="px-6 py-4 text-slate-400">Direct Kiro</td>
-                        <td className="px-6 py-4 text-slate-400">aws-docs</td>
-                        <td className="px-6 py-4">
-                           <div className="flex items-center justify-center gap-2 text-slate-400 bg-white/5 rounded px-2 py-1 w-fit mx-auto border border-white/5">
-                             <div className="flex items-center gap-1"><BookOpen className="w-3 h-3 text-slate-500" /> <span className="text-xs">2</span></div>
-                             <div className="flex items-center gap-1"><Settings2 className="w-3 h-3 text-slate-500" /> <span className="text-xs">1</span></div>
-                           </div>
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-white">29.8</td>
-                        <td className="px-6 py-4 text-right">
-                           <span className="text-blue-400 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">Inspect</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-            </div>
-          </section>
-
-        </div>
-      </div>
-    </div>
+    <Card className="bg-[#111827] border-white/5 shadow-lg">
+      <CardContent className="pt-6">
+        <p className="text-sm text-slate-400">Ownership detail is not applicable for this entity.</p>
+      </CardContent>
+    </Card>
   );
+}
+
+function resolveScope(entityType: string, entityId: string) {
+  const costCenter = entityType === "cost-center" ? getCostCenterById(entityId) : null;
+  const team = entityType === "team" ? getTeamById(entityId) : null;
+  const engineer = entityType === "engineer" ? getEngineerBySlug(entityId) : null;
+  const interaction = entityType === "interaction" ? getInteractionById(entityId) : null;
+
+  if (costCenter) {
+    return {
+      entityType,
+      entityLabel: "Cost Center",
+      title: costCenter.name,
+      description: "Ownership, use-case, and interaction analysis for the selected cost center.",
+      scope: { costCenterId: costCenter.id },
+      scopeLabel: costCenter.code,
+      recommendationScopeType: "Cost Center" as const,
+      recommendationScopeId: costCenter.id,
+      costCenter,
+      team: null,
+      engineer: null,
+      interaction: null,
+      metrics: [
+        { label: "AI Consumption", value: `${formatConsumption(costCenter.totalConsumption)} credits` },
+        { label: "Overrun", value: `${formatConsumption(costCenter.overrun)} credits` },
+        { label: "Teams", value: String(costCenter.teamCount) },
+        { label: "Top Engineer", value: costCenter.topEngineer, compact: true },
+      ],
+      tabs: [
+        { value: "summary", label: "Summary" },
+        { value: "ownership", label: "Teams" },
+        { value: "use-cases", label: "Use Cases" },
+        { value: "models-tools", label: "Models & Tools" },
+        { value: "recommendations", label: "Recommendations" },
+        { value: "evidence", label: "Evidence" },
+        { value: "reports", label: "Reports" },
+      ],
+      defaultTab: "summary",
+    };
+  }
+
+  if (team) {
+    return {
+      entityType,
+      entityLabel: "Team",
+      title: team.name,
+      description: "Team-level ownership, use-case behavior, and model/tool pressure.",
+      scope: { costCenterId: team.costCenterId, teamId: team.id },
+      scopeLabel: team.costCenterName,
+      recommendationScopeType: "Team" as const,
+      recommendationScopeId: team.id,
+      costCenter: null,
+      team,
+      engineer: null,
+      interaction: null,
+      metrics: [
+        { label: "AI Consumption", value: `${formatConsumption(team.totalConsumption)} credits` },
+        { label: "Overrun", value: `${formatConsumption(team.overrun)} credits` },
+        { label: "Active Engineers", value: String(team.activeEngineers) },
+        { label: "Top Use Case", value: team.topUseCase, compact: true },
+      ],
+      tabs: [
+        { value: "summary", label: "Summary" },
+        { value: "ownership", label: "Engineers" },
+        { value: "use-cases", label: "Use Cases" },
+        { value: "models-tools", label: "Models & Tools" },
+        { value: "recommendations", label: "Recommendations" },
+        { value: "evidence", label: "Evidence" },
+        { value: "reports", label: "Reports" },
+      ],
+      defaultTab: "summary",
+    };
+  }
+
+  if (engineer) {
+    return {
+      entityType,
+      entityLabel: "Engineer",
+      title: engineer.name,
+      description: "Engineer-level activity, use-case, and high-cost interaction review.",
+      scope: { costCenterId: engineer.costCenterId, teamId: engineer.teamId, engineerId: engineer.userId },
+      scopeLabel: `${engineer.teamName} · ${engineer.costCenterName}`,
+      recommendationScopeType: "Engineer" as const,
+      recommendationScopeId: engineer.userId,
+      costCenter: null,
+      team: null,
+      engineer,
+      interaction: null,
+      metrics: [
+        { label: "AI Consumption", value: `${formatConsumption(engineer.totalConsumption)} credits` },
+        { label: "Overrun", value: `${formatConsumption(engineer.overrun)} credits` },
+        { label: "Active Days", value: String(engineer.activeDays) },
+        { label: "Top Use Case", value: engineer.topUseCase, compact: true },
+      ],
+      tabs: [
+        { value: "summary", label: "Summary" },
+        { value: "ownership", label: "Activity" },
+        { value: "use-cases", label: "Use Cases" },
+        { value: "models-tools", label: "Models & Tools" },
+        { value: "recommendations", label: "Recommendations" },
+        { value: "evidence", label: "Evidence" },
+        { value: "reports", label: "Reports" },
+      ],
+      defaultTab: "summary",
+    };
+  }
+
+  if (interaction) {
+    return {
+      entityType,
+      entityLabel: "Interaction",
+      title: interaction.id,
+      description: "Prompt evidence, model/tool metadata, and the drivers behind this single interaction.",
+      scope: { engineerId: interaction.userId },
+      scopeLabel: interaction.useCaseLabel,
+      recommendationScopeType: "Interaction" as const,
+      recommendationScopeId: interaction.id,
+      costCenter: null,
+      team: null,
+      engineer: null,
+      interaction,
+      metrics: [
+        { label: "AI Consumption", value: `${formatConsumption(interaction.estimatedCredits)} credits` },
+        { label: "Prompt Chars", value: interaction.promptChars.toLocaleString() },
+        { label: "Response Chars", value: interaction.responseChars.toLocaleString() },
+        { label: "Model", value: interaction.modelName, compact: true },
+      ],
+      tabs: [
+        { value: "summary", label: "Summary" },
+        { value: "models-tools", label: "Input Drivers" },
+        { value: "evidence", label: "Evidence" },
+        { value: "recommendations", label: "Recommendations" },
+        { value: "reports", label: "Reports" },
+      ],
+      defaultTab: "evidence",
+    };
+  }
+
+  return {
+    entityType,
+    entityLabel: "Scope",
+    title: "Unknown Scope",
+    description: "The selected entity could not be resolved from the Kiro dataset.",
+    scope: {},
+    scopeLabel: "",
+    recommendationScopeType: "Enterprise" as const,
+    recommendationScopeId: "enterprise",
+    costCenter: null,
+    team: null,
+    engineer: null,
+    interaction: null,
+    metrics: [],
+    tabs: [{ value: "summary", label: "Summary" }],
+    defaultTab: "summary",
+  };
 }
