@@ -38,7 +38,7 @@ export default function AnalyticsDeepDive() {
               {['Consumption', 'Ownership', 'Models & Tools', 'Use Cases', 'Interactions'].map(tab => (
                 <TabsTrigger 
                   key={tab} 
-                  value={tab.toLowerCase().replace(' & ', '-')}
+                  value={tab.toLowerCase().replace(' & ', '-').replace(' ', '-')}
                   className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-400 rounded-none px-1 py-4 text-slate-400 hover:text-slate-200 transition-colors"
                 >
                   {tab}
