@@ -1,0 +1,61 @@
+export const MOCK_DATA = {
+  kpis: {
+    totalConsumption: "1,452K",
+    overrun: "34.5K",
+    activeEngineers: "842",
+    consumptionPerEngineer: "1.7K",
+    topCostCenter: "Payments Transformation",
+    topEngineer: "Aisha Khan"
+  },
+  costCenters: [
+    { id: "cc-4101", name: "Payments Transformation", consumption: "542K", overrun: "12K", activeEngineers: 145, topUseCase: "legacy-modernization", lastActive: "2m ago" },
+    { id: "cc-4402", name: "AI Delivery Acceleration", consumption: "480K", overrun: "8.5K", activeEngineers: 210, topUseCase: "spec-orchestration", lastActive: "Just now" },
+    { id: "cc-4308", name: "Platform Reliability", consumption: "245K", overrun: "0", activeEngineers: 85, topUseCase: "platform-hardening", lastActive: "15m ago" },
+    { id: "cc-4204", name: "Retail Intelligence", consumption: "185K", overrun: "14K", activeEngineers: 402, topUseCase: "retail-analytics", lastActive: "5m ago" }
+  ],
+  teams: [
+    { id: "t-1", name: "Payments Modernization Team", costCenter: "Payments Transformation", consumption: "542K", activeEngineers: 145, topEngineer: "Priya Nair", topChannel: "KIRO_IDE" },
+    { id: "t-2", name: "AI SDLC Enablement Team", costCenter: "AI Delivery Acceleration", consumption: "480K", activeEngineers: 210, topEngineer: "Aisha Khan", topChannel: "KIRO_IDE" },
+    { id: "t-3", name: "Platform Reliability Engineering", costCenter: "Platform Reliability", consumption: "245K", activeEngineers: 85, topEngineer: "Elena Garcia", topChannel: "KIRO_CLI" },
+    { id: "t-4", name: "Retail Analytics Team", costCenter: "Retail Intelligence", consumption: "185K", activeEngineers: 402, topEngineer: "Nina Patel", topChannel: "PLUGIN" }
+  ],
+  engineers: [
+    { id: "e-1", name: "Aisha Khan", team: "AI SDLC Enablement Team", costCenter: "AI Delivery Acceleration", consumption: "12.4K", activeDays: 27, status: "Active", clientMix: { ide: 65, cli: 20, plugin: 15 } },
+    { id: "e-2", name: "Priya Nair", team: "Payments Modernization Team", costCenter: "Payments Transformation", consumption: "11.2K", activeDays: 27, status: "Active", clientMix: { ide: 80, cli: 10, plugin: 10 } },
+    { id: "e-3", name: "Elena Garcia", team: "Platform Reliability Engineering", costCenter: "Platform Reliability", consumption: "8.5K", activeDays: 23, status: "Active", clientMix: { ide: 40, cli: 55, plugin: 5 } },
+    { id: "e-4", name: "Marco Silva", team: "Payments Modernization Team", costCenter: "Payments Transformation", consumption: "7.8K", activeDays: 20, status: "Active", clientMix: { ide: 70, cli: 20, plugin: 10 } },
+    { id: "e-5", name: "Ben Foster", team: "AI SDLC Enablement Team", costCenter: "AI Delivery Acceleration", consumption: "7.2K", activeDays: 24, status: "Active", clientMix: { ide: 60, cli: 25, plugin: 15 } }
+  ],
+  interactions: [
+    { id: "req-d3660255cf38", convId: "conv-8dae4bb19b", engineer: "Nina Patel", costCenter: "Retail Intelligence", useCase: "retail-analytics", model: "Claude_Sonnet_4.6", plugin: "Browser", mcp: "No MCP Invoked", consumption: "13.96", evidence: true },
+    { id: "req-39ba85c122c7", convId: "conv-47d541ba50", engineer: "Ethan Brooks", costCenter: "Payments Transformation", useCase: "legacy-modernization", model: "Auto", plugin: "GitHub", mcp: "github", consumption: "3.18", evidence: true },
+    { id: "req-b0cc3b47bccb", convId: "conv-d984e408fa", engineer: "Casey Liu", costCenter: "Retail Intelligence", useCase: "retail-analytics", model: "Auto", plugin: "Direct Kiro", mcp: "No MCP Invoked", consumption: "2.72", evidence: false },
+    { id: "req-d8d05ef11e2b", convId: "conv-646ebceb1b", engineer: "Aisha Khan", costCenter: "AI Delivery Acceleration", useCase: "spec-orchestration", model: "Claude_Sonnet_4.6", plugin: "Jira", mcp: "No MCP Invoked", consumption: "27.73", evidence: true },
+    { id: "req-7653a608668f", convId: "conv-68ac4a536a", engineer: "Elena Garcia", costCenter: "Platform Reliability", useCase: "platform-hardening", model: "Claude_Sonnet_4.6", plugin: "AWS Docs", mcp: "No MCP Invoked", consumption: "4.91", evidence: true }
+  ],
+  dailyTrend: [
+    { date: "2026-04-01", consumption: 420 },
+    { date: "2026-04-02", consumption: 480 },
+    { date: "2026-04-03", consumption: 450 },
+    { date: "2026-04-04", consumption: 380 },
+    { date: "2026-04-05", consumption: 350 },
+    { date: "2026-04-06", consumption: 520 },
+    { date: "2026-04-07", consumption: 580 },
+    { date: "2026-04-08", consumption: 610 },
+    { date: "2026-04-09", consumption: 590 },
+    { date: "2026-04-10", consumption: 540 }
+  ],
+  clientMix: [
+    { name: "Payments Transformation", ide: 65, cli: 20, plugin: 15 },
+    { name: "AI Delivery Acceleration", ide: 75, cli: 15, plugin: 10 },
+    { name: "Platform Reliability", ide: 40, cli: 55, plugin: 5 },
+    { name: "Retail Intelligence", ide: 50, cli: 10, plugin: 40 }
+  ],
+  findings: [
+    { id: "f-1", title: "High Spend Concentration", severity: "High", scope: "Cost Center", description: "Top 5% of engineers drive 45% of AI consumption in Payments Transformation.", category: "Spend Concentration" },
+    { id: "f-2", title: "Low Seat Utilization", severity: "Medium", scope: "Team", description: "12 engineers in Retail Analytics Team have < 3 active days this month.", category: "Low-Utilization Seats" },
+    { id: "f-3", title: "Expensive Model Usage", severity: "High", scope: "Engineer", description: "Frequent use of Opus 4.6 for basic code generation tasks by Aisha Khan.", category: "Model Routing Opportunity" },
+    { id: "f-4", title: "Unusual Usage Spike", severity: "Low", scope: "Team", description: "Platform Reliability Engineering CLI usage spiked 300% on April 8th.", category: "Unusual Usage Spike" },
+    { id: "f-5", title: "Overage Risk Detected", severity: "High", scope: "Cost Center", description: "Retail Intelligence projected to hit overage cap in 4 days.", category: "Overrun Risk" }
+  ]
+};

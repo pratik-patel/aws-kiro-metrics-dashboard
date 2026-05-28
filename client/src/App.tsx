@@ -3,48 +3,34 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import UnifiedPortfolio from "@/pages/UnifiedPortfolio";
-import DataMigration from "@/pages/DataMigration";
-import PrivateCreditDrillDown from "@/pages/PrivateCreditDrillDown";
-import DataDictionary from "@/pages/DataDictionary";
-import Analytics from "@/pages/Analytics";
-import ReportingCompliance from "@/pages/ReportingCompliance";
 
-// New Migration Module Pages
-import MigrationWorkspace from "@/pages/migration/MigrationWorkspace";
-import MigrationDesigner from "@/pages/migration/MigrationDesigner";
-import MigrationExecution from "@/pages/migration/MigrationExecution";
-import ValidationConsole from "@/pages/migration/ValidationConsole";
-import DataLineage from "@/pages/migration/DataLineage";
-import MigrationSummary from "@/pages/migration/MigrationSummary";
+import NotFound from "@/pages/not-found";
+import Layout from "@/components/layout/Layout";
+
+import GovernanceOverview from "@/pages/GovernanceOverview";
+import UsageExplorer from "@/pages/UsageExplorer";
+import DetailWorkspace from "@/pages/DetailWorkspace";
+import GovernanceFindings from "@/pages/GovernanceFindings";
+import PolicySimulationStudio from "@/pages/PolicySimulationStudio";
+import ExecutionMonitor from "@/pages/ExecutionMonitor";
+import AnalyticsDeepDive from "@/pages/AnalyticsDeepDive";
+import ReportEvidenceConsole from "@/pages/ReportEvidenceConsole";
 
 function Router() {
   return (
-    <Switch>
-      {/* Investment Office Context */}
-      <Route path="/unified-portfolio" component={UnifiedPortfolio} />
-      <Route path="/private-credit" component={PrivateCreditDrillDown} />
-      <Route path="/analytics" component={Analytics} />
-      <Route path="/reporting-compliance" component={ReportingCompliance} />
-      
-      {/* Shared / Demo */}
-      <Route path="/data-migration" component={DataMigration} />
-      <Route path="/data-dictionary" component={DataDictionary} />
-      
-      {/* Data Operations Context (Migration Module) */}
-      <Route path="/migration-workspace" component={MigrationWorkspace} />
-      <Route path="/migration-designer" component={MigrationDesigner} />
-      <Route path="/migration-execution" component={MigrationExecution} />
-      <Route path="/migration-validation" component={ValidationConsole} />
-      <Route path="/migration-lineage" component={DataLineage} />
-      <Route path="/migration-summary" component={MigrationSummary} />
-
-      <Route path="/">
-        <Redirect to="/unified-portfolio" />
-      </Route>
-      <Route component={NotFound} />
-    </Switch>
+    <Layout>
+      <Switch>
+        <Route path="/" component={GovernanceOverview} />
+        <Route path="/explorer" component={UsageExplorer} />
+        <Route path="/detail/:entityType/:entityId" component={DetailWorkspace} />
+        <Route path="/findings" component={GovernanceFindings} />
+        <Route path="/studio" component={PolicySimulationStudio} />
+        <Route path="/execution" component={ExecutionMonitor} />
+        <Route path="/analytics" component={AnalyticsDeepDive} />
+        <Route path="/reports" component={ReportEvidenceConsole} />
+        <Route component={NotFound} />
+      </Switch>
+    </Layout>
   );
 }
 

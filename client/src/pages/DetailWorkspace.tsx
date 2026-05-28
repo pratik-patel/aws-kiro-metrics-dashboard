@@ -1,0 +1,205 @@
+import { useParams } from "wouter";
+import { ArrowLeft, Download, Zap, Users, AlertTriangle, ChevronRight, Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MOCK_DATA } from "@/lib/mock-data";
+import { Link } from "wouter";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
+
+export default function DetailWorkspace() {
+  const { entityType, entityId } = useParams();
+  
+  // Try to find the entity in mock data
+  let entityName = "Unknown Entity";
+  let parentNav = [];
+  
+  if (entityType === 'cost-center') {
+    const cc = MOCK_DATA.costCenters.find(c => c.id === entityId);
+    if (cc) {
+      entityName = cc.name;
+      parentNav = [{ label: "Cost Centers", href: "/explorer" }];
+    }
+  } else if (entityType === 'team') {
+    const t = MOCK_DATA.teams.find(t => t.id === entityId);
+    if (t) {
+      entityName = t.name;
+    }
+  } else if (entityType === 'engineer') {
+    const e = MOCK_DATA.engineers.find(e => e.id === entityId);
+    if (e) {
+      entityName = e.name;
+    }
+  }
+
+  const scatterData = MOCK_DATA.engineers.map(e => ({
+    name: e.name,
+    consumption: parseFloat(e.consumption.replace('K', '')),
+    days: e.activeDays
+  }));
+
+  return (
+    <div className="flex flex-col h-full animate-in fade-in duration-500">
+      {/* Header Area */}
+      <div className="px-8 pt-8 pb-4 border-b border-white/5 bg-[#0a0f18]">
+        <div className="max-w-[1600px] mx-auto">
+          <div className="flex items-center text-sm text-slate-400 mb-4">
+            <Link href="/explorer" className="hover:text-white transition-colors">Explorer</Link>
+            <ChevronRight className="w-4 h-4 mx-1" />
+            <span className="text-blue-400 capitalize">{entityType?.replace('-', ' ')}</span>
+          </div>
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-white mb-1">{entityName}</h1>
+              <p className="text-slate-400">Detailed performance, consumption, and governance posture.</p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white transition-all shadow-sm">
+                <Download className="w-4 h-4 mr-2" />
+                Export Data
+              </Button>
+              <Link href="/studio">
+                <Button className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/50 shadow-[0_0_20px_rgba(37,99,235,0.2)] transition-all">
+                  <Zap className="w-4 h-4 mr-2" />
+                  Run AI Advisor on Scope
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Subnav */}
+      <div className="px-8 border-b border-white/5 bg-[#0c1220]/50 sticky top-16 z-40 backdrop-blur-md">
+        <div className="max-w-[1600px] mx-auto">
+          <Tabs defaultValue="summary" className="w-full">
+            <TabsList className="bg-transparent border-none p-0 h-auto gap-6 justify-start">
+              {['Summary', 'Consumption', 'Teams', 'Use Cases', 'Models & Tools', 'Findings', 'Evidence'].map(tab => (
+                <TabsTrigger 
+                  key={tab} 
+                  value={tab.toLowerCase().replace(' & ', '-').replace(' ', '-')}
+                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-400 rounded-none px-1 py-4 text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  {tab}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            <div className="py-6 max-w-[1600px] mx-auto">
+              <TabsContent value="summary" className="m-0 space-y-6">
+                {/* Contextual KPIs */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <KPICard title="AI Consumption" value="542K" trend="+8%" />
+                  <KPICard title="Overrun" value="12K" trendDown trend="+1.2%" />
+                  <KPICard title="Active Engineers" value="145" />
+                  <KPICard title="Top Use Case" value="Legacy Mod" isText />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="bg-[#111827] border-white/5 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-medium text-slate-200">Monthly Consumption Trend</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[250px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={MOCK_DATA.dailyTrend.slice(0,7)}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                          <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={12} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                          <YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} />
+                          <RechartsTooltip 
+                            contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                            itemStyle={{ color: '#e2e8f0' }}
+                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                          />
+                          <Bar dataKey="consumption" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-[#111827] border-white/5 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-medium text-slate-200">Consumption vs Active Days</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[250px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                          <XAxis type="number" dataKey="days" name="Active Days" stroke="rgba(255,255,255,0.2)" fontSize={12} />
+                          <YAxis type="number" dataKey="consumption" name="Consumption (K)" stroke="rgba(255,255,255,0.2)" fontSize={12} />
+                          <RechartsTooltip 
+                            cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.2)' }}
+                            contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                          />
+                          <Scatter name="Engineers" data={scatterData} fill="#8b5cf6" />
+                        </ScatterChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Findings Preview */}
+                <Card className="bg-[#111827] border-white/5 shadow-lg">
+                  <div className="bg-gradient-to-r from-red-500/10 to-transparent border-b border-red-500/20 p-4">
+                    <h3 className="font-medium text-red-400 flex items-center">
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Findings for this Scope
+                    </h3>
+                  </div>
+                  <div className="p-0">
+                    <div className="divide-y divide-white/5">
+                      {MOCK_DATA.findings.slice(0, 2).map(finding => (
+                        <div key={finding.id} className="p-4 hover:bg-white/5 transition-colors group cursor-pointer">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-medium text-sm text-slate-200 group-hover:text-blue-400 transition-colors">{finding.title}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                              finding.severity === 'High' ? 'bg-red-500/20 text-red-400' : 
+                              finding.severity === 'Medium' ? 'bg-amber-500/20 text-amber-400' : 
+                              'bg-blue-500/20 text-blue-400'
+                            }`}>
+                              {finding.severity}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 line-clamp-2">{finding.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="consumption" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
+                Consumption detail views will load here.
+              </TabsContent>
+              
+              <TabsContent value="teams" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
+                Ranked team table will load here.
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KPICard({ title, value, trend, trendDown, isText }: any) {
+  return (
+    <Card className="bg-[#111827] border-white/5 shadow-md">
+      <CardContent className="p-5">
+        <p className="text-xs font-medium text-slate-400 mb-2">{title}</p>
+        <div className="flex items-baseline gap-2">
+          <h3 className={`font-semibold text-white ${isText ? 'text-lg truncate' : 'text-2xl'}`}>
+            {value}
+          </h3>
+          {trend && (
+            <span className={`text-xs font-medium ${trendDown ? 'text-amber-400' : 'text-teal-400'}`}>
+              {trend}
+            </span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
