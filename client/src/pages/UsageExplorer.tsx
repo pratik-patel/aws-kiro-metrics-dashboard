@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MOCK_DATA } from "@/lib/mock-data";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
 
 export default function UsageExplorer() {
