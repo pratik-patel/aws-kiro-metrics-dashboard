@@ -15,7 +15,7 @@ const CustomizedTreemapContent = (props: any) => {
         width={width}
         height={height}
         style={{
-          fill: depth < 2 ? payload.fill : "none",
+          fill: depth < 2 ? (payload?.fill || "none") : "none",
           stroke: 'rgba(0,0,0,0.3)',
           strokeWidth: 2 / (depth + 1e-10),
           strokeOpacity: 1 / (depth + 1e-10),
