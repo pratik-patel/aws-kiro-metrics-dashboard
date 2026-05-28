@@ -144,12 +144,108 @@ export default function AnalyticsDeepDive() {
                 </Card>
               </TabsContent>
 
-              {['models-tools', 'use-cases', 'interactions'].map(tab => (
-                <TabsContent key={tab} value={tab} className="m-0 text-center py-20 text-slate-500 bg-[#111827] border border-white/5 rounded-lg shadow-lg">
-                  <BarChart3 className="w-8 h-8 text-slate-700 mx-auto mb-4" />
-                  Detailed visualization for {tab.replace('-', ' ')} will load here.
-                </TabsContent>
-              ))}
+              <TabsContent value="models-tools" className="m-0 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="bg-[#111827] border-white/5 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-medium text-slate-200">Model Mix by Cost Center</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={MOCK_DATA.clientMix} layout="vertical" margin={{ left: 30 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
+                          <XAxis type="number" hide />
+                          <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} width={80} />
+                          <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                          <Bar dataKey="ide" stackId="a" fill="#8b5cf6" name="Claude 4.6" />
+                          <Bar dataKey="cli" stackId="a" fill="#3b82f6" name="GPT-4o" />
+                          <Bar dataKey="plugin" stackId="a" fill="#14b8a6" name="Gemini 1.5" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-[#111827] border-white/5 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-medium text-slate-200">Plugin vs MCP Impact</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={[
+                          { name: 'GitHub', plugin: 125, mcp: 115 },
+                          { name: 'Jira', plugin: 85, mcp: 0 },
+                          { name: 'Browser', plugin: 45, mcp: 0 },
+                          { name: 'DB Schema', plugin: 0, mcp: 90 },
+                        ]} layout="vertical" margin={{ left: 30 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
+                          <XAxis type="number" hide />
+                          <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} width={80} />
+                          <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                          <Bar dataKey="plugin" fill="#6366f1" name="Plugin" />
+                          <Bar dataKey="mcp" fill="#a855f7" name="MCP" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="use-cases" className="m-0 space-y-6">
+                <Card className="bg-[#111827] border-white/5 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-medium text-slate-200">Use Case x Model Heatmap</CardTitle>
+                    <CardDescription className="text-slate-400">Distribution of model usage across different development contexts.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[400px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <XAxis type="category" dataKey="model" name="Model" stroke="rgba(255,255,255,0.2)" fontSize={12} allowDuplicatedCategory={false} />
+                        <YAxis type="category" dataKey="useCase" name="Use Case" stroke="rgba(255,255,255,0.2)" fontSize={12} allowDuplicatedCategory={false} />
+                        <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.2)' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                        <Scatter name="Usage Heat" data={[
+                          { useCase: 'legacy-mod', model: 'Claude 4.6', value: 850 },
+                          { useCase: 'legacy-mod', model: 'GPT-4o', value: 200 },
+                          { useCase: 'legacy-mod', model: 'Gemini 1.5', value: 50 },
+                          { useCase: 'spec-orch', model: 'Claude 4.6', value: 400 },
+                          { useCase: 'spec-orch', model: 'GPT-4o', value: 600 },
+                          { useCase: 'retail-analytics', model: 'Claude 4.6', value: 300 },
+                          { useCase: 'retail-analytics', model: 'Gemini 1.5', value: 700 },
+                          { useCase: 'platform-hard', model: 'Claude 4.6', value: 950 },
+                        ]} fill="#3b82f6" />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="interactions" className="m-0 space-y-6">
+                <Card className="bg-[#111827] border-white/5 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-medium text-slate-200">High-Cost Interactions Cluster</CardTitle>
+                    <CardDescription className="text-slate-400">Prompt length vs Estimated AI Consumption</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[400px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <XAxis type="number" dataKey="chars" name="Prompt Chars" stroke="rgba(255,255,255,0.2)" fontSize={12} unit="k" />
+                        <YAxis type="number" dataKey="consumption" name="Consumption" stroke="rgba(255,255,255,0.2)" fontSize={12} />
+                        <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.2)' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                        <Scatter name="Interactions" data={[
+                          { chars: 14.2, consumption: 27.7, id: 'req-d8d0' },
+                          { chars: 45.1, consumption: 82.4, id: 'req-f4a1' },
+                          { chars: 8.5, consumption: 13.9, id: 'req-d366' },
+                          { chars: 32.4, consumption: 64.1, id: 'req-e2b4' },
+                          { chars: 18.2, consumption: 35.8, id: 'req-c8f9' },
+                        ]} fill="#f59e0b" />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
             </div>
           </Tabs>

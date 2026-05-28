@@ -1,4 +1,5 @@
-import { useParams } from "wouter";
+import { useState } from "react";
+import { useParams, useLocation } from "wouter";
 import { ArrowLeft, Download, Zap, Users, AlertTriangle, ChevronRight, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +8,20 @@ import { MOCK_DATA } from "@/lib/mock-data";
 import { Link } from "wouter";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
 
+import { EvidenceDrawer } from "@/components/EvidenceDrawer";
+
 export default function DetailWorkspace() {
   const { entityType, entityId } = useParams();
+  const [, setLocation] = useLocation();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedInteraction, setSelectedInteraction] = useState<string | null>(null);
+
+  const openEvidence = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedInteraction(id);
+    setDrawerOpen(true);
+  };
+
   
   // Try to find the entity in mock data
   let entityName = "Unknown Entity";
@@ -40,6 +53,11 @@ export default function DetailWorkspace() {
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
+      <EvidenceDrawer 
+        open={drawerOpen} 
+        onOpenChange={setDrawerOpen} 
+        interactionId={selectedInteraction} 
+      />
       {/* Header Area */}
       <div className="px-8 pt-8 pb-4 border-b border-white/5 bg-[#0a0f18]">
         <div className="max-w-[1600px] mx-auto">

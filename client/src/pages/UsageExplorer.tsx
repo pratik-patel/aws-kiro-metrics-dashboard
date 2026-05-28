@@ -6,12 +6,27 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MOCK_DATA } from "@/lib/mock-data";
 import { Link, useLocation } from "wouter";
+import { EvidenceDrawer } from "@/components/EvidenceDrawer";
 
 export default function UsageExplorer() {
   const [, setLocation] = useLocation();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedInteraction, setSelectedInteraction] = useState<string | null>(null);
+
+  const openEvidence = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Prevent row click from navigating
+    setSelectedInteraction(id);
+    setDrawerOpen(true);
+  };
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500">
+      <EvidenceDrawer 
+        open={drawerOpen} 
+        onOpenChange={setDrawerOpen} 
+        interactionId={selectedInteraction} 
+      />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Usage Explorer</h1>
@@ -150,7 +165,9 @@ export default function UsageExplorer() {
                       <td className="px-6 py-4 text-right text-slate-300 font-mono">{int.consumption}</td>
                       <td className="px-6 py-4 text-center">
                         {int.evidence ? (
-                          <Eye className="w-4 h-4 text-teal-400 mx-auto" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-teal-400 hover:text-teal-300 hover:bg-teal-500/10" onClick={(e) => openEvidence(e, int.id)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
                         ) : (
                           <span className="text-slate-600">-</span>
                         )}
