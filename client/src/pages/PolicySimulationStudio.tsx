@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Beaker, Play, Save, History, Settings, ArrowRight, TrendingDown, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 export default function PolicySimulationStudio() {
   const [simulationRun, setSimulationRun] = useState(false);
+  const [advisorMode, setAdvisorMode] = useState("Optimization Recommendations");
   const [levers, setLevers] = useState({
     routingStrictness: 75,
     promptThreshold: 40,
@@ -26,14 +27,41 @@ export default function PolicySimulationStudio() {
     }
   };
 
+  // Adjust parameters based on Advisor Mode
+  useEffect(() => {
+    if (advisorMode === "Optimization Recommendations") {
+      setLevers({ routingStrictness: 75, promptThreshold: 40, utilizationThreshold: 20 });
+    } else if (advisorMode === "Cost Concentration Review") {
+      setLevers({ routingStrictness: 90, promptThreshold: 20, utilizationThreshold: 25 });
+    } else if (advisorMode === "License Hygiene Review") {
+      setLevers({ routingStrictness: 50, promptThreshold: 80, utilizationThreshold: 5 });
+    } else if (advisorMode === "Model Routing Review") {
+      setLevers({ routingStrictness: 95, promptThreshold: 10, utilizationThreshold: 20 });
+    }
+    setSimulationRun(false);
+  }, [advisorMode]);
+
   // Calculate dynamic simulated values based on levers
   const getSimulatedValue = (baseline: number, impactFactor: number) => {
     if (!simulationRun) return baseline;
     
-    // Simple deterministic simulation logic
+    // Determine the base strictness vs prompt impact scale from the specific advisor mode
+    let modeModifier = 1;
+    if (advisorMode === "Optimization Recommendations") {
+      modeModifier = 0.85; 
+    } else if (advisorMode === "Cost Concentration Review") {
+      modeModifier = 0.80;
+    } else if (advisorMode === "License Hygiene Review") {
+      modeModifier = 0.95; // License hygiene doesn't directly impact pure consumption as much
+    } else if (advisorMode === "Model Routing Review") {
+      modeModifier = 0.75; // Heavy impact from model routing changes
+    }
+
+    // Interactive slider modifiers relative to their default values
     const strictnessImpact = (levers.routingStrictness - 50) / 100 * 0.15; // +/- 15%
     const promptImpact = (levers.promptThreshold - 50) / 100 * 0.1; // +/- 10%
-    const totalImpact = impactFactor * (1 - strictnessImpact - promptImpact);
+    
+    const totalImpact = impactFactor * modeModifier * (1 - strictnessImpact - promptImpact);
     
     return Math.max(Math.round(baseline * totalImpact), 0);
   };
@@ -76,11 +104,15 @@ export default function PolicySimulationStudio() {
               <CardContent className="pt-6 space-y-6 flex-1 overflow-y-auto">
                 <div className="space-y-3">
                   <Label className="text-slate-400 text-xs uppercase tracking-wider">Advisor Mode</Label>
-                  <select className="w-full bg-black/40 border border-white/10 rounded-md p-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <option>Optimization Recommendations</option>
-                    <option>Cost Concentration Review</option>
-                    <option>License Hygiene Review</option>
-                    <option>Model Routing Review</option>
+                  <select 
+                    value={advisorMode}
+                    onChange={(e) => setAdvisorMode(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-md p-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="Optimization Recommendations">Optimization Recommendations</option>
+                    <option value="Cost Concentration Review">Cost Concentration Review</option>
+                    <option value="License Hygiene Review">License Hygiene Review</option>
+                    <option value="Model Routing Review">Model Routing Review</option>
                   </select>
                 </div>
                 
@@ -200,17 +232,21 @@ export default function PolicySimulationStudio() {
                 ) : (
                   <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 transition-all duration-500">
                         <p className="text-xs text-blue-400 mb-1 font-medium">Consumption Delta</p>
                         <div className="flex items-baseline gap-2">
-                          <p className="text-xl font-bold text-white font-mono">-172K</p>
+                          <p className="text-xl font-bold text-white font-mono">
+                            -{Math.round(1452 - getSimulatedValue(1452, 1))}K
+                          </p>
                           <TrendingDown className="w-3 h-3 text-teal-400" />
                         </div>
                       </div>
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 transition-all duration-500">
                         <p className="text-xs text-amber-400 mb-1 font-medium">Overrun Delta</p>
                         <div className="flex items-baseline gap-2">
-                          <p className="text-xl font-bold text-white font-mono">-24K</p>
+                          <p className="text-xl font-bold text-white font-mono">
+                            -{Math.round(34.5 - (34.5 * (getSimulatedValue(100, 1) / 100)))}K
+                          </p>
                           <TrendingDown className="w-3 h-3 text-teal-400" />
                         </div>
                       </div>
@@ -219,20 +255,64 @@ export default function PolicySimulationStudio() {
                     <div className="space-y-3">
                       <h4 className="text-sm font-medium text-slate-200">Advisor Recommendations</h4>
                       <div className="space-y-2">
-                        <div className="p-3 bg-black/20 border border-white/5 rounded-lg flex gap-3 items-start">
-                          <CheckCircle2 className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
-                          <div>
-                            <p className="text-sm text-slate-200">Enforce Claude Haiku routing for routine text tasks.</p>
-                            <p className="text-xs text-slate-400 mt-1">Saves est. 85K in AI Delivery Acceleration.</p>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-black/20 border border-white/5 rounded-lg flex gap-3 items-start">
-                          <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                          <div>
-                            <p className="text-sm text-slate-200">Review 45 low-utilization seats in Retail Intelligence.</p>
-                            <p className="text-xs text-slate-400 mt-1">Potential license hygiene improvement.</p>
-                          </div>
-                        </div>
+                        {advisorMode === "Optimization Recommendations" && (
+                          <>
+                            <div className="p-3 bg-black/20 border border-white/5 rounded-lg flex gap-3 items-start">
+                              <CheckCircle2 className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-sm text-slate-200">Enforce Claude Haiku routing for routine text tasks.</p>
+                                <p className="text-xs text-slate-400 mt-1">Saves est. 85K in AI Delivery Acceleration.</p>
+                              </div>
+                            </div>
+                            <div className="p-3 bg-black/20 border border-white/5 rounded-lg flex gap-3 items-start">
+                              <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-sm text-slate-200">Cap max tokens on spec-orchestration endpoints.</p>
+                                <p className="text-xs text-slate-400 mt-1">Mitigates prompt bloat in top 5% of requests.</p>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {advisorMode === "Cost Concentration Review" && (
+                          <>
+                            <div className="p-3 bg-black/20 border border-white/5 rounded-lg flex gap-3 items-start">
+                              <CheckCircle2 className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-sm text-slate-200">Implement hard budget limits for Payments Trans.</p>
+                                <p className="text-xs text-slate-400 mt-1">Current trajectory exceeds monthly cap by 15%.</p>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {advisorMode === "License Hygiene Review" && (
+                          <>
+                            <div className="p-3 bg-black/20 border border-white/5 rounded-lg flex gap-3 items-start">
+                              <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-sm text-slate-200">Review 45 low-utilization seats in Retail Intelligence.</p>
+                                <p className="text-xs text-slate-400 mt-1">Potential license hygiene improvement.</p>
+                              </div>
+                            </div>
+                            <div className="p-3 bg-black/20 border border-white/5 rounded-lg flex gap-3 items-start">
+                              <CheckCircle2 className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-sm text-slate-200">Downgrade 120 IDE plugin users to CLI tier.</p>
+                                <p className="text-xs text-slate-400 mt-1">Based on feature utilization tracking.</p>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {advisorMode === "Model Routing Review" && (
+                          <>
+                            <div className="p-3 bg-black/20 border border-white/5 rounded-lg flex gap-3 items-start">
+                              <CheckCircle2 className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-sm text-slate-200">Shift 80% of legacy-mod tasks to GPT-4o Mini.</p>
+                                <p className="text-xs text-slate-400 mt-1">Performance parity maintained while reducing cost 60%.</p>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
