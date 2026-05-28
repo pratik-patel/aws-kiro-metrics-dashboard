@@ -168,8 +168,103 @@ export default function UsageExplorer() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="teams" className="mt-6 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
-          Select Teams from the tabs above to explore hierarchy.
+        <TabsContent value="teams" className="mt-6">
+          <Card className="bg-[#111827] border-white/5 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-400 bg-black/40 uppercase border-b border-white/5">
+                  <tr>
+                    <th className="px-6 py-4 font-medium">Team</th>
+                    <th className="px-6 py-4 font-medium">Cost Center</th>
+                    <th className="px-6 py-4 font-medium text-right">AI Consumption</th>
+                    <th className="px-6 py-4 font-medium text-right">Active Eng.</th>
+                    <th className="px-6 py-4 font-medium">Top Engineer</th>
+                    <th className="px-6 py-4 font-medium">Top Channel</th>
+                    <th className="px-6 py-4 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {MOCK_DATA.teams.map((team) => (
+                    <tr key={team.id} className="hover:bg-white/[0.02] transition-colors cursor-pointer group" onClick={() => setLocation(`/detail/team/${team.id}`)}>
+                      <td className="px-6 py-4 font-medium text-slate-200">{team.name}</td>
+                      <td className="px-6 py-4 text-slate-400">{team.costCenter}</td>
+                      <td className="px-6 py-4 text-right text-slate-300 font-mono">{team.consumption}</td>
+                      <td className="px-6 py-4 text-right text-slate-300">{team.activeEngineers}</td>
+                      <td className="px-6 py-4 text-slate-400">{team.topEngineer}</td>
+                      <td className="px-6 py-4 text-slate-400"><Badge>{team.topChannel}</Badge></td>
+                      <td className="px-6 py-4 text-right">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all">
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="models" className="mt-6">
+          <Card className="bg-[#111827] border-white/5 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-400 bg-black/40 uppercase border-b border-white/5">
+                  <tr>
+                    <th className="px-6 py-4 font-medium">Model</th>
+                    <th className="px-6 py-4 font-medium text-right">AI Consumption</th>
+                    <th className="px-6 py-4 font-medium text-right">Interactions</th>
+                    <th className="px-6 py-4 font-medium">Top Cost Centers</th>
+                    <th className="px-6 py-4 font-medium">Top Use Cases</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {MOCK_DATA.models?.map((model) => (
+                    <tr key={model.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 font-medium text-slate-200">{model.name}</td>
+                      <td className="px-6 py-4 text-right text-slate-300 font-mono">{model.consumption}</td>
+                      <td className="px-6 py-4 text-right text-slate-300 font-mono">{model.interactions.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-slate-400">{model.topCostCenters}</td>
+                      <td className="px-6 py-4 text-slate-400"><Badge>{model.topUseCases}</Badge></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tools" className="mt-6">
+          <Card className="bg-[#111827] border-white/5 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-400 bg-black/40 uppercase border-b border-white/5">
+                  <tr>
+                    <th className="px-6 py-4 font-medium">Tool</th>
+                    <th className="px-6 py-4 font-medium">Type</th>
+                    <th className="px-6 py-4 font-medium text-right">AI Consumption</th>
+                    <th className="px-6 py-4 font-medium text-right">Interactions</th>
+                    <th className="px-6 py-4 font-medium">Top Cost Center</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {MOCK_DATA.tools?.map((tool) => (
+                    <tr key={tool.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 font-medium text-slate-200">{tool.name}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${tool.type === 'Plugin' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20'}`}>
+                          {tool.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right text-slate-300 font-mono">{tool.consumption}</td>
+                      <td className="px-6 py-4 text-right text-slate-300 font-mono">{tool.interactions.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-slate-400">{tool.topCostCenters}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

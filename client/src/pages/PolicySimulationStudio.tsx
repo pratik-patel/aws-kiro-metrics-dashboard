@@ -8,9 +8,34 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 export default function PolicySimulationStudio() {
   const [simulationRun, setSimulationRun] = useState(false);
+  const [levers, setLevers] = useState({
+    routingStrictness: 75,
+    promptThreshold: 40,
+    utilizationThreshold: 20
+  });
 
   const handleRunSimulation = () => {
     setSimulationRun(true);
+  };
+
+  const updateLever = (key: keyof typeof levers, value: string) => {
+    setLevers(prev => ({ ...prev, [key]: parseInt(value) }));
+    // In a real app, this might trigger a recalculation
+    if (simulationRun) {
+      setSimulationRun(false); // Reset to encourage re-running
+    }
+  };
+
+  // Calculate dynamic simulated values based on levers
+  const getSimulatedValue = (baseline: number, impactFactor: number) => {
+    if (!simulationRun) return baseline;
+    
+    // Simple deterministic simulation logic
+    const strictnessImpact = (levers.routingStrictness - 50) / 100 * 0.15; // +/- 15%
+    const promptImpact = (levers.promptThreshold - 50) / 100 * 0.1; // +/- 10%
+    const totalImpact = impactFactor * (1 - strictnessImpact - promptImpact);
+    
+    return Math.max(Math.round(baseline * totalImpact), 0);
   };
 
   return (
@@ -65,25 +90,46 @@ export default function PolicySimulationStudio() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <Label className="text-sm text-slate-300">Model Routing Strictness</Label>
-                      <span className="text-xs text-blue-400 font-mono">High</span>
+                      <span className="text-xs text-blue-400 font-mono">{levers.routingStrictness}%</span>
                     </div>
-                    <input type="range" min="1" max="100" defaultValue="75" className="w-full accent-blue-500" />
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="100" 
+                      value={levers.routingStrictness}
+                      onChange={(e) => updateLever('routingStrictness', e.target.value)}
+                      className="w-full accent-blue-500" 
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <Label className="text-sm text-slate-300">Prompt-Size Threshold</Label>
-                      <span className="text-xs text-blue-400 font-mono">8k chars</span>
+                      <span className="text-xs text-blue-400 font-mono">{levers.promptThreshold}k chars</span>
                     </div>
-                    <input type="range" min="1" max="100" defaultValue="40" className="w-full accent-blue-500" />
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="100" 
+                      value={levers.promptThreshold}
+                      onChange={(e) => updateLever('promptThreshold', e.target.value)}
+                      className="w-full accent-blue-500" 
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <Label className="text-sm text-slate-300">Low-Utilization Threshold</Label>
-                      <span className="text-xs text-blue-400 font-mono">&lt; 5 days/mo</span>
+                      <span className="text-xs text-blue-400 font-mono">&lt; {Math.round(levers.utilizationThreshold / 4)} days/mo</span>
                     </div>
-                    <input type="range" min="1" max="100" defaultValue="20" className="w-full accent-blue-500" />
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="100" 
+                      value={levers.utilizationThreshold}
+                      onChange={(e) => updateLever('utilizationThreshold', e.target.value)}
+                      className="w-full accent-blue-500" 
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -118,10 +164,10 @@ export default function PolicySimulationStudio() {
                 <div className="h-[300px] mt-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={[
-                      { name: "Payments Trans.", baseline: 542, simulated: simulationRun ? 480 : 542 },
-                      { name: "AI Del. Accel.", baseline: 480, simulated: simulationRun ? 410 : 480 },
-                      { name: "Platform Rel.", baseline: 245, simulated: simulationRun ? 230 : 245 },
-                      { name: "Retail Intel.", baseline: 185, simulated: simulationRun ? 160 : 185 },
+                      { name: "Payments Trans.", baseline: 542, simulated: getSimulatedValue(542, 0.88) },
+                      { name: "AI Del. Accel.", baseline: 480, simulated: getSimulatedValue(480, 0.85) },
+                      { name: "Platform Rel.", baseline: 245, simulated: getSimulatedValue(245, 0.94) },
+                      { name: "Retail Intel.", baseline: 185, simulated: getSimulatedValue(185, 0.86) },
                     ]}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                       <XAxis dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={11} />

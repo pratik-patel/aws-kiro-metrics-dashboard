@@ -1,17 +1,94 @@
-import { FileText, Download, Share, FileSignature, CheckCircle2, AlertTriangle, Zap, Eye } from "lucide-react";
+import { useState } from "react";
+import { FileText, Download, Share, FileSignature, CheckCircle2, AlertTriangle, Zap, Eye, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 
 export default function ReportEvidenceConsole() {
-  const reports = [
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [reportsList, setReportsList] = useState([
     { id: "REP-9182", title: "Enterprise AI Optimization Plan", scope: "Global", audience: "Executive Sponsor", date: "Today, 10:45 AM", status: "Generated" },
     { id: "REP-9181", title: "Payments Transformation Risk Review", scope: "Cost Center: cc-4101", audience: "Delivery Manager", date: "Yesterday, 2:30 PM", status: "Generated" },
     { id: "REP-9180", title: "Model Routing & Hygiene Audit", scope: "Global", audience: "Architect", date: "May 25, 2026", status: "Generated" },
     { id: "REP-9179", title: "Retail Intelligence Q1 Review", scope: "Cost Center: cc-4204", audience: "Executive Sponsor", date: "May 20, 2026", status: "Stale" }
-  ];
+  ]);
+
+  const handleGenerate = () => {
+    setIsGenerating(true);
+    setTimeout(() => {
+      setIsGenerating(false);
+      setShowGenerateModal(false);
+      // Add the new report to the top of the list
+      setReportsList(prev => [
+        {
+          id: `REP-${Math.floor(Math.random() * 1000) + 9000}`,
+          title: "New Strategic Report",
+          scope: "Global",
+          audience: "Executive Sponsor",
+          date: "Just now",
+          status: "Generated"
+        },
+        ...prev
+      ]);
+    }, 2000);
+  };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="p-8 max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500 relative">
+      {/* Generate Report Modal */}
+      {showGenerateModal && (
+        <div className="fixed inset-0 bg-[#0B1120]/80 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in duration-200">
+          <Card className="w-full max-w-lg bg-[#121A2B] border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 border-b border-white/5 bg-black/20">
+              <h3 className="font-semibold text-white">Generate Strategic Report</h3>
+              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" onClick={() => setShowGenerateModal(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Report Scope</Label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-md p-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                  <option>Global (Enterprise Wide)</option>
+                  <option>Payments Transformation (cc-4101)</option>
+                  <option>AI Delivery Acceleration (cc-4102)</option>
+                  <option>Platform Reliability (cc-4308)</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Target Audience</Label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-md p-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                  <option>Executive Sponsor</option>
+                  <option>Delivery Manager</option>
+                  <option>Enterprise Architect</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Reporting Period</Label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-md p-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                  <option>Last 30 Days</option>
+                  <option>Current Quarter (Q2)</option>
+                  <option>Year to Date</option>
+                </select>
+              </div>
+            </div>
+            <div className="p-4 border-t border-white/5 bg-black/20 flex justify-end gap-3">
+              <Button variant="outline" className="bg-transparent border-white/10 text-slate-300 hover:bg-white/5 hover:text-white" onClick={() => setShowGenerateModal(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.2)] w-32"
+                onClick={handleGenerate}
+                disabled={isGenerating}
+              >
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Generate"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Report & Evidence Console</h1>
@@ -22,7 +99,10 @@ export default function ReportEvidenceConsole() {
             <Share className="w-4 h-4 mr-2" />
             Share Hub
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/50 shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+          <Button 
+            className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/50 shadow-[0_0_20px_rgba(37,99,235,0.2)]"
+            onClick={() => setShowGenerateModal(true)}
+          >
             <FileText className="w-4 h-4 mr-2" />
             Generate New Report
           </Button>
@@ -48,7 +128,7 @@ export default function ReportEvidenceConsole() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {reports.map((rep) => (
+                  {reportsList.map((rep) => (
                     <tr key={rep.id} className="hover:bg-white/[0.02] transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">

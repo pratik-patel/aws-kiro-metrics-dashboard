@@ -169,12 +169,136 @@ export default function DetailWorkspace() {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="consumption" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
-                Consumption detail views will load here.
+              <TabsContent value="consumption" className="m-0 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="bg-[#111827] border-white/5 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-medium text-slate-200">Monthly AI Consumption</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={MOCK_DATA.dailyTrend}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                          <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={12} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                          <YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} />
+                          <RechartsTooltip 
+                            contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                            itemStyle={{ color: '#e2e8f0' }}
+                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                          />
+                          <Bar dataKey="consumption" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-[#111827] border-white/5 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-medium text-slate-200">Client Type Mix</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={MOCK_DATA.clientMix.slice(0, 1)} layout="vertical" margin={{ left: 30 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
+                          <XAxis type="number" hide />
+                          <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} width={80} />
+                          <RechartsTooltip 
+                            contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                            itemStyle={{ color: '#e2e8f0' }}
+                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                          />
+                          <Bar dataKey="ide" stackId="a" fill="#3b82f6" name="IDE" />
+                          <Bar dataKey="cli" stackId="a" fill="#8b5cf6" name="CLI" />
+                          <Bar dataKey="plugin" stackId="a" fill="#14b8a6" name="Plugin" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
               
-              <TabsContent value="teams" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
-                Ranked team table will load here.
+              <TabsContent value="teams" className="m-0 space-y-6">
+                <Card className="bg-[#111827] border-white/5 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-400 bg-black/40 uppercase border-b border-white/5">
+                        <tr>
+                          <th className="px-6 py-4 font-medium">Team</th>
+                          <th className="px-6 py-4 font-medium text-right">AI Consumption</th>
+                          <th className="px-6 py-4 font-medium text-right">Active Eng.</th>
+                          <th className="px-6 py-4 font-medium">Top Engineer</th>
+                          <th className="px-6 py-4 font-medium">Top Channel</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {MOCK_DATA.teams.map((team) => (
+                          <tr key={team.id} className="hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => setLocation(`/detail/team/${team.id}`)}>
+                            <td className="px-6 py-4 font-medium text-slate-200">{team.name}</td>
+                            <td className="px-6 py-4 text-right text-slate-300 font-mono">{team.consumption}</td>
+                            <td className="px-6 py-4 text-right text-slate-300">{team.activeEngineers}</td>
+                            <td className="px-6 py-4 text-slate-400">{team.topEngineer}</td>
+                            <td className="px-6 py-4 text-slate-400">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                                {team.topChannel}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="engineers" className="m-0 space-y-6">
+                 <Card className="bg-[#111827] border-white/5 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-400 bg-black/40 uppercase border-b border-white/5">
+                        <tr>
+                          <th className="px-6 py-4 font-medium">Engineer</th>
+                          <th className="px-6 py-4 font-medium text-right">AI Consumption</th>
+                          <th className="px-6 py-4 font-medium text-right">Active Days</th>
+                          <th className="px-6 py-4 font-medium">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {MOCK_DATA.engineers.map((eng) => (
+                          <tr key={eng.id} className="hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => setLocation(`/detail/engineer/${eng.id}`)}>
+                            <td className="px-6 py-4 font-medium text-slate-200">{eng.name}</td>
+                            <td className="px-6 py-4 text-right text-slate-300 font-mono">{eng.consumption}</td>
+                            <td className="px-6 py-4 text-right text-slate-300">{eng.activeDays}</td>
+                            <td className="px-6 py-4">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                                {eng.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="use-cases" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
+                Use case views will load here.
+              </TabsContent>
+
+              <TabsContent value="models-tools" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
+                Models and Tools views will load here.
+              </TabsContent>
+
+              <TabsContent value="findings" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
+                Findings detail view will load here.
+              </TabsContent>
+              
+              <TabsContent value="evidence" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
+                Evidence view will load here.
+              </TabsContent>
+              
+              <TabsContent value="reports" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
+                Reports view will load here.
               </TabsContent>
             </div>
           </Tabs>

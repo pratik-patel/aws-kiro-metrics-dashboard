@@ -33,6 +33,20 @@ export const MOCK_DATA = {
     { id: "req-d8d05ef11e2b", convId: "conv-646ebceb1b", engineer: "Aisha Khan", costCenter: "AI Delivery Acceleration", useCase: "spec-orchestration", model: "Claude_Sonnet_4.6", plugin: "Jira", mcp: "No MCP Invoked", consumption: "27.73", evidence: true },
     { id: "req-7653a608668f", convId: "conv-68ac4a536a", engineer: "Elena Garcia", costCenter: "Platform Reliability", useCase: "platform-hardening", model: "Claude_Sonnet_4.6", plugin: "AWS Docs", mcp: "No MCP Invoked", consumption: "4.91", evidence: true }
   ],
+  models: [
+    { id: "m-1", name: "Claude_Sonnet_4.6", consumption: "420K", interactions: 15420, topCostCenters: "Payments Transformation, Retail Intelligence", topUseCases: "legacy-modernization" },
+    { id: "m-2", name: "Claude_Opus_4.6", consumption: "350K", interactions: 2150, topCostCenters: "Platform Reliability", topUseCases: "platform-hardening" },
+    { id: "m-3", name: "Auto", consumption: "245K", interactions: 8500, topCostCenters: "AI Delivery Acceleration", topUseCases: "retail-analytics" },
+    { id: "m-4", name: "Claude_Haiku_4.6", consumption: "185K", interactions: 32000, topCostCenters: "Payments Transformation", topUseCases: "spec-orchestration" }
+  ],
+  tools: [
+    { id: "tl-1", name: "GitHub", type: "Plugin", consumption: "125K", interactions: 4500, topCostCenters: "AI Delivery Acceleration" },
+    { id: "tl-2", name: "Jira", type: "Plugin", consumption: "85K", interactions: 3200, topCostCenters: "Payments Transformation" },
+    { id: "tl-3", name: "Browser", type: "Plugin", consumption: "45K", interactions: 12000, topCostCenters: "Retail Intelligence" },
+    { id: "tl-4", name: "AWS Docs", type: "Plugin", consumption: "25K", interactions: 1800, topCostCenters: "Platform Reliability" },
+    { id: "tl-5", name: "github", type: "MCP", consumption: "115K", interactions: 2800, topCostCenters: "AI Delivery Acceleration" },
+    { id: "tl-6", name: "database-schema", type: "MCP", consumption: "90K", interactions: 1500, topCostCenters: "Payments Transformation" }
+  ],
   dailyTrend: [
     { date: "2026-04-01", consumption: 420 },
     { date: "2026-04-02", consumption: 480 },
