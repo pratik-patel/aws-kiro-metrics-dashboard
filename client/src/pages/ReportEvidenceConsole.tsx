@@ -51,9 +51,9 @@ export default function ReportEvidenceConsole() {
                 <Label className="text-slate-300">Report Scope</Label>
                 <select className="w-full bg-black/40 border border-white/10 rounded-md p-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500">
                   <option>Global (Enterprise Wide)</option>
-                  <option>Payments Transformation (cc-4101)</option>
-                  <option>AI Delivery Acceleration (cc-4102)</option>
-                  <option>Platform Reliability (cc-4308)</option>
+                  <option>Payments Transformation (cc-payments)</option>
+                  <option>AI Delivery Acceleration (cc-ai-delivery)</option>
+                  <option>Platform Reliability (cc-platform)</option>
                 </select>
               </div>
               <div className="space-y-2">

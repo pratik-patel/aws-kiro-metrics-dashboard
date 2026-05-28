@@ -2,10 +2,12 @@ import { ArrowUpRight, Zap, Users, AlertTriangle, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MOCK_DATA } from "@/lib/mock-data";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, Legend, Treemap } from 'recharts';
 
 export default function GovernanceOverview() {
+  const [, setLocation] = useLocation();
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Above-the-fold structure */}
@@ -50,18 +52,19 @@ export default function GovernanceOverview() {
           title="Top Cost Centers" 
           metric="Payments Transformation" 
           desc="Driving 37% of total enterprise consumption."
-          href="/detail/cost-center/cc-4101"
+          href="/detail/cost-center/cc-payments"
         />
         <IntelligenceTile 
           title="Top Teams" 
           metric="AI SDLC Enablement" 
           desc="Highest week-over-week growth (+18%)."
-          href="/detail/team/t-2"
+          href="/detail/team/t-sdlc"
         />
         <IntelligenceTile 
           title="Top Use Cases" 
           metric="Legacy Modernization" 
           desc="Accounting for 42% of all Claude Opus 4.6 usage."
+          href="/detail/cost-center/cc-legacy"
         />
         <IntelligenceTile 
           title="Top Risk Signals" 
@@ -178,12 +181,12 @@ export default function GovernanceOverview() {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {MOCK_DATA.engineers.slice(0, 5).map((eng, idx) => (
-                      <tr key={eng.id} className="hover:bg-white/[0.02] transition-colors">
+                      <tr key={eng.id} className="hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => setLocation(`/detail/engineer/${eng.id}`)}>
                         <td className="px-6 py-3 font-medium text-slate-200 flex items-center gap-2">
                           <span className="text-slate-500 font-mono text-xs w-4">{idx + 1}.</span>
                           {eng.name}
                         </td>
-                        <td className="px-6 py-3 text-slate-400">{eng.team}</td>
+                        <td className="px-6 py-3 text-slate-400 hover:text-blue-400 transition-colors" onClick={(e) => { e.stopPropagation(); setLocation(`/detail/team/${eng.team.replace(/\s+/g, '-').toLowerCase()}`); }}>{eng.team}</td>
                         <td className="px-6 py-3 text-right text-slate-300 font-mono font-medium">{eng.consumption}</td>
                         <td className="px-6 py-3 text-right text-slate-400">{eng.activeDays}</td>
                       </tr>
