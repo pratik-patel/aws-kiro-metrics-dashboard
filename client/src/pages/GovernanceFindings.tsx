@@ -1,10 +1,26 @@
+import { useState } from "react";
 import { AlertTriangle, CheckCircle, ShieldAlert, Zap, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MOCK_DATA } from "@/lib/mock-data";
+import { EvidenceDrawer } from "@/components/EvidenceDrawer";
+import { Link } from "wouter";
 
 export default function GovernanceFindings() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedInteraction, setSelectedInteraction] = useState<string | null>(null);
+
+  const openEvidence = (id: string) => {
+    setSelectedInteraction(id);
+    setDrawerOpen(true);
+  };
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500">
+      <EvidenceDrawer 
+        open={drawerOpen} 
+        onOpenChange={setDrawerOpen} 
+        interactionId={selectedInteraction} 
+      />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Governance Findings</h1>
@@ -53,14 +69,20 @@ export default function GovernanceFindings() {
             </div>
 
             <div className="flex flex-col justify-center gap-3 md:min-w-[200px] border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6">
-              <Button variant="outline" className="w-full justify-start bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start bg-black/20 border-white/10 hover:bg-white/5 hover:text-white"
+                onClick={() => openEvidence('req-d8d0')}
+              >
                 <ExternalLink className="w-4 h-4 mr-2 text-slate-400" />
                 View Evidence
               </Button>
-              <Button className="w-full justify-start bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20">
-                <Zap className="w-4 h-4 mr-2" />
-                Run Advisor
-              </Button>
+              <Link href="/monitor">
+                <Button className="w-full justify-start bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20">
+                  <Zap className="w-4 h-4 mr-2" />
+                  Run Advisor
+                </Button>
+              </Link>
             </div>
           </div>
         ))}

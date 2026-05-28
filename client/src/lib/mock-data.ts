@@ -65,6 +65,11 @@ export const MOCK_DATA = {
     { name: "Platform Reliability", ide: 40, cli: 55, plugin: 5 },
     { name: "Retail Intelligence", ide: 50, cli: 10, plugin: 40 }
   ],
+  reports: [
+    { id: 'rep-1', title: 'Q2 Core Engineering AI Review', scope: 'Core Engineering', audience: 'Executive Sponsor', createdAt: '2026-05-28 09:00', status: 'Completed' },
+    { id: 'rep-2', title: 'Data Science Model Routing Optimization', scope: 'Data Science', audience: 'Architect', createdAt: '2026-05-27 14:30', status: 'Completed' },
+    { id: 'rep-3', title: 'Retail App License Hygiene', scope: 'Retail App Team', audience: 'Delivery Manager', createdAt: '2026-05-28 16:45', status: 'Processing' }
+  ],
   findings: [
     { id: "f-1", title: "High Spend Concentration", severity: "High", scope: "Cost Center", description: "Top 5% of engineers drive 45% of AI consumption in Payments Transformation.", category: "Spend Concentration" },
     { id: "f-2", title: "Low Seat Utilization", severity: "Medium", scope: "Team", description: "12 engineers in Retail Analytics Team have < 3 active days this month.", category: "Low-Utilization Seats" },

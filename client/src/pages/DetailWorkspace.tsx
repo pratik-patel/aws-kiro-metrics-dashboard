@@ -308,15 +308,100 @@ export default function DetailWorkspace() {
               </TabsContent>
 
               <TabsContent value="findings" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
-                Findings detail view will load here.
+                <div className="text-left px-4">
+                  <div className="divide-y divide-white/5">
+                    {MOCK_DATA.findings.map(finding => (
+                      <div key={finding.id} className="p-4 hover:bg-white/5 transition-colors group cursor-pointer" onClick={(e) => openEvidence(e, finding.id)}>
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-medium text-sm text-slate-200 group-hover:text-blue-400 transition-colors">{finding.title}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                            finding.severity === 'High' ? 'bg-red-500/20 text-red-400' : 
+                            finding.severity === 'Medium' ? 'bg-amber-500/20 text-amber-400' : 
+                            'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {finding.severity}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 line-clamp-2">{finding.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </TabsContent>
               
               <TabsContent value="evidence" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
-                Evidence view will load here.
+                 <div className="overflow-x-auto text-left">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-slate-400 bg-black/40 uppercase border-b border-white/5">
+                      <tr>
+                        <th className="px-6 py-4 font-medium">Request ID</th>
+                        <th className="px-6 py-4 font-medium">Engineer</th>
+                        <th className="px-6 py-4 font-medium">Use Case</th>
+                        <th className="px-6 py-4 font-medium text-right">Consumption</th>
+                        <th className="px-6 py-4 font-medium text-center">Evidence</th>
+                        <th className="px-6 py-4 font-medium text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {MOCK_DATA.interactions.map((int) => (
+                        <tr key={int.id} className="hover:bg-white/[0.02] transition-colors cursor-pointer group" onClick={(e) => openEvidence(e, int.id)}>
+                          <td className="px-6 py-4 font-mono text-xs text-blue-400">{int.id.substring(0,12)}...</td>
+                          <td className="px-6 py-4 font-medium text-slate-200">{int.engineer}</td>
+                          <td className="px-6 py-4 text-slate-400">{int.useCase}</td>
+                          <td className="px-6 py-4 text-right text-slate-300 font-mono">{int.consumption}</td>
+                          <td className="px-6 py-4 text-center">
+                            {int.evidence ? (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-teal-400 hover:text-teal-300 hover:bg-teal-500/10" onClick={(e) => openEvidence(e, int.id)}>
+                                <Activity className="w-4 h-4" />
+                              </Button>
+                            ) : (
+                              <span className="text-slate-600">-</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all">
+                              <ChevronRight className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </TabsContent>
               
               <TabsContent value="reports" className="m-0 text-center py-12 text-slate-500 bg-[#111827] border border-white/5 rounded-lg">
-                Reports view will load here.
+                <div className="px-8 text-left">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+                     <h3 className="font-medium text-slate-200">Generated Reports for this Scope</h3>
+                     <Link href="/reports">
+                      <Button variant="outline" className="bg-black/20 hover:bg-white/5 border-white/10 hover:text-white text-sm h-8">
+                        View All
+                      </Button>
+                     </Link>
+                  </div>
+                  <div className="space-y-4">
+                     {MOCK_DATA.reports.slice(0, 2).map((report) => (
+                      <div key={report.id} className="bg-black/20 border border-white/5 rounded-lg p-4 flex justify-between items-center group hover:bg-white/[0.02] transition-colors cursor-pointer">
+                        <div>
+                           <div className="flex items-center gap-2 mb-1">
+                             <span className="text-slate-200 font-medium">{report.title}</span>
+                             <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                                report.status === 'Completed' ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20' : 
+                                'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                              }`}>
+                                {report.status}
+                             </span>
+                           </div>
+                           <p className="text-xs text-slate-400">Generated: {report.createdAt} • Audience: {report.audience}</p>
+                        </div>
+                        <Button variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          Download
+                        </Button>
+                      </div>
+                     ))}
+                  </div>
+                </div>
               </TabsContent>
             </div>
           </Tabs>
