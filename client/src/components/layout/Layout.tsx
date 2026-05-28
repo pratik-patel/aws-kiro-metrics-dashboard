@@ -14,6 +14,7 @@ import {
   Menu
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CommandPalette } from "@/components/CommandPalette";
 
 interface LayoutProps {
   children: ReactNode;
@@ -115,6 +116,7 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
+      <CommandPalette />
     </div>
   );
 }
