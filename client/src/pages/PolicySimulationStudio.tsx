@@ -309,8 +309,8 @@ export default function PolicySimulationStudio() {
                         )}
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
               {simulationRun && (
                 <div className="p-4 border-t border-white/5 bg-black/20">
