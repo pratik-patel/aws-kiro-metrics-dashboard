@@ -5,6 +5,42 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, BarChart, Bar, Legend, Treemap, ScatterChart, Scatter } from "recharts";
 import { MOCK_DATA } from "@/lib/mock-data";
 
+// Custom Treemap Content to ensure text visibility
+const CustomizedTreemapContent = (props: any) => {
+  const { root, depth, x, y, width, height, index, payload, colors, rank, name } = props;
+
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        style={{
+          fill: depth < 2 ? payload.fill : "none",
+          stroke: 'rgba(255,255,255,0.1)',
+          strokeWidth: 2 / (depth + 1e-10),
+          strokeOpacity: 1 / (depth + 1e-10),
+        }}
+      />
+      {
+        width > 50 && height > 30 && (
+          <text
+            x={x + width / 2}
+            y={y + height / 2}
+            textAnchor="middle"
+            fill="#f8fafc"
+            fontSize={12}
+            fontWeight="500"
+          >
+            {name}
+          </text>
+        )
+      }
+    </g>
+  );
+};
+
 export default function AnalyticsDeepDive() {
   const scatterData = MOCK_DATA.engineers.map(e => ({
     name: e.name,
@@ -93,6 +129,7 @@ export default function AnalyticsDeepDive() {
                           dataKey="size"
                           aspectRatio={4 / 3}
                           stroke="rgba(255,255,255,0.1)"
+                          content={<CustomizedTreemapContent />}
                         >
                           <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} />
                         </Treemap>
