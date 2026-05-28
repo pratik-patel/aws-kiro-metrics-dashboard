@@ -118,48 +118,33 @@ export function EvidenceDrawer({ open, onOpenChange, interactionId }: EvidenceDr
                 </div>
 
                 <TabsContent value="chat" className="m-0 space-y-6">
-                  <div className="space-y-4">
-                    {/* User Prompt */}
-                    <div className="flex gap-4">
-                      <div className="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-blue-400">AK</span>
-                      </div>
-                      <div className="flex-1 bg-[#121A2B] border border-white/5 rounded-2xl rounded-tl-none p-4 shadow-sm">
-                        <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
-                          Can you take a look at the attached JIRA ticket (PAY-821) and generate the full OpenAPI specification for the new payment reconciliation endpoint? I also need the boilerplate Go code for the handler and the database migration script for Postgres.
-                          
-                          Make sure to include all the error responses as well.
+                  <div className="bg-[#121A2B] border border-white/5 rounded-xl p-5 shadow-lg">
+                    <h3 className="text-sm font-medium text-slate-300 mb-4 uppercase tracking-wider flex items-center">
+                      <MessagesSquare className="w-4 h-4 mr-2" /> Chat Evidence
+                    </h3>
+                    <div className="space-y-4">
+                      {/* User Prompt */}
+                      <div className="bg-black/30 border border-white/5 rounded-lg p-4">
+                        <p className="text-xs font-semibold text-blue-400 mb-2">User Prompt</p>
+                        <p className="text-sm text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">
+                          We need to refactor the legacy payment processing module to use the new spec orchestration engine. Please review the attached Jira ticket (PAY-142) and generate the full architectural update strategy, including all interface changes for the API gateway and the required database schema migrations for Postgres.
                         </p>
-                        <div className="mt-3 flex gap-2">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
-                            Attached Context: 14.2k chars
-                          </span>
+                        <div className="flex justify-end mt-2">
+                          <Button variant="ghost" size="sm" className="h-6 text-xs text-slate-500 hover:text-white">
+                            <Copy className="w-3 h-3 mr-1" /> Copy
+                          </Button>
                         </div>
                       </div>
-                    </div>
 
-                    {/* AI Response */}
-                    <div className="flex gap-4 flex-row-reverse">
-                      <div className="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-                        <Zap className="w-4 h-4 text-indigo-400" />
-                      </div>
-                      <div className="flex-1 bg-[#182235] border border-white/5 rounded-2xl rounded-tr-none p-4 shadow-sm">
-                        <p className="text-sm text-slate-300 leading-relaxed mb-4">
-                          I've reviewed PAY-821. Based on the requirements for the new payment reconciliation endpoint, here is the OpenAPI specification, Go handler, and migration script.
+                      {/* Assistant Response */}
+                      <div className="bg-[#1E2A40]/50 border border-blue-500/10 rounded-lg p-4 relative">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
+                        <p className="text-xs font-semibold text-slate-400 mb-2">Assistant Response (Claude_Sonnet_4.6)</p>
+                        <p className="text-sm text-slate-300 font-mono whitespace-pre-wrap leading-relaxed opacity-80">
+                          Based on Jira ticket PAY-142, here is the architectural update strategy for migrating the legacy payment processing module to the spec orchestration engine...
+
+[Response truncated for preview. Full response was 2.1k tokens.]
                         </p>
-                        <div className="bg-[#0B1120] border border-white/10 rounded-lg p-3 overflow-x-auto">
-                          <pre className="text-xs font-mono text-slate-400">
-                            <code>{`openapi: 3.0.0
-info:
-  title: Payment Reconciliation API
-  version: 1.0.0
-paths:
-  /v1/payments/reconcile:
-    post:
-      summary: Trigger reconciliation
-      ... [150 lines omitted] ...`}</code>
-                          </pre>
-                        </div>
                       </div>
                     </div>
                   </div>

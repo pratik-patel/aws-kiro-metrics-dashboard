@@ -91,8 +91,8 @@ export default function GovernanceOverview() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={12} tickMargin={10} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
-                  <YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} tickMargin={10} />
+                  <XAxis dataKey="date" stroke="#cbd5e1" fontSize={12} tickMargin={10} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                  <YAxis stroke="#cbd5e1" fontSize={12} tickMargin={10} />
                   <RechartsTooltip 
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                     itemStyle={{ color: '#e2e8f0' }}
@@ -143,7 +143,7 @@ export default function GovernanceOverview() {
                   <BarChart data={MOCK_DATA.clientMix} layout="vertical" margin={{ left: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
                     <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} width={80} />
+                    <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} width={80} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                       itemStyle={{ color: '#e2e8f0' }}

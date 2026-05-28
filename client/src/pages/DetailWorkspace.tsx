@@ -123,8 +123,8 @@ export default function DetailWorkspace() {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={MOCK_DATA.dailyTrend.slice(0,7)}>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                          <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={12} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
-                          <YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} />
+                          <XAxis dataKey="date" stroke="#cbd5e1" fontSize={12} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                          <YAxis stroke="#cbd5e1" fontSize={12} />
                           <RechartsTooltip 
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                             itemStyle={{ color: '#e2e8f0' }}
@@ -144,10 +144,10 @@ export default function DetailWorkspace() {
                       <ResponsiveContainer width="100%" height="100%">
                         <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                          <XAxis type="number" dataKey="days" name="Active Days" stroke="rgba(255,255,255,0.2)" fontSize={12} />
-                          <YAxis type="number" dataKey="consumption" name="Consumption (K)" stroke="rgba(255,255,255,0.2)" fontSize={12} />
+                          <XAxis type="number" dataKey="days" name="Active Days" stroke="#cbd5e1" fontSize={12} />
+                          <YAxis type="number" dataKey="consumption" name="Consumption (K)" stroke="#cbd5e1" fontSize={12} />
                           <RechartsTooltip 
-                            cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.2)' }}
+                            cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }}
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                           />
                           <Scatter name="Engineers" data={scatterData} fill="#8b5cf6" />
@@ -197,8 +197,8 @@ export default function DetailWorkspace() {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={MOCK_DATA.dailyTrend}>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                          <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={12} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
-                          <YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} />
+                          <XAxis dataKey="date" stroke="#cbd5e1" fontSize={12} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                          <YAxis stroke="#cbd5e1" fontSize={12} />
                           <RechartsTooltip 
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                             itemStyle={{ color: '#e2e8f0' }}
@@ -219,7 +219,7 @@ export default function DetailWorkspace() {
                         <BarChart data={MOCK_DATA.clientMix.slice(0, 1)} layout="vertical" margin={{ left: 30 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
                           <XAxis type="number" hide />
-                          <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} width={80} />
+                          <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} width={80} />
                           <RechartsTooltip 
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                             itemStyle={{ color: '#e2e8f0' }}

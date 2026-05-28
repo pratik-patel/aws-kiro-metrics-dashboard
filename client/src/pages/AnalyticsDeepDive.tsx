@@ -65,8 +65,8 @@ export default function AnalyticsDeepDive() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={12} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
-                        <YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} />
+                        <XAxis dataKey="date" stroke="#cbd5e1" fontSize={12} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                        <YAxis stroke="#cbd5e1" fontSize={12} />
                         <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} />
                         <Area type="monotone" dataKey="consumption" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorConsumptionArea)" />
                       </AreaChart>
@@ -111,7 +111,7 @@ export default function AnalyticsDeepDive() {
                         <BarChart data={MOCK_DATA.clientMix} layout="vertical" margin={{ left: 30 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
                           <XAxis type="number" hide />
-                          <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} width={80} />
+                          <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} width={80} />
                           <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                           <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
                           <Bar dataKey="ide" stackId="a" fill="#3b82f6" name="IDE" />
@@ -134,9 +134,9 @@ export default function AnalyticsDeepDive() {
                     <ResponsiveContainer width="100%" height="100%">
                       <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis type="number" dataKey="days" name="Active Days" stroke="rgba(255,255,255,0.2)" fontSize={12} />
-                        <YAxis type="number" dataKey="consumption" name="Consumption (K)" stroke="rgba(255,255,255,0.2)" fontSize={12} />
-                        <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.2)' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                        <XAxis type="number" dataKey="days" name="Active Days" stroke="#cbd5e1" fontSize={12} />
+                        <YAxis type="number" dataKey="consumption" name="Consumption (K)" stroke="#cbd5e1" fontSize={12} />
+                        <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                         <Scatter name="Engineers" data={scatterData} fill="#14b8a6" />
                       </ScatterChart>
                     </ResponsiveContainer>
@@ -155,7 +155,7 @@ export default function AnalyticsDeepDive() {
                         <BarChart data={MOCK_DATA.clientMix} layout="vertical" margin={{ left: 30 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
                           <XAxis type="number" hide />
-                          <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} width={80} />
+                          <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} width={80} />
                           <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                           <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
                           <Bar dataKey="ide" stackId="a" fill="#8b5cf6" name="Claude 4.6" />
@@ -180,7 +180,7 @@ export default function AnalyticsDeepDive() {
                         ]} layout="vertical" margin={{ left: 30 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
                           <XAxis type="number" hide />
-                          <YAxis type="category" dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} width={80} />
+                          <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} width={80} />
                           <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                           <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
                           <Bar dataKey="plugin" fill="#6366f1" name="Plugin" />
@@ -202,9 +202,9 @@ export default function AnalyticsDeepDive() {
                     <ResponsiveContainer width="100%" height="100%">
                       <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis type="category" dataKey="model" name="Model" stroke="rgba(255,255,255,0.2)" fontSize={12} allowDuplicatedCategory={false} />
-                        <YAxis type="category" dataKey="useCase" name="Use Case" stroke="rgba(255,255,255,0.2)" fontSize={12} allowDuplicatedCategory={false} />
-                        <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.2)' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                        <XAxis type="category" dataKey="model" name="Model" stroke="#cbd5e1" fontSize={12} allowDuplicatedCategory={false} />
+                        <YAxis type="category" dataKey="useCase" name="Use Case" stroke="#cbd5e1" fontSize={12} allowDuplicatedCategory={false} />
+                        <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                         <Scatter name="Usage Heat" data={[
                           { useCase: 'legacy-mod', model: 'Claude 4.6', value: 850 },
                           { useCase: 'legacy-mod', model: 'GPT-4o', value: 200 },
@@ -231,9 +231,9 @@ export default function AnalyticsDeepDive() {
                     <ResponsiveContainer width="100%" height="100%">
                       <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis type="number" dataKey="chars" name="Prompt Chars" stroke="rgba(255,255,255,0.2)" fontSize={12} unit="k" />
-                        <YAxis type="number" dataKey="consumption" name="Consumption" stroke="rgba(255,255,255,0.2)" fontSize={12} />
-                        <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.2)' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                        <XAxis type="number" dataKey="chars" name="Prompt Chars" stroke="#cbd5e1" fontSize={12} unit="k" />
+                        <YAxis type="number" dataKey="consumption" name="Consumption" stroke="#cbd5e1" fontSize={12} />
+                        <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                         <Scatter name="Interactions" data={[
                           { chars: 14.2, consumption: 27.7, id: 'req-d8d0' },
                           { chars: 45.1, consumption: 82.4, id: 'req-f4a1' },

@@ -170,8 +170,8 @@ export default function PolicySimulationStudio() {
                       { name: "Retail Intel.", baseline: 185, simulated: getSimulatedValue(185, 0.86) },
                     ]}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={11} />
-                      <YAxis stroke="rgba(255,255,255,0.2)" fontSize={11} />
+                      <XAxis dataKey="name" stroke="#cbd5e1" fontSize={11} />
+                      <YAxis stroke="#cbd5e1" fontSize={11} />
                       <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                       <Bar dataKey="baseline" fill="#334155" name="Baseline" radius={[2, 2, 0, 0]} />
                       <Bar dataKey="simulated" fill="#3b82f6" name="Simulated" radius={[2, 2, 0, 0]} />
