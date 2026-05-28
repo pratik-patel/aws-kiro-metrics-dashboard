@@ -21,10 +21,6 @@ export default function PolicySimulationStudio() {
 
   const updateLever = (key: keyof typeof levers, value: string) => {
     setLevers(prev => ({ ...prev, [key]: parseInt(value) }));
-    // In a real app, this might trigger a recalculation
-    if (simulationRun) {
-      setSimulationRun(false); // Reset to encourage re-running
-    }
   };
 
   // Adjust parameters based on Advisor Mode
@@ -38,13 +34,10 @@ export default function PolicySimulationStudio() {
     } else if (advisorMode === "Model Routing Review") {
       setLevers({ routingStrictness: 95, promptThreshold: 10, utilizationThreshold: 20 });
     }
-    setSimulationRun(false);
   }, [advisorMode]);
 
   // Calculate dynamic simulated values based on levers
   const getSimulatedValue = (baseline: number, impactFactor: number) => {
-    if (!simulationRun) return baseline;
-    
     // Determine the base strictness vs prompt impact scale from the specific advisor mode
     let modeModifier = 1;
     if (advisorMode === "Optimization Recommendations") {
@@ -60,8 +53,9 @@ export default function PolicySimulationStudio() {
     // Interactive slider modifiers relative to their default values
     const strictnessImpact = (levers.routingStrictness - 50) / 100 * 0.15; // +/- 15%
     const promptImpact = (levers.promptThreshold - 50) / 100 * 0.1; // +/- 10%
+    const utilizationImpact = (levers.utilizationThreshold - 20) / 100 * 0.05; // +/- 5%
     
-    const totalImpact = impactFactor * modeModifier * (1 - strictnessImpact - promptImpact);
+    const totalImpact = impactFactor * modeModifier * (1 - strictnessImpact - promptImpact - utilizationImpact);
     
     return Math.max(Math.round(baseline * totalImpact), 0);
   };
@@ -224,35 +218,35 @@ export default function PolicySimulationStudio() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 flex-1">
-                {!simulationRun ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 space-y-4">
-                    <Beaker className="w-12 h-12 text-slate-700" />
-                    <p>Adjust levers and run simulation to see projected impact and advisor recommendations.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 transition-all duration-500">
-                        <p className="text-xs text-blue-400 mb-1 font-medium">Consumption Delta</p>
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-xl font-bold text-white font-mono">
-                            -{Math.round(1452 - getSimulatedValue(1452, 1))}K
-                          </p>
-                          <TrendingDown className="w-3 h-3 text-teal-400" />
-                        </div>
-                      </div>
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 transition-all duration-500">
-                        <p className="text-xs text-amber-400 mb-1 font-medium">Overrun Delta</p>
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-xl font-bold text-white font-mono">
-                            -{Math.round(34.5 - (34.5 * (getSimulatedValue(100, 1) / 100)))}K
-                          </p>
-                          <TrendingDown className="w-3 h-3 text-teal-400" />
-                        </div>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 transition-all duration-500">
+                      <p className="text-xs text-blue-400 mb-1 font-medium">Consumption Delta</p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-xl font-bold text-white font-mono">
+                          -{Math.round(1452 - getSimulatedValue(1452, 1))}K
+                        </p>
+                        <TrendingDown className="w-3 h-3 text-teal-400" />
                       </div>
                     </div>
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 transition-all duration-500">
+                      <p className="text-xs text-amber-400 mb-1 font-medium">Overrun Delta</p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-xl font-bold text-white font-mono">
+                          -{Math.round(34.5 - (34.5 * (getSimulatedValue(100, 1) / 100)))}K
+                        </p>
+                        <TrendingDown className="w-3 h-3 text-teal-400" />
+                      </div>
+                    </div>
+                  </div>
 
-                    <div className="space-y-3">
+                  {!simulationRun ? (
+                    <div className="flex flex-col items-center justify-center text-center text-slate-500 space-y-4 py-8 border border-dashed border-white/10 rounded-lg">
+                      <Beaker className="w-8 h-8 text-slate-700" />
+                      <p className="text-sm px-4">Run the simulation to generate AI Advisor recommendations based on these parameters.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 animate-in slide-in-from-bottom-4 duration-500">
                       <h4 className="text-sm font-medium text-slate-200">Advisor Recommendations</h4>
                       <div className="space-y-2">
                         {advisorMode === "Optimization Recommendations" && (
