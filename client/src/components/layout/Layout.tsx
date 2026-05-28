@@ -72,7 +72,14 @@ export default function Layout({ children }: LayoutProps) {
 
         <div className="flex items-center gap-4 ml-auto">
           {/* Global Search Trigger */}
-          <Button variant="outline" className="hidden lg:flex w-64 justify-start text-muted-foreground bg-black/20 border-white/10 hover:bg-white/5 hover:text-slate-200 shadow-inner">
+          <Button 
+            variant="outline" 
+            className="hidden lg:flex w-64 justify-start text-muted-foreground bg-black/20 border-white/10 hover:bg-white/5 hover:text-slate-200 shadow-inner"
+            onClick={() => {
+              // Dispatch a keyboard event to trigger the command palette
+              document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+            }}
+          >
             <Search className="mr-2 h-4 w-4" />
             <span className="text-sm font-normal">Search command palette...</span>
             <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-slate-400">
@@ -92,7 +99,14 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-100 hover:bg-white/5 rounded-full">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-slate-400 hover:text-slate-100 hover:bg-white/5 rounded-full"
+              onClick={() => {
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+              }}
+            >
               <Search className="h-4 w-4 lg:hidden" />
             </Button>
             <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-100 hover:bg-white/5 rounded-full relative">

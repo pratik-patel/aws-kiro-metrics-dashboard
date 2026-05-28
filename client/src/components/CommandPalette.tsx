@@ -10,10 +10,12 @@ export function CommandPalette() {
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      // Toggle palette with Cmd+K or Ctrl+K
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((open) => !open);
       }
+      // Escape closes the palette
       if (e.key === "Escape") {
         setOpen(false);
       }
