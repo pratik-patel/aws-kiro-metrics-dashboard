@@ -6,7 +6,11 @@ import { MOCK_DATA } from "@/lib/mock-data";
 
 // Custom Treemap Content to ensure text visibility
 const CustomizedTreemapContent = (props: any) => {
-  const { root, depth, x, y, width, height, index, payload, colors, rank, name } = props;
+  const { depth, x, y, width, height, name, fill, payload } = props;
+
+  const nodeFill = fill || payload?.fill || "rgba(255,255,255,0.05)";
+  const displayName = name || payload?.name;
+
   return (
     <g>
       <rect
@@ -15,16 +19,15 @@ const CustomizedTreemapContent = (props: any) => {
         width={width}
         height={height}
         style={{
-          fill: depth < 2 ? (payload?.fill || "none") : "none",
-          stroke: 'rgba(0,0,0,0.3)',
-          strokeWidth: 2 / (depth + 1e-10),
-          strokeOpacity: 1 / (depth + 1e-10),
+          fill: depth === 1 ? nodeFill : "transparent",
+          stroke: '#0c1220',
+          strokeWidth: 3,
         }}
       />
       {
-        width > 50 && height > 30 && (
+        depth === 1 && width > 50 && height > 30 && displayName && displayName !== "root" && (
           <text x={x + width / 2} y={y + height / 2} textAnchor="middle" fill="#0f172a" fontSize={13} fontWeight="600">
-            {name}
+            {displayName}
           </text>
         )
       }
@@ -99,11 +102,12 @@ export default function AnalyticsDeepDive() {
               </CardHeader>
               <CardContent className="h-[300px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyTrendData} barSize={120}>
+                  <BarChart data={monthlyTrendData} maxBarSize={60} margin={{ bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                     <XAxis dataKey="month" stroke="#cbd5e1" fontSize={12} />
                     <YAxis stroke="#cbd5e1" fontSize={12} />
-                    <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                    <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', bottom: 0 }} />
                     <Bar dataKey="payments" stackId="a" fill="#60a5fa" name="Payments Trans." />
                     <Bar dataKey="ai" stackId="a" fill="#34d399" name="AI Delivery Accel." />
                     <Bar dataKey="platform" stackId="a" fill="#fbbf24" name="Platform Rel." />
@@ -129,6 +133,7 @@ export default function AnalyticsDeepDive() {
                       { name: 'Retail Intel.', size: 185, fill: '#a78bfa' }
                     ]}
                     dataKey="size"
+                    nameKey="name"
                     aspectRatio={4 / 3}
                     stroke="rgba(0,0,0,0.2)"
                     content={<CustomizedTreemapContent />}
