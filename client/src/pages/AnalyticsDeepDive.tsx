@@ -1,6 +1,5 @@
 import { BarChart3, PieChart, Activity, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, BarChart, Bar, Legend, Treemap, ScatterChart, Scatter } from "recharts";
 import { MOCK_DATA } from "@/lib/mock-data";
@@ -256,38 +255,59 @@ export default function AnalyticsDeepDive() {
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </section>
 
-              <TabsContent value="interactions" className="m-0 space-y-6">
-                <Card className="bg-[#111827] border-white/5 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-200">High-Cost Interactions Cluster</CardTitle>
-                    <CardDescription className="text-slate-400">Prompt length vs Estimated AI Consumption</CardDescription>
-                  </CardHeader>
-                  <CardContent className="h-[400px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis type="number" dataKey="chars" name="Prompt Chars" stroke="#cbd5e1" fontSize={12} unit="k" />
-                        <YAxis type="number" dataKey="consumption" name="Consumption" stroke="#cbd5e1" fontSize={12} />
-                        <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                        <Scatter name="Interactions" data={[
-                          { chars: 14.2, consumption: 27.7, id: 'req-d8d0' },
-                          { chars: 45.1, consumption: 82.4, id: 'req-f4a1' },
-                          { chars: 8.5, consumption: 13.9, id: 'req-d366' },
-                          { chars: 32.4, consumption: 64.1, id: 'req-e2b4' },
-                          { chars: 18.2, consumption: 35.8, id: 'req-c8f9' },
-                        ]} fill="#f59e0b" />
-                      </ScatterChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+              {/* SECTION 4: Outliers & Inefficiencies */}
+              <section className="space-y-6">
+                <div className="border-b border-white/10 pb-2">
+                  <h2 className="text-xl font-semibold text-slate-200">Outliers & Inefficiencies</h2>
+                  <p className="text-sm text-slate-400">Identifying high-consumption low-activity users and abnormal model mix.</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="bg-[#111827] border-white/5 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-medium text-slate-200">Active Days vs Consumption by Engineer</CardTitle>
+                      <CardDescription className="text-slate-400">Identifying high-consumption low-activity outliers.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                          <XAxis type="number" dataKey="days" name="Active Days" stroke="#cbd5e1" fontSize={12} />
+                          <YAxis type="number" dataKey="consumption" name="Consumption (K)" stroke="#cbd5e1" fontSize={12} />
+                          <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                          <Scatter name="Engineers" data={scatterData} fill="#14b8a6" />
+                        </ScatterChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-[#111827] border-white/5 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-medium text-slate-200">Model Mix by Cost Center</CardTitle>
+                      <CardDescription className="text-slate-400">Identifying sub-optimal model selection habits.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={MOCK_DATA.clientMix} layout="vertical" margin={{ left: 30 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
+                          <XAxis type="number" hide />
+                          <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} width={80} />
+                          <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{ color: '#e2e8f0' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                          <Bar dataKey="ide" stackId="a" fill="#8b5cf6" name="Claude 4.6" />
+                          <Bar dataKey="cli" stackId="a" fill="#3b82f6" name="GPT-4o" />
+                          <Bar dataKey="plugin" stackId="a" fill="#14b8a6" name="Gemini 1.5" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+              </section>
 
             </div>
-          </Tabs>
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      );
+    }

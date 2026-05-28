@@ -148,8 +148,8 @@ export default function ExecutionMonitor() {
         {/* Progress Bar */}
         <div className="h-1.5 w-full bg-slate-800">
           <div 
-            className={\`h-full transition-all duration-300 relative \${status === 'cancelled' ? 'bg-red-500' : status === 'completed' ? 'bg-teal-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'}\`}
-            style={{ width: \`\${progress}%\` }}
+            className={`h-full transition-all duration-300 relative ${status === 'cancelled' ? 'bg-red-500' : status === 'completed' ? 'bg-teal-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'}`}
+            style={{ width: `${progress}%` }}
           >
             {status === 'running' && <div className="absolute inset-0 bg-white/20 animate-pulse"></div>}
           </div>
@@ -161,14 +161,14 @@ export default function ExecutionMonitor() {
             <div className="p-4 border-b border-white/5 flex items-center justify-between">
               <h3 className="text-sm font-medium text-slate-300">Live Console Output</h3>
               <span className="text-xs text-slate-500 font-mono">
-                {status === 'running' ? \`ETA: ~\${eta}s\` : status === 'completed' ? 'Done in 45s' : 'Halted'}
+                {status === 'running' ? `ETA: ~${eta}s` : status === 'completed' ? 'Done in 45s' : 'Halted'}
               </span>
             </div>
             <div ref={scrollRef} className="p-4 font-mono text-xs text-slate-400 space-y-2 h-[400px] overflow-y-auto">
               {logs.map((log, i) => (
                 <p key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <span className="text-slate-500 mr-2">{log.time}</span>
-                  <span className={\`mr-2 \${log.color}\`}>[{log.level}]</span>
+                  <span className={`mr-2 ${log.color}`}>[{log.level}]</span>
                   <span className={log.level === 'SUCCESS' ? 'text-slate-300' : ''}>{log.text}</span>
                 </p>
               ))}
@@ -184,52 +184,52 @@ export default function ExecutionMonitor() {
               <h3 className="text-sm font-medium text-slate-300 mb-4">Stage Progress</h3>
               <div className="space-y-4">
                 {/* Stage 1: Ingestion */}
-                <div className={\`flex items-center gap-3 transition-opacity \${getStageStatus(0) === 'waiting' ? 'opacity-50' : ''}\`}>
+                <div className={`flex items-center gap-3 transition-opacity ${getStageStatus(0) === 'waiting' ? 'opacity-50' : ''}`}>
                   {getStageStatus(0) === 'completed' ? <CheckCircle2 className="w-5 h-5 text-teal-500" /> : 
                    getStageStatus(0) === 'running' ? <Loader2 className="w-5 h-5 text-blue-500 animate-spin" /> :
                    <Clock className="w-5 h-5 text-slate-500" />}
                   <div className="flex-1">
                     <p className="text-sm text-slate-200">Data Ingestion</p>
-                    <p className={\`text-xs \${getStageStatus(0) === 'running' ? 'text-blue-400' : 'text-slate-500'}\`}>
+                    <p className={`text-xs ${getStageStatus(0) === 'running' ? 'text-blue-400' : 'text-slate-500'}`}>
                       {getStageStatus(0) === 'completed' ? 'Completed' : getStageStatus(0) === 'running' ? 'Processing...' : 'Waiting'}
                     </p>
                   </div>
                 </div>
 
                 {/* Stage 2: Heuristics */}
-                <div className={\`flex items-center gap-3 transition-opacity \${getStageStatus(1) === 'waiting' ? 'opacity-50' : ''}\`}>
+                <div className={`flex items-center gap-3 transition-opacity ${getStageStatus(1) === 'waiting' ? 'opacity-50' : ''}`}>
                   {getStageStatus(1) === 'completed' ? <CheckCircle2 className="w-5 h-5 text-teal-500" /> : 
                    getStageStatus(1) === 'running' ? <Loader2 className="w-5 h-5 text-blue-500 animate-spin" /> :
                    <Clock className="w-5 h-5 text-slate-500" />}
                   <div className="flex-1">
                     <p className="text-sm text-slate-200">Heuristic Analysis</p>
-                    <p className={\`text-xs \${getStageStatus(1) === 'running' ? 'text-blue-400' : 'text-slate-500'}\`}>
+                    <p className={`text-xs ${getStageStatus(1) === 'running' ? 'text-blue-400' : 'text-slate-500'}`}>
                       {getStageStatus(1) === 'completed' ? 'Completed' : getStageStatus(1) === 'running' ? 'Processing...' : 'Waiting'}
                     </p>
                   </div>
                 </div>
 
                 {/* Stage 3: Synthesis */}
-                <div className={\`flex items-center gap-3 transition-opacity \${getStageStatus(2) === 'waiting' ? 'opacity-50' : ''}\`}>
+                <div className={`flex items-center gap-3 transition-opacity ${getStageStatus(2) === 'waiting' ? 'opacity-50' : ''}`}>
                   {getStageStatus(2) === 'completed' ? <CheckCircle2 className="w-5 h-5 text-teal-500" /> : 
                    getStageStatus(2) === 'running' ? <Loader2 className="w-5 h-5 text-blue-500 animate-spin" /> :
                    <Clock className="w-5 h-5 text-slate-500" />}
                   <div className="flex-1">
                     <p className="text-sm text-slate-200">Recommendation Synthesis</p>
-                    <p className={\`text-xs \${getStageStatus(2) === 'running' ? 'text-blue-400' : 'text-slate-500'}\`}>
+                    <p className={`text-xs ${getStageStatus(2) === 'running' ? 'text-blue-400' : 'text-slate-500'}`}>
                       {getStageStatus(2) === 'completed' ? 'Completed' : getStageStatus(2) === 'running' ? 'Processing...' : 'Waiting'}
                     </p>
                   </div>
                 </div>
 
                 {/* Stage 4: Artifacts */}
-                <div className={\`flex items-center gap-3 transition-opacity \${getStageStatus(3) === 'waiting' ? 'opacity-50' : ''}\`}>
+                <div className={`flex items-center gap-3 transition-opacity ${getStageStatus(3) === 'waiting' ? 'opacity-50' : ''}`}>
                   {getStageStatus(3) === 'completed' ? <CheckCircle2 className="w-5 h-5 text-teal-500" /> : 
                    getStageStatus(3) === 'running' ? <Loader2 className="w-5 h-5 text-blue-500 animate-spin" /> :
                    <Clock className="w-5 h-5 text-slate-500" />}
                   <div className="flex-1">
                     <p className="text-sm text-slate-200">Artifact Generation</p>
-                    <p className={\`text-xs \${getStageStatus(3) === 'running' ? 'text-blue-400' : 'text-slate-500'}\`}>
+                    <p className={`text-xs ${getStageStatus(3) === 'running' ? 'text-blue-400' : 'text-slate-500'}`}>
                       {getStageStatus(3) === 'completed' ? 'Completed' : getStageStatus(3) === 'running' ? 'Processing...' : 'Waiting'}
                     </p>
                   </div>
@@ -243,7 +243,7 @@ export default function ExecutionMonitor() {
                 <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                   <p className="text-xs text-slate-500 mb-1">Throughput</p>
                   <p className="text-lg font-semibold text-slate-200 font-mono">
-                    {status === 'running' ? \`\${Math.floor(175 + Math.random() * 10)}K/s\` : '0K/s'}
+                    {status === 'running' ? `${Math.floor(175 + Math.random() * 10)}K/s` : '0K/s'}
                   </p>
                 </div>
                 <div className="bg-black/20 p-3 rounded-lg border border-white/5">
