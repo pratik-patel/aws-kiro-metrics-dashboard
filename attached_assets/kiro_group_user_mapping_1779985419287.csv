@@ -1,0 +1,15 @@
+Group_Name,Box_Name,UserId,User_Name,Subscription_Tier,Subscription_Status,Plan_Source,Cost_Center,Engineering_Manager,Primary_Workflow
+AI SDLC Enablement Team,AI Delivery Acceleration,d-92675051d5.a9a3e94b-b147-4fb7-9934-f5ea941fd110,Aisha Khan,Power,Active,Direct,CC-4402,Leila Morgan,spec-orchestration
+AI SDLC Enablement Team,AI Delivery Acceleration,d-92675051d5.9b1ac779-7da0-470f-bfd8-fba1849ca111,Ben Foster,ProPlus,Active,Group: AI SDLC Enablement Team,CC-4402,Leila Morgan,guardrail-evaluation
+AI SDLC Enablement Team,AI Delivery Acceleration,d-92675051d5.59888cc4-2dac-4454-a84e-b7968ad4e112,Chloe Martin,Pro,Active,Group: AI SDLC Enablement Team,CC-4402,Leila Morgan,spec-orchestration
+Payments Modernization Team,Payments Transformation,d-92675051d5.f12818d1-8f2c-4d54-9188-4f7224a4d103,Ethan Brooks,Pro,Active,Group: Payments Modernization Team,CC-4101,Rohan Mehta,legacy-modernization
+Payments Modernization Team,Payments Transformation,d-92675051d5.797d1e6c-6d5f-41a9-8dc7-53d2ef14e102,Marco Silva,ProPlus,Active,Group: Payments Modernization Team,CC-4101,Rohan Mehta,test-generation
+Payments Modernization Team,Payments Transformation,d-92675051d5.0ec463de-81c2-4f79-9d4c-029f7bb0f101,Priya Nair,Power,Active,Group: Payments Modernization Team,CC-4101,Rohan Mehta,legacy-modernization
+Platform Reliability Engineering,Platform Reliability,d-92675051d5.838f6b85-1e72-4404-a193-f1b0dc79d107,Elena Garcia,Power,Active,Group: Platform Reliability Engineering,CC-4308,Jonas Weber,platform-hardening
+Platform Reliability Engineering,Platform Reliability,d-92675051d5.7f1ccf95-18df-4d5f-9d1b-7155a1be8114,Lucy Chen,ProPlus,Canceled,Group: Platform Reliability Engineering,CC-4308,Jonas Weber,platform-hardening
+Platform Reliability Engineering,Platform Reliability,d-92675051d5.3b537ba7-2c3b-4a6c-aec6-61e594bd1109,Sam Walker,Pro,Active,Group: Platform Reliability Engineering,CC-4308,Jonas Weber,platform-hardening
+Platform Reliability Engineering,Platform Reliability,d-92675051d5.6273ba8a-bb02-425f-b443-3d4dcb2c9108,Victor Chen,ProPlus,Active,Group: Platform Reliability Engineering,CC-4308,Jonas Weber,platform-hardening
+Retail Analytics Team,Retail Intelligence,d-92675051d5.7e23e16f-5eb6-49f0-8e5d-a84c5ad99106,Casey Liu,Pro,Active,Group: Retail Analytics Team,CC-4204,Maya Sethi,retail-analytics
+Retail Analytics Team,Retail Intelligence,d-92675051d5.e94a3400-4c89-4dbf-bc29-4e5c0b764113,David Kim,Pro,Pending,Group: Retail Analytics Team,CC-4204,Maya Sethi,retail-analytics
+Retail Analytics Team,Retail Intelligence,d-92675051d5.33a7a52f-dbf7-4f6b-89c9-43d30a61e104,Nina Patel,ProPlus,Active,Group: Retail Analytics Team,CC-4204,Maya Sethi,retail-analytics
+Retail Analytics Team,Retail Intelligence,d-92675051d5.4a0a1ddb-32de-4237-b40f-cbc81f6ae105,Omar Haddad,Pro,Active,Group: Retail Analytics Team,CC-4204,Maya Sethi,retail-analytics
