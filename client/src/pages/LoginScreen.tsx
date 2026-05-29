@@ -44,11 +44,6 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               Review posture, ownership, policy controls, evidence, and strategic recommendations from the latest Kiro telemetry snapshot.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <InfoChip label="Coverage" value="Overview to evidence" />
-            <InfoChip label="Telemetry" value="55-day activity window" />
-            <InfoChip label="Mode" value="Static credentials" />
-          </div>
         </div>
 
         <Card className="bg-[#111827] border-white/6 shadow-[0_24px_80px_rgba(2,6,23,0.45)] overflow-hidden">
@@ -89,14 +84,6 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   {error}
                 </div>
               ) : null}
-
-              <div className="rounded-2xl border border-white/6 bg-[#0B1120] px-4 py-4">
-                <p className="dashboard-eyebrow">Static access</p>
-                <p className="mt-2 text-sm text-slate-300">
-                  Username: <span className="font-semibold text-white">admin</span>
-                </p>
-              </div>
-
               <Button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40 shadow-[0_0_20px_rgba(37,99,235,0.18)]"
@@ -107,15 +94,6 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
-}
-
-function InfoChip({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/6 bg-black/20 px-4 py-4">
-      <p className="dashboard-eyebrow">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-100">{value}</p>
     </div>
   );
 }
