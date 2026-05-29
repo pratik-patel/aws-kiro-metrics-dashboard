@@ -10,6 +10,7 @@ import chatLogsCsv from "../../../attached_assets/kiro_prompt_logs_chat_flattene
 import inlineLogsCsv from "../../../attached_assets/kiro_prompt_logs_inline_suggestions_flattened_1779985419286.csv?raw";
 
 type Severity = "High" | "Medium" | "Low";
+export type EngineerFunction = "FE" | "BE" | "QA" | "AI";
 type RecommendationType =
   | "Model Routing"
   | "Prompt Discipline"
@@ -129,6 +130,7 @@ export interface InteractionSummary {
   userId: string;
   engineerId: string;
   engineerName: string;
+  engineerFunction: EngineerFunction;
   teamId: string;
   teamName: string;
   costCenterId: string;
@@ -177,6 +179,7 @@ export interface EngineerSummary {
   id: string;
   userId: string;
   name: string;
+  engineerFunction: EngineerFunction;
   teamId: string;
   teamName: string;
   costCenterId: string;
@@ -373,15 +376,46 @@ const RECOMMENDATION_PRIORITY: RecommendationType[] = [
   "Team Coaching",
 ];
 
-const TEAM_DISPLAY_NAMES: Record<string, string> = {
-  "AI SDLC Enablement Team": "AI SDLC Enablement Team",
-  "Payments Modernization Team": "Backend API Team",
-  "Retail Analytics Team": "Frontend Web Team",
-  "Platform Reliability Engineering": "QA & Automation Team",
+const ENGINEER_TEAM_ASSIGNMENTS: Record<string, string> = {
+  "Aisha Khan": "Specification Experience Squad",
+  "Ben Foster": "Delivery Guardrails Squad",
+  "Chloe Martin": "Specification Experience Squad",
+  "Ethan Brooks": "Payments Platform Squad",
+  "Marco Silva": "Payments Platform Squad",
+  "Priya Nair": "Checkout Experience Squad",
+  "Elena Garcia": "Platform Controls Squad",
+  "Lucy Chen": "Release Assurance Squad",
+  "Sam Walker": "Platform Controls Squad",
+  "Victor Chen": "Release Assurance Squad",
+  "Casey Liu": "Decision Intelligence Squad",
+  "David Kim": "Merch Insights Squad",
+  "Nina Patel": "Merch Insights Squad",
+  "Omar Haddad": "Decision Intelligence Squad",
 };
 
-function normalizeTeamName(value: string) {
-  return TEAM_DISPLAY_NAMES[value] ?? value;
+const ENGINEER_FUNCTION_BY_NAME: Record<string, EngineerFunction> = {
+  "Aisha Khan": "AI",
+  "Ben Foster": "QA",
+  "Casey Liu": "FE",
+  "Chloe Martin": "FE",
+  "David Kim": "BE",
+  "Elena Garcia": "AI",
+  "Ethan Brooks": "BE",
+  "Lucy Chen": "FE",
+  "Marco Silva": "QA",
+  "Nina Patel": "QA",
+  "Omar Haddad": "AI",
+  "Priya Nair": "FE",
+  "Sam Walker": "BE",
+  "Victor Chen": "QA",
+};
+
+function normalizeTeamName(userName: string, fallbackTeamName: string) {
+  return ENGINEER_TEAM_ASSIGNMENTS[userName] ?? fallbackTeamName;
+}
+
+function getEngineerFunction(name: string): EngineerFunction {
+  return ENGINEER_FUNCTION_BY_NAME[name] ?? "BE";
 }
 
 function parseCsv<T>(content: string): T[] {
@@ -566,6 +600,7 @@ function buildDataset(): KiroDataset {
     {
       userId: string;
       name: string;
+      engineerFunction: EngineerFunction;
       teamId: string;
       teamName: string;
       costCenterId: string;
@@ -594,13 +629,14 @@ function buildDataset(): KiroDataset {
     if (!mapping) return;
     const subscription = subscriptionsByName.get(mapping.User_Name);
     const engineerId = row.UserId;
-    const teamName = normalizeTeamName(mapping.Group_Name);
+    const teamName = normalizeTeamName(mapping.User_Name, mapping.Group_Name);
     const teamId = slugify(teamName);
     const costCenterId = mapping.Cost_Center || slugify(mapping.Box_Name);
     if (!userMetrics.has(engineerId)) {
       userMetrics.set(engineerId, {
         userId: engineerId,
         name: mapping.User_Name,
+        engineerFunction: getEngineerFunction(mapping.User_Name),
         teamId,
         teamName,
         costCenterId,
@@ -636,7 +672,7 @@ function buildDataset(): KiroDataset {
 
   const interactions: InteractionSummary[] = interactionRows.map((row) => {
     const mapping = mappingByUserId.get(row.UserId);
-    const teamName = normalizeTeamName(mapping?.Group_Name || row.Group_Name);
+    const teamName = normalizeTeamName(row.User_Name, mapping?.Group_Name || row.Group_Name);
     const costCenterName = mapping?.Box_Name || row.Box_Name;
     const costCenterId = mapping?.Cost_Center || slugify(costCenterName);
     const teamId = slugify(teamName);
@@ -656,6 +692,7 @@ function buildDataset(): KiroDataset {
       userId: row.UserId,
       engineerId,
       engineerName: row.User_Name,
+      engineerFunction: getEngineerFunction(row.User_Name),
       teamId,
       teamName,
       costCenterId,
@@ -719,6 +756,7 @@ function buildDataset(): KiroDataset {
       id: slugify(metric.name),
       userId: metric.userId,
       name: metric.name,
+      engineerFunction: metric.engineerFunction,
       teamId: metric.teamId,
       teamName: metric.teamName,
       costCenterId: metric.costCenterId,

@@ -77,6 +77,17 @@ export default function ReportEvidenceConsole() {
     () => resolveScopedDataset(selectedReport?.scopeType ?? "Enterprise", selectedReport?.scopeId ?? "enterprise"),
     [selectedReport],
   );
+  const reportHighlights = useMemo(() => {
+    const topRecommendation = reportScope.recommendations[0];
+    const leadUseCase = reportScope.useCases[0];
+
+    return [
+      `Consumption at ${formatConsumption(reportScope.totalConsumption)} credits`,
+      `Overrun at ${formatConsumption(reportScope.overrun)} credits`,
+      topRecommendation ? `Priority action: ${topRecommendation.title}` : "No priority action flagged",
+      leadUseCase ? `Busiest flow: ${leadUseCase.label}` : "No dominant workflow flagged",
+    ];
+  }, [reportScope]);
 
   const evidencePacks = useMemo(
     () =>
@@ -143,7 +154,7 @@ export default function ReportEvidenceConsole() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-black/20">
               <div>
                 <h3 className="font-semibold text-white">Generate Strategic Report</h3>
-                <p className="text-xs text-slate-400 mt-1">Create a stakeholder-ready report from the current telemetry model.</p>
+                <p className="text-xs text-slate-400 mt-1">Build a focused report from the current telemetry snapshot.</p>
               </div>
               <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" onClick={() => setShowGenerateModal(false)}>
                 <X className="w-4 h-4" />
@@ -212,7 +223,7 @@ export default function ReportEvidenceConsole() {
         <div>
           <h1 className="dashboard-page-title mb-1">Reports & Evidence</h1>
           <p className="dashboard-page-lead">
-            Generate strategic reports, inspect evidence packs, and prepare executive-ready governance outputs.
+            Generate reports, review evidence, and export a clean governance snapshot.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -265,9 +276,7 @@ export default function ReportEvidenceConsole() {
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
             <CardTitle className="dashboard-card-title text-slate-200">Report Queue</CardTitle>
-            <CardDescription className="text-slate-400">
-              Reports generated across enterprise, cost-center, team, and engineer scopes.
-            </CardDescription>
+            <CardDescription className="text-slate-400">All saved report scopes in one queue.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-white/5">
@@ -291,12 +300,12 @@ export default function ReportEvidenceConsole() {
                       <div>
                         <p className="font-medium text-slate-100">{report.title}</p>
                         <p className="text-sm text-slate-400 mt-1">{report.scopeLabel}</p>
-                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
                           <Badge className="bg-white/5 text-slate-300 border-white/10">{report.audience}</Badge>
                           <Badge className={statusClass}>{report.status}</Badge>
                         </div>
                       </div>
-                      <span className="text-xs text-slate-500">{report.generatedAt}</span>
+                      <span className="max-w-28 text-right text-xs leading-5 text-slate-500">{report.generatedAt}</span>
                     </div>
                   </button>
                 );
@@ -312,9 +321,7 @@ export default function ReportEvidenceConsole() {
                 <CardTitle className="dashboard-card-title text-slate-200">
                   {selectedReport?.title ?? "Report Preview"}
                 </CardTitle>
-                <CardDescription className="text-slate-400">
-                  {selectedReport?.scopeLabel ?? "Enterprise"} · {selectedReport?.audience ?? "Executive Sponsor"}
-                </CardDescription>
+                <CardDescription className="text-slate-400">{selectedReport?.scopeLabel ?? "Enterprise"} · {selectedReport?.audience ?? "Executive Sponsor"}</CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
@@ -329,8 +336,18 @@ export default function ReportEvidenceConsole() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
-            <section className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">Executive Summary</p>
+            <section className="rounded-2xl border border-white/5 bg-[#0b1120] p-4 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Executive Summary</p>
+                <Badge className="bg-white/5 text-slate-300 border-white/10">Condensed View</Badge>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {reportHighlights.map((highlight) => (
+                  <Badge key={highlight} className="bg-white/5 px-3 py-1 text-slate-200 border-white/10">
+                    {highlight}
+                  </Badge>
+                ))}
+              </div>
               <p className="text-sm leading-relaxed text-slate-300">
                 {selectedReport ? selectedReport.executiveSummary : "Select a report to preview the strategic summary."}
               </p>
@@ -344,14 +361,17 @@ export default function ReportEvidenceConsole() {
             </div>
 
             <section className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">Recommended Actions</p>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Recommended Actions</p>
+                <span className="text-xs text-slate-500">Top 2 only</span>
+              </div>
               <div className="space-y-3">
-                {reportScope.recommendations.slice(0, 3).map((recommendation) => (
+                {reportScope.recommendations.slice(0, 2).map((recommendation) => (
                   <div key={recommendation.id} className="rounded-xl border border-white/5 bg-[#0b1120] p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-medium text-slate-100">{recommendation.title}</p>
-                        <p className="text-xs text-slate-400 mt-1">{recommendation.whyItMatters}</p>
+                        <p className="text-xs text-slate-400 mt-1 line-clamp-2">{recommendation.whyItMatters}</p>
                       </div>
                       <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
                     </div>
@@ -361,7 +381,10 @@ export default function ReportEvidenceConsole() {
             </section>
 
             <section className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">Use-case & Input Signals</p>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Use-case Signals</p>
+                <span className="text-xs text-slate-500">Top 3 flows</span>
+              </div>
               <div className="space-y-3">
                 {reportScope.useCases.slice(0, 3).map((useCase) => (
                   <div key={useCase.key} className="flex items-start justify-between gap-4 border-b border-white/5 pb-3 last:border-b-0 last:pb-0">
@@ -377,13 +400,9 @@ export default function ReportEvidenceConsole() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-red-300 mb-3">Caveat</p>
-              <p className="text-xs leading-relaxed text-slate-300">
-                Reports are grounded in observed Kiro telemetry for models, prompts, tools, and AI consumption. Steering,
-                system prompt, spec carryover, and retrieved-context overhead remain estimated contributors.
-              </p>
-            </section>
+            <p className="text-xs leading-relaxed text-slate-500">
+              Report totals come from observed Kiro telemetry. System prompts, steering, and retrieved context remain estimated.
+            </p>
           </CardContent>
         </Card>
 
@@ -391,9 +410,7 @@ export default function ReportEvidenceConsole() {
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-200">Evidence Packs</CardTitle>
-              <CardDescription className="text-slate-400">
-                Curated interaction clusters tied to the top recommendations.
-              </CardDescription>
+              <CardDescription className="text-slate-400">Evidence linked to the highest-priority recommendations.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
@@ -424,6 +441,7 @@ export default function ReportEvidenceConsole() {
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-200">Recent Prompt Inspections</CardTitle>
+              <CardDescription className="text-slate-400">Recent high-signal interactions worth reviewing.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">

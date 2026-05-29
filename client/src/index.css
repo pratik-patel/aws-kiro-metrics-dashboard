@@ -5,7 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
+  --font-display: var(--app-font-display);
 
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -73,6 +75,9 @@
 
 @layer base {
   :root {
+    --app-font-sans: "Plus Jakarta Sans", "Inter", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    --app-font-display: "Space Grotesk", "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+    --app-font-mono: "IBM Plex Mono", "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -100,58 +105,115 @@
   * {
     @apply border-border;
   }
+  html {
+    font-size: 15px;
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11" 1, "ss01" 1;
+  }
+  @media (width < 768px) {
+    html {
+      font-size: 16px;
+    }
   }
 }
 
 @layer components {
   .dashboard-page-title {
-    @apply text-[2rem] md:text-[2.35rem] font-bold tracking-tight text-white;
+    @apply font-bold tracking-tight text-white;
+    font-family: var(--app-font-display);
+    font-size: clamp(1.8rem, 1.45rem + 1vw, 2.2rem);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
   }
 
   .dashboard-page-lead {
-    @apply text-base md:text-[1.0625rem] text-slate-400;
+    @apply text-[0.98rem] md:text-[1.02rem] leading-relaxed text-slate-400;
   }
 
   .dashboard-page-support {
-    @apply text-sm md:text-[0.95rem] leading-relaxed text-slate-500;
+    @apply text-sm leading-relaxed text-slate-500;
   }
 
   .dashboard-card-title {
-    @apply text-base md:text-[1.0625rem] font-medium leading-tight;
+    @apply text-[0.98rem] md:text-[1.02rem] font-semibold leading-tight tracking-[-0.01em];
   }
 
   .dashboard-section-title {
-    @apply text-lg md:text-[1.2rem] font-semibold text-slate-200;
+    @apply text-[1.05rem] md:text-[1.14rem] font-semibold tracking-[-0.01em] text-slate-200;
   }
 
   .dashboard-eyebrow {
-    @apply text-xs uppercase tracking-[0.18em] text-slate-400;
+    @apply text-[0.68rem] uppercase tracking-[0.2em] text-slate-400;
   }
 
   .dashboard-item-title {
-    @apply text-[1.02rem] md:text-[1.1rem] font-semibold leading-tight text-white;
+    @apply text-[0.98rem] md:text-[1.04rem] font-semibold leading-snug tracking-[-0.015em] text-white;
   }
 
   .dashboard-body {
-    @apply text-sm leading-relaxed text-slate-300;
+    @apply text-[0.93rem] leading-relaxed text-slate-300;
   }
 
   .dashboard-muted-body {
-    @apply text-sm leading-relaxed text-slate-400;
+    @apply text-[0.93rem] leading-relaxed text-slate-400;
   }
 
   .dashboard-stat-value {
-    @apply text-[1.65rem] md:text-[1.85rem] font-semibold text-white;
+    @apply font-semibold text-white tracking-[-0.03em];
+    font-size: clamp(1.45rem, 1.15rem + 0.75vw, 1.75rem);
+    line-height: 1.05;
   }
 
   .dashboard-metric-label {
-    @apply text-xs uppercase tracking-[0.18em] text-slate-500;
+    @apply text-[0.68rem] uppercase tracking-[0.18em] text-slate-500;
   }
 
   .dashboard-metric-value {
-    @apply mt-2 text-sm font-semibold text-slate-200;
+    @apply mt-2 text-[0.94rem] font-semibold text-slate-200;
+  }
+
+  .dashboard-panel {
+    @apply rounded-[1.4rem] border border-white/6 bg-[#111827] shadow-lg overflow-hidden;
+  }
+
+  .dashboard-panel-header {
+    @apply bg-black/20 border-b border-white/5;
+  }
+
+  .dashboard-panel-content {
+    @apply pt-5;
+  }
+
+  .dashboard-table {
+    @apply w-full text-[0.93rem] leading-[1.45];
+  }
+
+  .dashboard-table-head {
+    @apply bg-[#0B1120] text-left;
+  }
+
+  .dashboard-table-head-cell {
+    @apply px-5 py-3.5 text-[0.68rem] uppercase tracking-[0.16em] text-slate-500 font-medium;
+  }
+
+  .dashboard-table-row {
+    @apply border-t border-white/5 transition-colors;
+  }
+
+  .dashboard-table-cell {
+    @apply px-5 py-3.5 align-top text-slate-300;
+  }
+
+  .dashboard-table-cell-strong {
+    @apply px-5 py-3.5 align-top font-medium text-slate-100;
+  }
+
+  .dashboard-table-subtext {
+    @apply mt-1 text-[0.8rem] text-slate-500;
   }
 }
 

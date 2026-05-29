@@ -45,13 +45,6 @@ type OverviewInsight = {
   emphasis?: "default" | "alert";
 };
 
-const OVERVIEW_AI_DELIVERY_TEAM_SPLITS = [
-  { name: "AI SDLC Enablement Team", credits: 8300 },
-  { name: "Backend API Team", credits: 4700 },
-  { name: "Frontend Web Team", credits: 3100 },
-  { name: "QA & Automation Team", credits: 2100 },
-] as const;
-
 function formatChartDate(value: string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(`${value}T00:00:00`));
 }
@@ -80,10 +73,15 @@ export default function GovernanceOverview() {
   const supportingRecommendations = topRecommendations.slice(1, 4);
   const aiDeliveryCostCenterId = KIRO_DATA.costCenters[0]?.id ?? "CC-4402";
   const aiDeliveryCostCenterName = KIRO_DATA.costCenters[0]?.name ?? "AI Delivery Acceleration";
-  const aiDeliveryTeamSplits = OVERVIEW_AI_DELIVERY_TEAM_SPLITS.map((team) => ({
-    ...team,
-    href: `/detail/cost-center/${aiDeliveryCostCenterId}`,
-  }));
+  const aiDeliveryTeamSplits = KIRO_DATA.teams
+    .filter((team) => team.costCenterId === aiDeliveryCostCenterId)
+    .sort((left, right) => right.totalConsumption - left.totalConsumption)
+    .map((team) => ({
+      name: team.name,
+      credits: team.totalConsumption,
+      engineers: team.activeEngineers,
+      href: `/detail/cost-center/${aiDeliveryCostCenterId}`,
+    }));
   const aiDeliveryCostCenterCredits = aiDeliveryTeamSplits.reduce((sum, team) => sum + team.credits, 0);
 
   const peakDailyConsumption = KIRO_DATA.dailyTrend.reduce(
@@ -155,7 +153,7 @@ export default function GovernanceOverview() {
     },
     {
       title: "Lead Team in Cost Center",
-      metric: aiDeliveryTeamSplits[0]?.name ?? "AI SDLC Enablement Team",
+      metric: aiDeliveryTeamSplits[0]?.name ?? "Specification Experience Squad",
       detail: `${formatConsumption(aiDeliveryTeamSplits[0]?.credits ?? 0)} credits`,
       href: `/detail/cost-center/${aiDeliveryCostCenterId}`,
     },
