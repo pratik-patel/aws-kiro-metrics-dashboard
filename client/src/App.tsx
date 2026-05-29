@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -13,10 +14,37 @@ import DetailWorkspace from "@/pages/DetailWorkspace";
 import PolicySimulationStudio from "@/pages/PolicySimulationStudio";
 import ReportEvidenceConsole from "@/pages/ReportEvidenceConsole";
 import Recommendations from "@/pages/Recommendations";
+import LoginScreen from "@/pages/LoginScreen";
+
+const STATIC_USERNAME = "admin";
+const STATIC_PASSWORD = "lumpysoda11";
+const AUTH_STORAGE_KEY = "kiro-governance-authenticated";
 
 function Router() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => typeof window !== "undefined" && window.sessionStorage.getItem(AUTH_STORAGE_KEY) === "true",
+  );
+
+  function handleLogin(username: string, password: string) {
+    const isValid = username === STATIC_USERNAME && password === STATIC_PASSWORD;
+    if (isValid) {
+      window.sessionStorage.setItem(AUTH_STORAGE_KEY, "true");
+      setIsAuthenticated(true);
+    }
+    return isValid;
+  }
+
+  function handleLogout() {
+    window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    setIsAuthenticated(false);
+  }
+
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
   return (
-    <Layout>
+    <Layout onLogout={handleLogout}>
       <Switch>
         <Route path="/" component={GovernanceOverview} />
         <Route path="/explorer" component={UsageExplorer} />

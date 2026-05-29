@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
+  CircleDashed,
   ExternalLink,
   Eye,
   PlayCircle,
@@ -9,6 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Link } from "wouter";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +83,29 @@ export default function Recommendations() {
     [sortedRecommendations],
   );
 
+  const severityMix = useMemo(
+    () => [
+      { name: "High", value: sortedRecommendations.filter((item) => item.severity === "High").length, color: "#f97316" },
+      { name: "Medium", value: sortedRecommendations.filter((item) => item.severity === "Medium").length, color: "#f59e0b" },
+      { name: "Low", value: sortedRecommendations.filter((item) => item.severity === "Low").length, color: "#3b82f6" },
+    ].filter((item) => item.value > 0),
+    [sortedRecommendations],
+  );
+
+  const actionMix = useMemo(
+    () =>
+      Array.from(
+        sortedRecommendations.reduce((acc, recommendation) => {
+          acc.set(recommendation.type, (acc.get(recommendation.type) || 0) + 1);
+          return acc;
+        }, new Map<string, number>()),
+      )
+        .map(([type, count]) => ({ type, count }))
+        .sort((left, right) => right.count - left.count)
+        .slice(0, 6),
+    [sortedRecommendations],
+  );
+
   const totalEvidenceLinks = useMemo(
     () => sortedRecommendations.reduce((sum, recommendation) => sum + recommendation.evidenceInteractionIds.length, 0),
     [sortedRecommendations],
@@ -137,6 +162,67 @@ export default function Recommendations() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[0.82fr_1.18fr]">
+            <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+              <CardHeader className="bg-black/20 border-b border-white/5">
+                <CardTitle className="dashboard-card-title text-slate-100">Priority Mix</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-[140px_1fr] items-center gap-4 pt-5">
+                <div className="h-[124px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={severityMix}
+                        dataKey="value"
+                        innerRadius={34}
+                        outerRadius={54}
+                        stroke="rgba(255,255,255,0.06)"
+                        strokeWidth={2}
+                        paddingAngle={3}
+                      >
+                        {severityMix.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "12px" }}
+                        itemStyle={{ color: "#e2e8f0" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-3">
+                  {severityMix.map((item) => (
+                    <SeverityRail
+                      key={item.name}
+                      label={item.name}
+                      value={item.value}
+                      max={sortedRecommendations.length}
+                      color={item.color}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+              <CardHeader className="bg-black/20 border-b border-white/5">
+                <CardTitle className="dashboard-card-title text-slate-100">Action Coverage</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-5">
+                {actionMix.map((item) => (
+                  <ActionCoverageRail
+                    key={item.type}
+                    label={item.type}
+                    value={item.count}
+                    max={actionMix[0]?.count ?? item.count}
+                  />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
             <CardTitle className="dashboard-card-title text-slate-100">Recommendation Queue</CardTitle>
@@ -190,6 +276,7 @@ export default function Recommendations() {
             ))}
           </CardContent>
         </Card>
+        </div>
 
         {selectedRecommendation ? (
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
@@ -251,6 +338,12 @@ export default function Recommendations() {
                         <span className="dashboard-body">{signal}</span>
                       </div>
                     ))}
+                    {!topSignals.length ? (
+                      <div className="flex items-start gap-3 rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3">
+                        <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                        <span className="dashboard-muted-body">No stronger-than-baseline signals were attached to this recommendation.</span>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -315,6 +408,55 @@ function SummaryChip({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-4">
       <p className="dashboard-eyebrow">{label}</p>
       <p className="mt-2 text-sm font-semibold leading-snug text-white text-balance">{value}</p>
+    </div>
+  );
+}
+
+function SeverityRail({
+  label,
+  value,
+  max,
+  color,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+}) {
+  return (
+    <div className="rounded-xl border border-white/6 bg-black/20 px-3 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-200">{label}</p>
+        <span className="text-xs text-slate-400">{value}</span>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-white/6 overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${max ? Math.max(12, (value / max) * 100) : 12}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  );
+}
+
+function ActionCoverageRail({
+  label,
+  value,
+  max,
+}: {
+  label: string;
+  value: number;
+  max: number;
+}) {
+  return (
+    <div className="rounded-xl border border-white/6 bg-black/20 px-3 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-200">{label}</p>
+        <span className="text-xs text-slate-400">{value}</span>
+      </div>
+      <div className="mt-2 h-2.5 rounded-full bg-white/6 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#60a5fa)]"
+          style={{ width: `${max ? Math.max(14, (value / max) * 100) : 14}%` }}
+        />
+      </div>
     </div>
   );
 }

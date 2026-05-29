@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { format, parseISO, startOfWeek } from "date-fns";
 import {
   ArrowRight,
   Compass,
@@ -17,8 +18,6 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Scatter,
-  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -251,18 +250,46 @@ export default function UsageExplorer() {
 
   const dailyTrendData = useMemo(() => groupInteractionsByDay(scopedInteractions), [scopedInteractions]);
 
-  const activeDaysScatterData = useMemo(
-    () =>
-      engineersForScope
-        .map((engineer) => ({
-          name: engineer.name,
-          activeDays: engineer.activeDays,
-          credits: Number(engineer.totalConsumption.toFixed(1)),
-          overrun: Number(engineer.overrun.toFixed(1)),
-          tier: engineer.subscriptionTier,
-        }))
-        .sort((a, b) => b.credits - a.credits),
-    [engineersForScope],
+  const weeklyEngineerMatrix = useMemo(() => {
+    const weekOrder: string[] = [];
+    const weekLabels = new Map<string, string>();
+    const engineerWeekCredits = new Map<string, Map<string, number>>();
+
+    scopedInteractions.forEach((interaction) => {
+      const weekStart = format(
+        startOfWeek(parseISO(interaction.timestamp), { weekStartsOn: 1 }),
+        "yyyy-MM-dd",
+      );
+      if (!weekLabels.has(weekStart)) {
+        weekLabels.set(weekStart, format(parseISO(weekStart), "MMM d"));
+        weekOrder.push(weekStart);
+      }
+      if (!engineerWeekCredits.has(interaction.engineerId)) {
+        engineerWeekCredits.set(interaction.engineerId, new Map());
+      }
+      const engineerWeeks = engineerWeekCredits.get(interaction.engineerId)!;
+      engineerWeeks.set(weekStart, (engineerWeeks.get(weekStart) || 0) + interaction.estimatedCredits);
+    });
+
+    const orderedWeeks = weekOrder.sort((left, right) => left.localeCompare(right)).slice(-6);
+    return engineersForScope
+      .map((engineer) => {
+        const engineerWeeks = engineerWeekCredits.get(engineer.userId) ?? new Map<string, number>();
+        return {
+          engineer,
+          weeks: orderedWeeks.map((week) => ({
+            key: week,
+            label: weekLabels.get(week) ?? week,
+            credits: Number((engineerWeeks.get(week) || 0).toFixed(1)),
+          })),
+        };
+      })
+      .sort((left, right) => right.engineer.totalConsumption - left.engineer.totalConsumption)
+      .slice(0, 6);
+  }, [engineersForScope, scopedInteractions]);
+  const weeklyEngineerMax = weeklyEngineerMatrix.reduce(
+    (max, row) => Math.max(max, ...row.weeks.map((week) => week.credits)),
+    0,
   );
 
   const watchlistEngineers = useMemo(() => {
@@ -684,64 +711,74 @@ export default function UsageExplorer() {
           <CardHeader className="bg-black/20 border-b border-white/5">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <CardTitle className="dashboard-card-title text-slate-100">Active Days vs AI Consumption</CardTitle>
+                <CardTitle className="dashboard-card-title text-slate-100">Weekly Engineer Spend</CardTitle>
                 <CardDescription className="text-slate-400">{selectedWindow}</CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-[#0B1120] px-3 py-1">
-                  <span className="h-2 w-2 rounded-full bg-[#80AFFF]" />
-                  Normal spend
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-[#0B1120] px-3 py-1">
-                  <span className="h-2 w-2 rounded-full bg-[#FFB443]" />
-                  Overrun
+                  Last {weeklyEngineerMatrix[0]?.weeks.length ?? 0} weekly buckets
                 </span>
               </div>
             </div>
           </CardHeader>
           <CardContent className="pt-5">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart margin={{ top: 8, right: 12, left: 12, bottom: 24 }}>
-                  <CartesianGrid stroke={CHART_GRID} strokeDasharray="3 3" />
-                  <XAxis
-                    type="number"
-                    dataKey="activeDays"
-                    name="Active Days"
-                    tick={{ fill: "#94A3B8", fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                    label={{ value: "Active days", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
-                  />
-                  <YAxis
-                    type="number"
-                    dataKey="credits"
-                    name="Consumption"
-                    tick={{ fill: "#94A3B8", fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                    label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#94A3B8", fontSize: 12 }}
-                  />
-                  <Tooltip
-                    cursor={{ strokeDasharray: "3 3" }}
-                    contentStyle={{
-                      background: "#0F172A",
-                      borderColor: "rgba(148,163,184,0.14)",
-                      borderRadius: 16,
-                      color: "#E2E8F0",
-                    }}
-                    formatter={(value: number, name: string) =>
-                      name === "credits" ? [`${formatConsumption(value)} credits`, "Consumption"] : [value, "Active Days"]
-                    }
-                    labelFormatter={(_, payload: any[]) => payload?.[0]?.payload?.name ?? ""}
-                  />
-                  <Scatter data={activeDaysScatterData} fill={CHART_BLUE_SOFT}>
-                    {activeDaysScatterData.map((engineer) => (
-                      <Cell key={engineer.name} fill={engineer.overrun > 0 ? CHART_AMBER : CHART_BLUE_SOFT} />
+            <div className="space-y-3">
+              {weeklyEngineerMatrix.length ? (
+                <>
+                  <div className="grid grid-cols-[minmax(0,1.35fr)_repeat(6,minmax(0,0.8fr))_110px] gap-2 px-2">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Engineer</div>
+                    {weeklyEngineerMatrix[0]?.weeks.map((week) => (
+                      <div key={week.key} className="text-center text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                        {week.label}
+                      </div>
                     ))}
-                  </Scatter>
-                </ScatterChart>
-              </ResponsiveContainer>
+                    <div className="text-right text-[11px] uppercase tracking-[0.18em] text-slate-500">Total</div>
+                  </div>
+                  {weeklyEngineerMatrix.map((row) => (
+                    <div
+                      key={row.engineer.userId}
+                      className="grid grid-cols-[minmax(0,1.35fr)_repeat(6,minmax(0,0.8fr))_110px] items-center gap-2 rounded-2xl border border-white/6 bg-[#0B1120] px-3 py-3"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link href={engineerDetailHref(row.engineer.id)}>
+                            <span className="text-sm font-medium text-slate-100 hover:underline underline-offset-4">
+                              {row.engineer.name}
+                            </span>
+                          </Link>
+                          <FunctionBadge role={row.engineer.engineerFunction} />
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">{row.engineer.activeDays} active days</p>
+                      </div>
+                      {row.weeks.map((week) => {
+                        const intensity = weeklyEngineerMax ? week.credits / weeklyEngineerMax : 0;
+                        const fillClass =
+                          week.credits === 0
+                            ? "bg-white/[0.04] text-slate-600"
+                            : row.engineer.overrun > 0 && week.credits === Math.max(...row.weeks.map((item) => item.credits))
+                              ? "bg-amber-500/22 text-amber-200 border border-amber-500/20"
+                              : "bg-blue-500/12 text-blue-100 border border-blue-500/14";
+                        return (
+                          <div
+                            key={`${row.engineer.userId}-${week.key}`}
+                            className={`rounded-xl px-2 py-2 text-center text-xs font-medium ${fillClass}`}
+                            style={{ opacity: week.credits === 0 ? 1 : 0.45 + intensity * 0.55 }}
+                          >
+                            {week.credits > 0 ? formatConsumption(week.credits) : "—"}
+                          </div>
+                        );
+                      })}
+                      <div className="text-right text-sm font-medium text-slate-200">
+                        {formatConsumption(row.engineer.totalConsumption)} credits
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-[#0B1120] px-4 py-10 text-center text-sm text-slate-500">
+                  No weekly engineer activity was available in this scope.
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

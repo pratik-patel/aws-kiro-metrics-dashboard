@@ -53,31 +53,6 @@ function formatChartValue(value: number) {
   return `${value.toFixed(1).replace(".0", "")} credits`;
 }
 
-function wrapAxisLabel(name: string, maxLineLength: number) {
-  const words = name.split(" ");
-  const lines: string[] = [];
-  let currentLine = "";
-
-  words.forEach((word) => {
-    const nextLine = currentLine ? `${currentLine} ${word}` : word;
-    if (nextLine.length <= maxLineLength) {
-      currentLine = nextLine;
-      return;
-    }
-
-    if (currentLine) {
-      lines.push(currentLine);
-    }
-    currentLine = word;
-  });
-
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
-  return lines;
-}
-
 function wrapTreemapLabel(name: string, maxLineLength: number) {
   const words = name.split(" ");
   const lines: string[] = [];
@@ -799,58 +774,28 @@ function RankedList({
   return (
     <div className="p-5">
       <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-4">{title}</h3>
-      <div className="h-[248px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={items}
-            layout="vertical"
-            margin={{ top: 6, right: 18, left: 120, bottom: 6 }}
-            barCategoryGap={18}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
-            <XAxis type="number" hide />
-            <YAxis
-              type="category"
-              dataKey="label"
-              width={150}
-              axisLine={false}
-              tickLine={false}
-              tick={({ x, y, payload }) => {
-                const lines = wrapAxisLabel(String(payload.value), 18);
-                return (
-                  <g transform={`translate(${x},${y})`}>
-                    <text x={-10} y={0} textAnchor="end" fill="#E2E8F0" fontSize={12} fontWeight={500}>
-                      {lines.map((line, index) => (
-                        <tspan key={`${line}-${index}`} x={-10} dy={index === 0 ? -4 : 14}>
-                          {line}
-                        </tspan>
-                      ))}
-                    </text>
-                  </g>
-                );
-              }}
-            />
-            <Tooltip
-              cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
-              contentStyle={{
-                backgroundColor: "#0f172a",
-                borderColor: "rgba(255,255,255,0.1)",
-                borderRadius: "12px",
-              }}
-              formatter={(value: number) => [`${formatConsumption(Number(value))} credits`, "Consumption"]}
-            />
-            <Bar
-              dataKey="amount"
-              radius={[0, 12, 12, 0]}
-              fill="#3b82f6"
-              onClick={(entry) => {
-                if (entry?.href) {
-                  window.location.href = entry.href;
-                }
-              }}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="grid grid-cols-1 gap-3">
+        {items.map((item, index) => (
+          <div key={`${item.id}-rail`} className="rounded-xl border border-white/5 bg-black/20 px-3 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-slate-200 text-balance">{item.label}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-slate-400">{item.value}</span>
+                <div className="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[11px] text-blue-300">
+                  {index + 1}
+                </div>
+              </div>
+            </div>
+            <div className="mt-2 h-2.5 rounded-full bg-white/6 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#60a5fa)]"
+                style={{ width: `${items[0]?.amount ? Math.max(16, (item.amount / items[0].amount) * 100) : 16}%` }}
+              />
+            </div>
+          </div>
+        ))}
       </div>
       <div className="mt-3 grid grid-cols-1 gap-2">
         {items.map((item, index) => (

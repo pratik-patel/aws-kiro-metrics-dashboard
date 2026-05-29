@@ -8,6 +8,7 @@ import {
   Share2,
   X,
 } from "lucide-react";
+import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
 import { Button } from "@/components/ui/button";
@@ -99,6 +100,15 @@ export default function ReportEvidenceConsole() {
     [],
   );
   const maxPromptInspectionCredits = promptInspections[0]?.estimatedCredits ?? 0;
+  const reportStatusMix = useMemo(
+    () =>
+      [
+        { name: "Completed", value: generatedReports.filter((report) => report.status === "Completed").length, color: "#14b8a6" },
+        { name: "Processing", value: generatedReports.filter((report) => report.status === "Processing").length, color: "#3b82f6" },
+        { name: "Queued", value: generatedReports.filter((report) => report.status === "Queued").length, color: "#f59e0b" },
+      ].filter((item) => item.value > 0),
+    [generatedReports],
+  );
 
   const handleGenerate = () => {
     const option = scopeOptions.find((item) => item.id === draftScopeId);
@@ -229,12 +239,38 @@ export default function ReportEvidenceConsole() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/6 bg-[#0d1526] px-4 py-3">
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          <SummaryChip label="Reports" value={String(generatedReports.length)} />
-          <SummaryChip label="Evidence Packs" value={String(evidencePacks.length)} />
-          <SummaryChip label="Inspections" value={String(promptInspections.length)} />
-          <SummaryChip label="Scope Consumption" value={`${formatConsumption(reportScope.totalConsumption)} credits`} />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.72fr_1.28fr]">
+        <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+          <CardHeader className="bg-black/20 border-b border-white/5">
+            <CardTitle className="dashboard-card-title text-slate-200">Report Status</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-[140px_1fr] items-center gap-4 pt-5">
+            <div className="h-[120px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={reportStatusMix} dataKey="value" innerRadius={34} outerRadius={52} paddingAngle={3} stroke="rgba(255,255,255,0.06)" strokeWidth={2}>
+                    {reportStatusMix.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-3">
+              {reportStatusMix.map((item) => (
+                <SummaryRail key={item.name} label={item.name} value={item.value} max={generatedReports.length} color={item.color} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="rounded-2xl border border-white/6 bg-[#0d1526] px-4 py-3">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            <SummaryChip label="Reports" value={String(generatedReports.length)} />
+            <SummaryChip label="Evidence Packs" value={String(evidencePacks.length)} />
+            <SummaryChip label="Inspections" value={String(promptInspections.length)} />
+            <SummaryChip label="Scope Consumption" value={`${formatConsumption(reportScope.totalConsumption)} credits`} />
+          </div>
         </div>
       </div>
 
@@ -461,6 +497,30 @@ function SummaryChip({ label, value }: { label: string; value: string }) {
     <div className="rounded-xl border border-white/6 bg-black/20 px-4 py-3 min-h-[76px]">
       <p className="dashboard-eyebrow">{label}</p>
       <p className="mt-2 text-sm md:text-[0.98rem] font-semibold leading-snug text-slate-100 text-balance">{value}</p>
+    </div>
+  );
+}
+
+function SummaryRail({
+  label,
+  value,
+  max,
+  color,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+}) {
+  return (
+    <div className="rounded-xl border border-white/6 bg-black/20 px-3 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-200">{label}</p>
+        <span className="text-xs text-slate-400">{value}</span>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-white/6 overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${max ? Math.max(12, (value / max) * 100) : 12}%`, backgroundColor: color }} />
+      </div>
     </div>
   );
 }

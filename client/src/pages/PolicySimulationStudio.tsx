@@ -11,16 +11,6 @@ import {
   Sparkles,
   TriangleAlert,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,13 +35,12 @@ type AdvisorMode =
   | "Use Case Risk Review";
 
 interface SimulationLevers {
-  routingStrictness: number;
-  promptThreshold: number;
-  lowUtilizationThreshold: number;
-  pluginReviewThreshold: number;
-  mcpReviewThreshold: number;
-  steeringScope: number;
-  overrunAlertThreshold: number;
+  modelTierCeiling: 1 | 2 | 3;
+  promptTokenCeiling: number;
+  maxActiveMcpServers: number;
+  contextCompactionTrigger: number;
+  maxAgenticSteps: number;
+  toolOutputTruncation: number;
 }
 
 const advisorModes: AdvisorMode[] = [
@@ -65,59 +54,59 @@ const advisorModes: AdvisorMode[] = [
 
 const defaultLevers: Record<AdvisorMode, SimulationLevers> = {
   "Executive Summary": {
-    routingStrictness: 70,
-    promptThreshold: 6200,
-    lowUtilizationThreshold: 3,
-    pluginReviewThreshold: 55,
-    mcpReviewThreshold: 55,
-    steeringScope: 45,
-    overrunAlertThreshold: 180,
+    modelTierCeiling: 2,
+    promptTokenCeiling: 4000,
+    maxActiveMcpServers: 4,
+    contextCompactionTrigger: 70,
+    maxAgenticSteps: 10,
+    toolOutputTruncation: 2000,
   },
   "Cost Concentration Review": {
-    routingStrictness: 78,
-    promptThreshold: 6500,
-    lowUtilizationThreshold: 4,
-    pluginReviewThreshold: 50,
-    mcpReviewThreshold: 50,
-    steeringScope: 40,
-    overrunAlertThreshold: 145,
+    modelTierCeiling: 2,
+    promptTokenCeiling: 4200,
+    maxActiveMcpServers: 4,
+    contextCompactionTrigger: 72,
+    maxAgenticSteps: 11,
+    toolOutputTruncation: 2200,
   },
   "License Hygiene Review": {
-    routingStrictness: 45,
-    promptThreshold: 7000,
-    lowUtilizationThreshold: 5,
-    pluginReviewThreshold: 35,
-    mcpReviewThreshold: 35,
-    steeringScope: 30,
-    overrunAlertThreshold: 220,
+    modelTierCeiling: 3,
+    promptTokenCeiling: 5200,
+    maxActiveMcpServers: 6,
+    contextCompactionTrigger: 82,
+    maxAgenticSteps: 15,
+    toolOutputTruncation: 2800,
   },
   "Optimization Recommendations": {
-    routingStrictness: 82,
-    promptThreshold: 5600,
-    lowUtilizationThreshold: 3,
-    pluginReviewThreshold: 65,
-    mcpReviewThreshold: 58,
-    steeringScope: 52,
-    overrunAlertThreshold: 160,
+    modelTierCeiling: 2,
+    promptTokenCeiling: 4000,
+    maxActiveMcpServers: 4,
+    contextCompactionTrigger: 70,
+    maxAgenticSteps: 10,
+    toolOutputTruncation: 2000,
   },
   "Model Routing Review": {
-    routingStrictness: 92,
-    promptThreshold: 6000,
-    lowUtilizationThreshold: 3,
-    pluginReviewThreshold: 45,
-    mcpReviewThreshold: 42,
-    steeringScope: 38,
-    overrunAlertThreshold: 170,
+    modelTierCeiling: 2,
+    promptTokenCeiling: 4600,
+    maxActiveMcpServers: 5,
+    contextCompactionTrigger: 74,
+    maxAgenticSteps: 12,
+    toolOutputTruncation: 2400,
   },
   "Use Case Risk Review": {
-    routingStrictness: 74,
-    promptThreshold: 5400,
-    lowUtilizationThreshold: 3,
-    pluginReviewThreshold: 70,
-    mcpReviewThreshold: 62,
-    steeringScope: 60,
-    overrunAlertThreshold: 150,
+    modelTierCeiling: 2,
+    promptTokenCeiling: 3600,
+    maxActiveMcpServers: 3,
+    contextCompactionTrigger: 68,
+    maxAgenticSteps: 9,
+    toolOutputTruncation: 1800,
   },
+};
+
+const MODEL_TIER_LABELS: Record<SimulationLevers["modelTierCeiling"], string> = {
+  1: "Qwen3 Coder Next",
+  2: "Sonnet",
+  3: "Opus",
 };
 
 export default function PolicySimulationStudio() {
@@ -150,6 +139,8 @@ export default function PolicySimulationStudio() {
   );
   const topRecommendation = resolvedScope.recommendations[0];
   const flaggedReduction = Math.max(0, simulation.flaggedBefore - simulation.flaggedAfter);
+  const projectedConsumption = Math.max(0, resolvedScope.totalConsumption - simulation.totalDelta);
+  const projectedOverrun = Math.max(0, resolvedScope.overrun - simulation.overrunDelta);
 
   const runSimulation = () => setSimulationRunCount((count) => count + 1);
 
@@ -267,61 +258,85 @@ export default function PolicySimulationStudio() {
             <div className="space-y-5 border-t border-white/5 pt-5">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">3. Policy levers</p>
               <SliderField
-                label="Model Routing Strictness"
-                value={levers.routingStrictness}
-                min={25}
-                max={100}
-                suffix="%"
-                onChange={(value) => setLevers((current) => ({ ...current, routingStrictness: value }))}
-              />
-              <SliderField
-                label="Prompt Threshold"
-                value={levers.promptThreshold}
-                min={3000}
-                max={9000}
-                step={250}
-                suffix=" chars"
-                onChange={(value) => setLevers((current) => ({ ...current, promptThreshold: value }))}
-              />
-              <SliderField
-                label="Low-utilization Seat Threshold"
-                value={levers.lowUtilizationThreshold}
+                section="Per-request cost"
+                label="Model tier ceiling"
+                value={4 - levers.modelTierCeiling}
                 min={1}
-                max={8}
-                suffix=" days"
-                onChange={(value) => setLevers((current) => ({ ...current, lowUtilizationThreshold: value }))}
+                max={3}
+                minLabel="Opus"
+                maxLabel="Qwen3 Coder Next"
+                displayValue={MODEL_TIER_LABELS[levers.modelTierCeiling]}
+                description="Routes task types to the highest model tier allowed for a single request."
+                badge="Highest leverage"
+                onChange={(value) =>
+                  setLevers((current) => ({
+                    ...current,
+                    modelTierCeiling: Math.max(1, Math.min(3, 4 - value)) as 1 | 2 | 3,
+                  }))
+                }
               />
               <SliderField
-                label="Plugin Review Threshold"
-                value={levers.pluginReviewThreshold}
-                min={10}
-                max={100}
-                suffix="%"
-                onChange={(value) => setLevers((current) => ({ ...current, pluginReviewThreshold: value }))}
+                label="Prompt token ceiling"
+                value={levers.promptTokenCeiling}
+                min={1000}
+                max={32000}
+                step={500}
+                minLabel="1K"
+                maxLabel="32K"
+                displayValue={`${levers.promptTokenCeiling.toLocaleString()} tokens`}
+                description="Hard cap on input size per request. This is measured in tokens, not characters."
+                badge={`${simulation.promptHeavyCount} offenders`}
+                onChange={(value) => setLevers((current) => ({ ...current, promptTokenCeiling: value }))}
               />
               <SliderField
-                label="MCP Review Threshold"
-                value={levers.mcpReviewThreshold}
-                min={10}
-                max={100}
-                suffix="%"
-                onChange={(value) => setLevers((current) => ({ ...current, mcpReviewThreshold: value }))}
+                label="Max active MCP servers"
+                value={levers.maxActiveMcpServers}
+                min={1}
+                max={12}
+                minLabel="1"
+                maxLabel="12"
+                displayValue={`${levers.maxActiveMcpServers} servers`}
+                description="Limits how many MCP servers can stay active before request context starts inflating."
+                badge={`${simulation.mcpHeavyCount} requests`}
+                onChange={(value) => setLevers((current) => ({ ...current, maxActiveMcpServers: value }))}
               />
               <SliderField
-                label="Steering Scope Controls"
-                value={levers.steeringScope}
-                min={5}
-                max={100}
-                suffix="%"
-                onChange={(value) => setLevers((current) => ({ ...current, steeringScope: value }))}
+                section="Session-level cost"
+                label="Context compaction trigger"
+                value={levers.contextCompactionTrigger}
+                min={50}
+                max={95}
+                minLabel="50%"
+                maxLabel="95%"
+                displayValue={`${levers.contextCompactionTrigger}%`}
+                description="Determines when long sessions should compact before they become expensive to reload."
+                badge="Session control"
+                onChange={(value) => setLevers((current) => ({ ...current, contextCompactionTrigger: value }))}
               />
               <SliderField
-                label="Overrun Alert Threshold"
-                value={levers.overrunAlertThreshold}
-                min={60}
-                max={300}
-                suffix=" credits"
-                onChange={(value) => setLevers((current) => ({ ...current, overrunAlertThreshold: value }))}
+                label="Max agentic steps"
+                value={levers.maxAgenticSteps}
+                min={3}
+                max={30}
+                minLabel="3"
+                maxLabel="30"
+                displayValue={`${levers.maxAgenticSteps} steps`}
+                description="Caps how many autonomous steps an agentic workflow can take before it should stop or hand off."
+                badge={`${simulation.agenticCount} agentic`}
+                onChange={(value) => setLevers((current) => ({ ...current, maxAgenticSteps: value }))}
+              />
+              <SliderField
+                label="Tool output truncation"
+                value={levers.toolOutputTruncation}
+                min={500}
+                max={10000}
+                step={250}
+                minLabel="500"
+                maxLabel="10K"
+                displayValue={`${levers.toolOutputTruncation.toLocaleString()} tokens`}
+                description="Caps how much tool output can return into context before it starts inflating downstream requests."
+                badge={`${simulation.toolOutputHeavyCount} oversized`}
+                onChange={(value) => setLevers((current) => ({ ...current, toolOutputTruncation: value }))}
               />
 
               <Button
@@ -366,6 +381,33 @@ export default function PolicySimulationStudio() {
                   </div>
                 </div>
               </div>
+
+              <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-4">
+                <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-4">Before / After</h3>
+                <div className="space-y-4">
+                  <OutcomeBullet
+                    label="Consumption"
+                    before={resolvedScope.totalConsumption}
+                    after={projectedConsumption}
+                    formatter={(value) => `${formatConsumption(value)} credits`}
+                    tone="blue"
+                  />
+                  <OutcomeBullet
+                    label="Overrun"
+                    before={resolvedScope.overrun}
+                    after={projectedOverrun}
+                    formatter={(value) => `${formatConsumption(value)} credits`}
+                    tone="amber"
+                  />
+                  <OutcomeBullet
+                    label="Flagged risks"
+                    before={simulation.flaggedBefore}
+                    after={simulation.flaggedAfter}
+                    formatter={(value) => `${value}`}
+                    tone="violet"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -390,43 +432,16 @@ export default function PolicySimulationStudio() {
               <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-5">
                 <div className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
                   <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-4">Intervention Breakdown</h3>
-                  <div className="h-[260px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={simulation.interventionChart} margin={{ bottom: 12 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                        <XAxis
-                          dataKey="name"
-                          stroke="#94a3b8"
-                          fontSize={11}
-                          tickLine={false}
-                          axisLine={false}
-                          label={{ value: "Intervention", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
-                        />
-                        <YAxis
-                          stroke="#94a3b8"
-                          fontSize={11}
-                          tickLine={false}
-                          axisLine={false}
-                          label={{ value: "Projected credits", angle: -90, position: "insideLeft", fill: "#94A3B8", fontSize: 12 }}
-                        />
-                        <Tooltip
-                          cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                          contentStyle={{
-                            backgroundColor: "#0B1120",
-                            borderColor: "rgba(255,255,255,0.1)",
-                            borderRadius: "12px",
-                          }}
-                          formatter={(value: number) => [`${formatConsumption(value)} credits`, "Projected delta"]}
-                        />
-                        <Bar dataKey="delta" fill="url(#simulationGradient)" radius={[10, 10, 0, 0]} />
-                        <defs>
-                          <linearGradient id="simulationGradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#3B82F6" />
-                            <stop offset="100%" stopColor="#A855F7" />
-                          </linearGradient>
-                        </defs>
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <div className="space-y-4">
+                    {simulation.interventionChart.map((item, index) => (
+                      <InterventionRail
+                        key={item.name}
+                        label={item.name}
+                        value={item.delta}
+                        max={simulation.interventionChart[0]?.delta ?? item.delta}
+                        tone={index % 2 === 0 ? "blue" : "violet"}
+                      />
+                    ))}
                   </div>
                 </div>
 
@@ -598,62 +613,81 @@ function buildSimulation(
   advisorMode: AdvisorMode,
   levers: SimulationLevers,
 ) {
-  const promptHeavyInteractions = scope.interactions.filter((interaction) => interaction.promptChars >= levers.promptThreshold);
-  const modelMismatchInteractions = scope.interactions.filter(
-    (interaction) =>
-      ["test-generation", "guardrail-evaluation"].includes(interaction.useCaseKey) &&
-      interaction.modelCategory === "High Reasoning",
+  const promptHeavyInteractions = scope.interactions.filter(
+    (interaction) => interaction.promptChars / 4 >= levers.promptTokenCeiling,
   );
-  const pluginHeavyInteractions = scope.interactions.filter((interaction) => interaction.pluginName !== "Direct Kiro");
+  const modelMismatchInteractions = scope.interactions.filter((interaction) => {
+    const modelName = interaction.modelName.toLowerCase();
+    if (levers.modelTierCeiling === 3) return false;
+    if (levers.modelTierCeiling === 2) return modelName.includes("opus");
+    return modelName.includes("opus") || modelName.includes("sonnet");
+  });
   const mcpHeavyInteractions = scope.interactions.filter((interaction) => interaction.mcpServer !== "No MCP Invoked");
-  const steeringHeavyInteractions = scope.interactions.filter((interaction) =>
-    interaction.inputDrivers.some((driver) => driver.label === "Instruction / Steering Overhead"),
+  const longContextInteractions = scope.interactions.filter((interaction) =>
+    interaction.inputDrivers.some(
+      (driver) =>
+        driver.label === "Instruction / Steering Overhead" || driver.label === "Specification / Workflow Context",
+    ),
+  );
+  const agenticInteractions = scope.interactions.filter(
+    (interaction) => interaction.agentPattern === "orchestrated-multi-agent" || interaction.toolInvocationCount >= levers.maxAgenticSteps,
+  );
+  const toolOutputHeavyInteractions = scope.interactions.filter(
+    (interaction) => interaction.responseChars / 4 >= levers.toolOutputTruncation,
   );
   const lowUtilizationSeats = scope.engineers.filter(
-    (engineer) => engineer.subscriptionStatus.toLowerCase() === "active" && engineer.activeDays <= levers.lowUtilizationThreshold,
+    (engineer) => engineer.subscriptionStatus.toLowerCase() === "active" && engineer.activeDays <= 3,
   );
 
-  const modelSavings = modelMismatchInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0) * (levers.routingStrictness / 100) * 0.26;
+  const modelSavings =
+    modelMismatchInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0) *
+    (levers.modelTierCeiling === 2 ? 0.24 : 0.38);
   const promptSavings =
     promptHeavyInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0) *
-    Math.max(0, (8200 - levers.promptThreshold) / 5200) *
-    0.16;
-  const pluginSavings =
-    pluginHeavyInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0) *
-    (levers.pluginReviewThreshold / 100) *
-    0.07;
+    Math.max(0, (32000 - levers.promptTokenCeiling) / 28000) *
+    0.18;
   const mcpSavings =
     mcpHeavyInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0) *
-    (levers.mcpReviewThreshold / 100) *
-    0.05;
-  const steeringSavings =
-    steeringHeavyInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0) *
-    (levers.steeringScope / 100) *
-    0.09;
+    Math.max(0, (12 - levers.maxActiveMcpServers) / 11) *
+    0.08;
+  const compactionSavings =
+    longContextInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0) *
+    Math.max(0, (95 - levers.contextCompactionTrigger) / 45) *
+    0.1;
+  const agenticSavings =
+    agenticInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0) *
+    Math.max(0, (30 - levers.maxAgenticSteps) / 27) *
+    0.12;
+  const toolOutputSavings =
+    toolOutputHeavyInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0) *
+    Math.max(0, (10000 - levers.toolOutputTruncation) / 9500) *
+    0.08;
 
   const totalDelta = Math.min(
     scope.totalConsumption * 0.38,
-    Math.round(modelSavings + promptSavings + pluginSavings + mcpSavings + steeringSavings),
+    Math.round(modelSavings + promptSavings + mcpSavings + compactionSavings + agenticSavings + toolOutputSavings),
   );
   const overrunDelta = Math.min(scope.overrun, Math.round(totalDelta * 0.18 + scope.overrun * 0.12));
   const flaggedBefore = scope.interactions.filter(
-    (interaction) => interaction.estimatedCredits >= levers.overrunAlertThreshold,
+    (interaction) => interaction.estimatedCredits >= 160,
   ).length;
   const flaggedAfter = Math.max(
     0,
     flaggedBefore -
       Math.round(
-        (modelMismatchInteractions.length * (levers.routingStrictness / 100)) / 2 +
-          (promptHeavyInteractions.length * Math.max(0, (7000 - levers.promptThreshold) / 4000)) / 2,
+        modelMismatchInteractions.length * (levers.modelTierCeiling === 1 ? 0.7 : 0.45) +
+          promptHeavyInteractions.length * Math.max(0, (8000 - levers.promptTokenCeiling) / 7000) * 0.55 +
+          agenticInteractions.length * Math.max(0, (14 - levers.maxAgenticSteps) / 11) * 0.3,
       ),
   );
 
   const interventionChart = [
     { name: "Model routing", delta: Math.round(modelSavings) },
-    { name: "Prompt discipline", delta: Math.round(promptSavings) },
-    { name: "Plugin review", delta: Math.round(pluginSavings) },
-    { name: "MCP review", delta: Math.round(mcpSavings) },
-    { name: "Steering scope", delta: Math.round(steeringSavings) },
+    { name: "Prompt token cap", delta: Math.round(promptSavings) },
+    { name: "MCP ceiling", delta: Math.round(mcpSavings) },
+    { name: "Context compaction", delta: Math.round(compactionSavings) },
+    { name: "Agentic step guard", delta: Math.round(agenticSavings) },
+    { name: "Tool output truncation", delta: Math.round(toolOutputSavings) },
   ].filter((item) => item.delta > 0);
 
   const topUseCase = scope.useCases[0];
@@ -673,7 +707,10 @@ function buildSimulation(
   return {
     promptHeavyCount: promptHeavyInteractions.length,
     modelMismatchCount: modelMismatchInteractions.length,
-    pluginHeavyCount: pluginHeavyInteractions.length,
+    mcpHeavyCount: mcpHeavyInteractions.length,
+    agenticCount: agenticInteractions.length,
+    toolOutputHeavyCount: toolOutputHeavyInteractions.length,
+    pluginHeavyCount: toolOutputHeavyInteractions.length,
     lowUtilizationSeats: lowUtilizationSeats.length,
     totalDelta,
     overrunDelta,
@@ -728,8 +765,8 @@ function buildAdvisorSummary({
 
   if (advisorMode === "Model Routing Review") {
     return [
-      `${modelMismatchInteractions.length} interactions use a high-reasoning tier for lower-complexity workflows.`,
-      `The strongest candidate for lighter routing is ${topUseCase?.label ?? "the dominant use case"} based on current prompt and response patterns.`,
+      `${modelMismatchInteractions.length} interactions currently exceed the selected model tier ceiling.`,
+      `The strongest candidate for stricter model routing is ${topUseCase?.label ?? "the dominant use case"} based on current request cost and workflow fit.`,
       ...shared,
     ];
   }
@@ -754,7 +791,7 @@ function buildAdvisorSummary({
 
   if (advisorMode === "Executive Summary") {
     return [
-      `${scope.label} shows a mix of prompt bloat, model mismatch, and tool-driven context expansion.`,
+      `${scope.label} shows a mix of prompt bloat, model-tier creep, and session-level context expansion.`,
       topRecommendation
         ? `Top action: ${topRecommendation.title}.`
         : "No single recommendation dominates; the opportunity is distributed across multiple usage patterns.",
@@ -763,37 +800,59 @@ function buildAdvisorSummary({
   }
 
   return [
-    `${promptHeavyInteractions.length} interactions exceed the chosen prompt threshold and are likely carrying repeated context.`,
-    `${modelMismatchInteractions.length} interactions could shift to a lighter model tier with limited quality risk.`,
+    `${promptHeavyInteractions.length} interactions exceed the selected token ceiling and are likely carrying repeated context.`,
+    `${modelMismatchInteractions.length} interactions could shift below the current model tier ceiling with limited quality risk.`,
     ...shared,
   ];
 }
 
 function SliderField({
+  section,
   label,
   value,
   min,
   max,
   onChange,
-  suffix,
+  displayValue,
+  description,
+  badge,
+  minLabel,
+  maxLabel,
   step = 1,
 }: {
+  section?: string;
   label: string;
   value: number;
   min: number;
   max: number;
   onChange: (value: number) => void;
-  suffix: string;
+  displayValue: string;
+  description: string;
+  badge?: string;
+  minLabel: string;
+  maxLabel: string;
   step?: number;
 }) {
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <label className="text-sm text-slate-300">{label}</label>
-        <span className="text-xs font-mono text-blue-300">
-          {value.toLocaleString()}
-          {suffix}
-        </span>
+    <div className="space-y-3 border-t border-white/5 pt-5 first:border-t-0 first:pt-0">
+      {section ? (
+        <div className="rounded-xl bg-white/[0.03] px-3 py-2">
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{section}</p>
+        </div>
+      ) : null}
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-2 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-sm font-medium text-slate-200">{label}</label>
+            {badge ? (
+              <Badge className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/5">
+                {badge}
+              </Badge>
+            ) : null}
+          </div>
+          <p className="text-sm leading-relaxed text-slate-400">{description}</p>
+        </div>
+        <span className="shrink-0 text-sm font-semibold text-blue-300">{displayValue}</span>
       </div>
       <input
         type="range"
@@ -804,6 +863,10 @@ function SliderField({
         onChange={(event) => onChange(Number(event.target.value))}
         className="w-full accent-blue-500"
       />
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>{minLabel}</span>
+        <span>{maxLabel}</span>
+      </div>
     </div>
   );
 }
@@ -858,6 +921,79 @@ function ImpactCard({
       <p className="text-xs uppercase tracking-[0.18em] opacity-80">{label}</p>
       <p className="text-2xl font-semibold mt-2">{value}</p>
       <p className="text-xs opacity-75 mt-2">{hint}</p>
+    </div>
+  );
+}
+
+function OutcomeBullet({
+  label,
+  before,
+  after,
+  formatter,
+  tone,
+}: {
+  label: string;
+  before: number;
+  after: number;
+  formatter: (value: number) => string;
+  tone: "blue" | "amber" | "violet";
+}) {
+  const tones = {
+    blue: "bg-blue-500",
+    amber: "bg-amber-400",
+    violet: "bg-violet-400",
+  } as const;
+  const max = Math.max(before, after, 1);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-200">{label}</p>
+        <p className="text-xs text-slate-400">{formatter(after)}</p>
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <span className="w-14 shrink-0 text-[11px] uppercase tracking-[0.18em] text-slate-500">Before</span>
+          <div className="h-2 flex-1 rounded-full bg-white/6 overflow-hidden">
+            <div className="h-full rounded-full bg-slate-500/70" style={{ width: `${(before / max) * 100}%` }} />
+          </div>
+          <span className="w-28 shrink-0 text-right text-xs text-slate-400">{formatter(before)}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="w-14 shrink-0 text-[11px] uppercase tracking-[0.18em] text-slate-500">After</span>
+          <div className="h-2 flex-1 rounded-full bg-white/6 overflow-hidden">
+            <div className={`h-full rounded-full ${tones[tone]}`} style={{ width: `${(after / max) * 100}%` }} />
+          </div>
+          <span className="w-28 shrink-0 text-right text-xs text-slate-200">{formatter(after)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InterventionRail({
+  label,
+  value,
+  max,
+  tone,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  tone: "blue" | "violet";
+}) {
+  return (
+    <div className="rounded-xl border border-white/5 bg-black/20 px-3 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-200">{label}</p>
+        <span className="text-xs text-slate-400">{formatConsumption(value)} credits</span>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-white/6 overflow-hidden">
+        <div
+          className={`h-full rounded-full ${tone === "blue" ? "bg-[linear-gradient(90deg,#3b82f6,#60a5fa)]" : "bg-[linear-gradient(90deg,#6366f1,#a855f7)]"}`}
+          style={{ width: `${max ? Math.max(14, (value / max) * 100) : 14}%` }}
+        />
+      </div>
     </div>
   );
 }

@@ -4,12 +4,11 @@ import {
   Activity,
   LayoutDashboard, 
   Compass, 
-  AlertTriangle, 
   Beaker, 
   FileText,
   Search,
   Bell,
-  User,
+  LogOut,
   Menu,
   Sparkles,
 } from "lucide-react";
@@ -19,6 +18,7 @@ import { KIRO_DATA } from "@/lib/kiro-data";
 
 interface LayoutProps {
   children: ReactNode;
+  onLogout?: () => void;
 }
 
 const navItems = [
@@ -29,7 +29,7 @@ const navItems = [
   { href: "/reports", label: "Reports & Evidence", icon: FileText },
 ];
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, onLogout }: LayoutProps) {
   const [location] = useLocation();
 
   return (
@@ -109,9 +109,17 @@ export default function Layout({ children }: LayoutProps) {
               <span className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-[#0c1220]"></span>
             </Button>
             <div className="w-px h-5 bg-white/10 mx-2 hidden sm:block" />
-            <Button variant="ghost" size="icon" className="rounded-full bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 ml-1">
-              <User className="h-4 w-4" />
-            </Button>
+            {onLogout ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 ml-1"
+                onClick={onLogout}
+                aria-label="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            ) : null}
             <Button variant="ghost" size="icon" className="md:hidden text-slate-400 hover:text-slate-100 hover:bg-white/5">
               <Menu className="h-5 w-5" />
             </Button>
