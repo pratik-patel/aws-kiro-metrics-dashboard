@@ -163,7 +163,7 @@ export default function PolicySimulationStudio() {
           </div>
           <h1 className="dashboard-page-title mb-1">Policy & Simulation Studio</h1>
           <p className="dashboard-page-lead max-w-4xl">
-            Choose a scope, tune the guardrails, and compare projected impact before changing live behavior.
+            Adjust policy levers, compare projected impact, and decide before changing live behavior.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -358,14 +358,11 @@ export default function PolicySimulationStudio() {
                 <div className="flex items-start gap-3">
                   <Sparkles className="w-5 h-5 text-blue-300 mt-0.5 shrink-0" />
                   <div>
-                    <h3 className="text-sm font-medium text-blue-100">Recommended next move</h3>
+                    <h3 className="text-sm font-medium text-blue-100">Next move</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-300">
                       {topRecommendation?.title ??
-                        "Use the current simulation summary to prioritize which recommendation bundle should be reviewed next."}
+                        "Use the simulation outcome to choose the next recommendation bundle."}
                     </p>
-                    {topRecommendation?.recommendedAction && (
-                      <p className="mt-2 text-xs leading-6 text-slate-400">{topRecommendation.recommendedAction}</p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -441,17 +438,19 @@ export default function PolicySimulationStudio() {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="text-sm font-medium text-slate-100">{useCase.label}</p>
-                            <p className="text-xs text-slate-500 mt-1">{useCase.category}</p>
+                            <p className="text-xs text-slate-500 mt-1">{useCase.dominantModel}</p>
                           </div>
                           <Badge className="bg-white/5 text-slate-300 border-white/10">
-                            {formatConsumption(useCase.totalConsumption)}
+                            {formatConsumption(useCase.totalConsumption)} credits
                           </Badge>
                         </div>
-                        <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-400">
-                          <div>Model: <span className="text-slate-200">{useCase.dominantModel}</span></div>
-                          <div>Prompt avg: <span className="text-slate-200">{useCase.avgPromptChars.toLocaleString()}</span></div>
-                          <div>Plugin: <span className="text-slate-200">{useCase.dominantPlugin}</span></div>
-                          <div>MCP: <span className="text-slate-200">{useCase.dominantMcp}</span></div>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
+                          <span className="rounded-full border border-white/8 bg-black/20 px-2.5 py-1">
+                            {useCase.interactionCount} interactions
+                          </span>
+                          <span className="rounded-full border border-white/8 bg-black/20 px-2.5 py-1">
+                            {useCase.category}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -467,7 +466,7 @@ export default function PolicySimulationStudio() {
             </CardHeader>
             <CardContent className="space-y-5 pt-6">
               <div className="space-y-3">
-                {simulation.summary.map((item) => (
+                {simulation.summary.slice(0, 2).map((item) => (
                   <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/5 bg-black/20 px-4 py-4 text-sm text-slate-300">
                     <CheckCircle2 className="w-4 h-4 text-teal-300 mt-0.5 shrink-0" />
                     <span>{item}</span>
@@ -481,8 +480,7 @@ export default function PolicySimulationStudio() {
                   <div>
                     <h3 className="text-sm font-medium text-red-200">Caveat</h3>
                     <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                      This simulation uses observed Kiro telemetry for prompts, models, tools, and use cases. Steering,
-                      retrieved context, and instruction overhead remain estimated.
+                      Uses observed Kiro telemetry; steering, retrieved context, and instruction overhead remain estimated.
                     </p>
                   </div>
                 </div>

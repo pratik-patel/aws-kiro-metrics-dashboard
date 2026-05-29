@@ -53,6 +53,31 @@ function formatChartValue(value: number) {
   return `${value.toFixed(1).replace(".0", "")} credits`;
 }
 
+function wrapAxisLabel(name: string, maxLineLength: number) {
+  const words = name.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+    if (nextLine.length <= maxLineLength) {
+      currentLine = nextLine;
+      return;
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    currentLine = word;
+  });
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
 function wrapTreemapLabel(name: string, maxLineLength: number) {
   const words = name.split(" ");
   const lines: string[] = [];
@@ -552,6 +577,7 @@ export default function GovernanceOverview() {
                   items={KIRO_DATA.costCenters.slice(1, 4).map((item) => ({
                     id: item.id,
                     label: item.name,
+                    amount: item.totalConsumption,
                     value: `${formatConsumption(item.totalConsumption)} credits`,
                     href: `/detail/cost-center/${item.id}`,
                   }))}
@@ -561,6 +587,7 @@ export default function GovernanceOverview() {
                   items={aiDeliveryTeamSplits.map((item) => ({
                     id: item.name,
                     label: item.name,
+                    amount: item.credits,
                     value: `${formatConsumption(item.credits)} credits`,
                     href: item.href,
                   }))}
@@ -590,14 +617,14 @@ export default function GovernanceOverview() {
               </div>
               <div className="grid grid-cols-1 gap-3">
                 <BriefSignal
-                  label="Recommendation Type"
-                  value={leadRecommendation?.type ?? "Governance review"}
-                  note={leadRecommendation?.scopeLabel ?? "Enterprise"}
+                  label="Scope"
+                  value={leadRecommendation?.scopeLabel ?? "Enterprise"}
+                  note={leadRecommendation?.type ?? "Governance review"}
                 />
                 <BriefSignal
-                  label="Expected Impact"
-                  value={leadRecommendation?.expectedImpact ?? "Reduce overrun and tighten policy-controlled workflows."}
-                  note="Modeled from current telemetry and usage patterns"
+                  label="Linked Evidence"
+                  value={`${leadRecommendation?.evidenceInteractionIds.length ?? 0} interactions`}
+                  note="Ready for inspection"
                 />
               </div>
               <div className="rounded-2xl border border-white/6 bg-black/20 p-4">
@@ -767,25 +794,78 @@ function RankedList({
   items,
 }: {
   title: string;
-  items: Array<{ id: string; label: string; value: string; href: string }>;
+  items: Array<{ id: string; label: string; amount: number; value: string; href: string }>;
 }) {
   return (
     <div className="p-5">
       <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-4">{title}</h3>
-      <div className="space-y-3">
+      <div className="h-[248px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={items}
+            layout="vertical"
+            margin={{ top: 6, right: 18, left: 120, bottom: 6 }}
+            barCategoryGap={18}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
+            <XAxis type="number" hide />
+            <YAxis
+              type="category"
+              dataKey="label"
+              width={150}
+              axisLine={false}
+              tickLine={false}
+              tick={({ x, y, payload }) => {
+                const lines = wrapAxisLabel(String(payload.value), 18);
+                return (
+                  <g transform={`translate(${x},${y})`}>
+                    <text x={-10} y={0} textAnchor="end" fill="#E2E8F0" fontSize={12} fontWeight={500}>
+                      {lines.map((line, index) => (
+                        <tspan key={`${line}-${index}`} x={-10} dy={index === 0 ? -4 : 14}>
+                          {line}
+                        </tspan>
+                      ))}
+                    </text>
+                  </g>
+                );
+              }}
+            />
+            <Tooltip
+              cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+              contentStyle={{
+                backgroundColor: "#0f172a",
+                borderColor: "rgba(255,255,255,0.1)",
+                borderRadius: "12px",
+              }}
+              formatter={(value: number) => [`${formatConsumption(Number(value))} credits`, "Consumption"]}
+            />
+            <Bar
+              dataKey="amount"
+              radius={[0, 12, 12, 0]}
+              fill="#3b82f6"
+              onClick={(entry) => {
+                if (entry?.href) {
+                  window.location.href = entry.href;
+                }
+              }}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-2">
         {items.map((item, index) => (
           <Link key={item.id} href={item.href}>
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/20 px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/20 px-3 py-2.5 hover:bg-white/[0.03] transition-colors cursor-pointer">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-7 h-7 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-xs text-blue-300 shrink-0">
+                <div className="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[11px] text-blue-300 shrink-0">
                   {index + 1}
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-100 text-balance">{item.label}</p>
-                  <p className="text-xs text-slate-500">{item.value}</p>
-                </div>
+                <p className="text-sm text-slate-200 truncate">{item.label}</p>
               </div>
-              <ArrowUpRight className="w-4 h-4 text-slate-500 shrink-0" />
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-slate-400">{item.value}</span>
+                <ArrowUpRight className="w-4 h-4 text-slate-500" />
+              </div>
             </div>
           </Link>
         ))}

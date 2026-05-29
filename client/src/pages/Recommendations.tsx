@@ -76,22 +76,16 @@ export default function Recommendations() {
     [sortedRecommendations],
   );
 
-  const categoryMix = useMemo(() => {
-    const counts = new Map<string, number>();
-    sortedRecommendations.forEach((recommendation) => {
-      counts.set(recommendation.type, (counts.get(recommendation.type) ?? 0) + 1);
-    });
-
-    return Array.from(counts.entries())
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [sortedRecommendations]);
+  const actionTypeCount = useMemo(
+    () => new Set(sortedRecommendations.map((recommendation) => recommendation.type)).size,
+    [sortedRecommendations],
+  );
 
   const totalEvidenceLinks = useMemo(
     () => sortedRecommendations.reduce((sum, recommendation) => sum + recommendation.evidenceInteractionIds.length, 0),
     [sortedRecommendations],
   );
+  const maxEvidenceLinks = sortedRecommendations[0]?.evidenceInteractionIds.length ?? 0;
 
   const primaryEvidence = selectedRecommendation ? getInteractionById(selectedRecommendation.evidenceInteractionIds[0]) : null;
   const highSeverityCount = sortedRecommendations.filter((recommendation) => recommendation.severity === "High").length;
@@ -112,10 +106,10 @@ export default function Recommendations() {
               <h1 className="dashboard-page-title mb-2">Recommendations</h1>
             </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <SummaryChip label="High severity" value={String(highSeverityCount)} />
-              <SummaryChip label="Queue" value={String(sortedRecommendations.length)} />
-              <SummaryChip label="Evidence links" value={String(totalEvidenceLinks)} />
-              <SummaryChip label="Top pattern" value={categoryMix[0]?.label ?? "Mixed"} />
+                <SummaryChip label="High severity" value={String(highSeverityCount)} />
+                <SummaryChip label="Queue" value={String(sortedRecommendations.length)} />
+                <SummaryChip label="Evidence links" value={String(totalEvidenceLinks)} />
+                <SummaryChip label="Action types" value={String(actionTypeCount)} />
             </div>
           </div>
 
@@ -167,16 +161,27 @@ export default function Recommendations() {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-2">
+                        <div className="space-y-3 min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge className={severityStyles[recommendation.severity]}>{recommendation.severity}</Badge>
                             <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
-                            <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.scopeType}</Badge>
                           </div>
                           <p className="dashboard-item-title">{recommendation.title}</p>
                           <p className="dashboard-muted-body">{recommendation.scopeLabel}</p>
+                          <div className="flex items-center gap-3">
+                            <div className="h-2 flex-1 rounded-full bg-white/6 overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#8b5cf6)]"
+                                style={{
+                                  width: `${maxEvidenceLinks ? Math.max(16, (recommendation.evidenceInteractionIds.length / maxEvidenceLinks) * 100) : 16}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="text-xs text-slate-500 whitespace-nowrap">
+                              {recommendation.evidenceInteractionIds.length} evidence
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-right text-xs text-slate-500">{recommendation.evidenceInteractionIds.length} evidence</div>
                       </div>
                     </button>
                   ))}
@@ -223,21 +228,20 @@ export default function Recommendations() {
             </CardHeader>
             <CardContent className="space-y-5 pt-6">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <SummaryChip label="Scope" value={selectedRecommendation.scopeType} />
-                <SummaryChip label="Impact" value={selectedRecommendation.expectedImpact} />
+                <SummaryChip label="Scope" value={selectedRecommendation.scopeLabel} />
+                <SummaryChip label="Type" value={selectedRecommendation.type} />
                 <SummaryChip label="Evidence" value={`${selectedRecommendation.evidenceInteractionIds.length} linked`} />
               </div>
 
               <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
-                <p className="dashboard-eyebrow mb-3">Recommended Action</p>
+                <p className="dashboard-eyebrow mb-3">Action</p>
                 <p className="dashboard-body text-slate-100">{selectedRecommendation.recommendedAction}</p>
-                <p className="mt-3 text-sm leading-relaxed text-slate-400">{selectedRecommendation.whyItMatters}</p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[0.88fr_1.12fr]">
                 <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
                   <div className="flex items-center justify-between gap-3 mb-4">
-                    <h3 className="dashboard-section-title">Signals</h3>
+                    <h3 className="dashboard-section-title">Evidence Signals</h3>
                     <span className="dashboard-eyebrow">{topSignals.length}</span>
                   </div>
                   <div className="space-y-3">
@@ -288,7 +292,7 @@ export default function Recommendations() {
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="text-sm font-medium text-slate-100">{run.title}</p>
-                              <p className="mt-1 text-sm text-slate-400">{run.summary}</p>
+                              <p className="mt-1 text-sm text-slate-400">{run.scopeLabel}</p>
                             </div>
                             <Badge className={statusStyles[run.status]}>{run.status}</Badge>
                           </div>

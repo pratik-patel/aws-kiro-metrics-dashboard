@@ -73,6 +73,7 @@ export default function ReportEvidenceConsole() {
     () => resolveScopedDataset(selectedReport?.scopeType ?? "Enterprise", selectedReport?.scopeId ?? "enterprise"),
     [selectedReport],
   );
+  const topUseCaseMax = reportScope.useCases[0]?.totalConsumption ?? 0;
 
   const evidencePacks = useMemo(
     () =>
@@ -96,6 +97,7 @@ export default function ReportEvidenceConsole() {
         .slice(0, 6),
     [],
   );
+  const maxPromptInspectionCredits = promptInspections[0]?.estimatedCredits ?? 0;
 
   const handleGenerate = () => {
     const option = scopeOptions.find((item) => item.id === draftScopeId);
@@ -208,7 +210,7 @@ export default function ReportEvidenceConsole() {
         <div>
           <h1 className="dashboard-page-title mb-1">Reports & Evidence</h1>
           <p className="dashboard-page-lead max-w-4xl">
-            Select a report, read the summary, then open the supporting evidence.
+            Choose a report, scan the conclusion, then open the supporting evidence.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -230,7 +232,7 @@ export default function ReportEvidenceConsole() {
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           <SummaryChip label="Reports" value={String(generatedReports.length)} />
           <SummaryChip label="Evidence Packs" value={String(evidencePacks.length)} />
-          <SummaryChip label="Prompt Inspections" value={String(promptInspections.length)} />
+          <SummaryChip label="Inspections" value={String(promptInspections.length)} />
           <SummaryChip label="Scope Consumption" value={`${formatConsumption(reportScope.totalConsumption)} credits`} />
         </div>
       </div>
@@ -297,7 +299,7 @@ export default function ReportEvidenceConsole() {
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
             <section className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
-              <p className="dashboard-eyebrow mb-3">Executive Summary</p>
+              <p className="dashboard-eyebrow mb-3">Conclusion</p>
               <p className="text-sm leading-relaxed text-slate-300">
                 {selectedReport ? selectedReport.executiveSummary : "Select a report to preview the strategic summary."}
               </p>
@@ -311,14 +313,14 @@ export default function ReportEvidenceConsole() {
             </div>
 
             <section className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <p className="dashboard-eyebrow mb-3">Recommended Actions</p>
+              <p className="dashboard-eyebrow mb-3">Actions</p>
               <div className="space-y-3">
                 {reportScope.recommendations.slice(0, 2).map((recommendation) => (
                   <div key={recommendation.id} className="rounded-xl border border-white/5 bg-[#0b1120] p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-medium text-slate-100">{recommendation.title}</p>
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2">{recommendation.whyItMatters}</p>
+                        <p className="text-xs text-slate-400 mt-1 line-clamp-1">{recommendation.recommendedAction}</p>
                       </div>
                       <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
                     </div>
@@ -328,17 +330,27 @@ export default function ReportEvidenceConsole() {
             </section>
 
             <section className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <p className="dashboard-eyebrow mb-3">Top Use Cases</p>
+              <p className="dashboard-eyebrow mb-3">Cost Drivers</p>
               <div className="space-y-3">
                 {reportScope.useCases.slice(0, 3).map((useCase) => (
-                  <div key={useCase.key} className="flex items-start justify-between gap-4 border-b border-white/5 pb-3 last:border-b-0 last:pb-0">
-                    <div>
-                      <p className="text-sm font-medium text-slate-100">{useCase.label}</p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {useCase.dominantModel} · prompt avg {useCase.avgPromptChars.toLocaleString()} chars
-                      </p>
+                  <div key={useCase.key} className="rounded-xl border border-white/5 bg-[#0b1120] p-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-100">{useCase.label}</p>
+                        <p className="text-xs text-slate-400 mt-1">{useCase.dominantModel}</p>
+                      </div>
+                      <span className="text-sm text-slate-200 whitespace-nowrap">
+                        {formatConsumption(useCase.totalConsumption)} credits
+                      </span>
                     </div>
-                    <span className="text-sm text-slate-200">{formatConsumption(useCase.totalConsumption)}</span>
+                    <div className="mt-3 h-2.5 rounded-full bg-white/6 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#14b8a6)]"
+                        style={{
+                          width: `${topUseCaseMax ? Math.max(20, (useCase.totalConsumption / topUseCaseMax) * 100) : 20}%`,
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -382,23 +394,52 @@ export default function ReportEvidenceConsole() {
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-200">Recent Prompt Inspections</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-white/5">
-                {promptInspections.map((interaction) => (
-                  <button
-                    key={interaction.id}
-                    type="button"
-                    onClick={() => setEvidenceInteractionId(interaction.id)}
-                    className="w-full text-left p-4 hover:bg-white/[0.02] transition-colors"
-                  >
-                    <p className="font-medium text-slate-100">{interaction.useCaseLabel}</p>
-                    <p className="text-xs text-slate-400 mt-1">{interaction.engineerName} · {interaction.costCenterName}</p>
-                    <div className="flex items-center justify-between gap-3 mt-3">
-                      <span className="text-xs text-slate-500">{interaction.modelName}</span>
-                      <span className="text-sm text-slate-200">{formatConsumption(interaction.estimatedCredits)} credits</span>
-                    </div>
-                  </button>
-                ))}
+            <CardContent className="space-y-3 p-4">
+              <div className="grid grid-cols-2 gap-3">
+                <SummaryChip label="Inspections" value={String(promptInspections.length)} />
+                <SummaryChip
+                  label="Peak Inspection"
+                  value={maxPromptInspectionCredits ? `${formatConsumption(maxPromptInspectionCredits)} credits` : "None"}
+                />
+              </div>
+              <div className="space-y-3">
+                {promptInspections.map((interaction) => {
+                  const width = maxPromptInspectionCredits
+                    ? Math.max(18, (interaction.estimatedCredits / maxPromptInspectionCredits) * 100)
+                    : 18;
+
+                  return (
+                    <button
+                      key={interaction.id}
+                      type="button"
+                      onClick={() => setEvidenceInteractionId(interaction.id)}
+                      className="w-full rounded-2xl border border-white/6 bg-[#0b1120] p-4 text-left transition-colors hover:bg-white/[0.03]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-100">{interaction.useCaseLabel}</p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {interaction.engineerName} · {interaction.costCenterName}
+                          </p>
+                        </div>
+                        <Badge className="bg-white/5 text-slate-300 border-white/10 shrink-0">
+                          {interaction.modelName}
+                        </Badge>
+                      </div>
+                      <div className="mt-4 flex items-center gap-3">
+                        <div className="h-2.5 flex-1 rounded-full bg-white/6 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#8b5cf6)]"
+                            style={{ width: `${width}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-slate-200 whitespace-nowrap">
+                          {formatConsumption(interaction.estimatedCredits)} credits
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

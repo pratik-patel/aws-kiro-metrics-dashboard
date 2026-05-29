@@ -559,9 +559,6 @@ export default function UsageExplorer() {
                   <span className="h-2 w-2 rounded-full bg-[#FFB443]" />
                   Overrun present
                 </span>
-                <span className="rounded-full border border-white/8 bg-[#0B1120] px-3 py-1">
-                  Click to focus
-                </span>
                 {isContributionTruncated ? (
                   <span className="rounded-full border border-white/8 bg-[#0B1120] px-3 py-1">
                     Showing top {contributionChartData.length}
@@ -838,7 +835,6 @@ export default function UsageExplorer() {
         <Card className="dashboard-panel">
           <CardHeader className="dashboard-panel-header">
             <CardTitle className="dashboard-card-title text-slate-100">High-Cost Interactions</CardTitle>
-            <CardDescription className="text-slate-400">Open evidence from any row.</CardDescription>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <table className="dashboard-table min-w-[900px]">
