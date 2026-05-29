@@ -458,6 +458,11 @@ const USE_CASE_RESPONSE_SCALE: Record<string, number> = {
   "test-generation": 1.08,
 };
 
+const ACTIVE_ENGINEER_RULE = {
+  minActiveDays: 3,
+  minCredits: 250,
+} as const;
+
 function normalizeTeamName(userName: string, fallbackTeamName: string) {
   return ENGINEER_TEAM_ASSIGNMENTS[userName] ?? fallbackTeamName;
 }
@@ -558,6 +563,13 @@ function scaleInteractionResponseChars(
     (USE_CASE_RESPONSE_SCALE[useCaseKey] ?? 1) *
     seededFactor(`${row.Request_Id}:response`, 0.96, 1.06);
   return Math.round(toNumber(row.Response_Chars) * scale);
+}
+
+function isMateriallyActiveEngineer(engineer: Pick<EngineerSummary, "activeDays" | "totalConsumption">) {
+  return (
+    engineer.activeDays >= ACTIVE_ENGINEER_RULE.minActiveDays &&
+    engineer.totalConsumption >= ACTIVE_ENGINEER_RULE.minCredits
+  );
 }
 
 function parseCsv<T>(content: string): T[] {
@@ -978,7 +990,7 @@ function buildDataset(): KiroDataset {
     const team = teamsMap.get(engineer.teamId)!;
     team.totalConsumption += engineer.totalConsumption;
     team.overrun += engineer.overrun;
-    team.activeEngineers += 1;
+    team.activeEngineers += isMateriallyActiveEngineer(engineer) ? 1 : 0;
   });
 
   teamsMap.forEach((team) => {
@@ -1656,7 +1668,7 @@ function buildDataset(): KiroDataset {
     kpis: {
       totalConsumption: engineers.reduce((sum, engineer) => sum + engineer.totalConsumption, 0),
       overrun: engineers.reduce((sum, engineer) => sum + engineer.overrun, 0),
-      activeEngineers: engineers.length,
+      activeEngineers: engineers.filter(isMateriallyActiveEngineer).length,
       consumptionPerEngineer:
         engineers.reduce((sum, engineer) => sum + engineer.totalConsumption, 0) / Math.max(engineers.length, 1),
       topCostCenter: costCenters[0]?.name || "N/A",
