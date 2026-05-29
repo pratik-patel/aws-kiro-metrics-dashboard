@@ -121,6 +121,10 @@ function formatWindowLabel(startDate?: string, endDate?: string) {
   return `${formatChartDate(startDate)} - ${formatChartDate(endDate)}`;
 }
 
+function engineerDetailHref(engineerId: string) {
+  return `/detail/engineer/${engineerId}`;
+}
+
 export default function UsageExplorer() {
   const [search, setSearch] = useState("");
   const [selectedCostCenterId, setSelectedCostCenterId] = useState(KIRO_DATA.costCenters[0]?.id ?? "");
@@ -454,21 +458,34 @@ export default function UsageExplorer() {
               <div className="rounded-2xl border border-white/6 bg-[#0B1120] p-2">
                 <div className="space-y-2">
                 {topEngineerFocusRows.map((engineer) => (
-                  <Button
+                  <div
                     key={engineer.userId}
-                    type="button"
-                    variant={selectedEngineer?.userId === engineer.userId ? "default" : "outline"}
+                    role="button"
+                    tabIndex={0}
                     className={
                       selectedEngineer?.userId === engineer.userId
-                        ? "w-full h-auto rounded-xl bg-[#1D4ED8] text-white border border-blue-400/50 px-3 py-3"
-                        : "w-full h-auto rounded-xl bg-transparent border-white/8 text-slate-300 hover:bg-white/5 hover:text-white px-3 py-3"
+                        ? "w-full rounded-xl bg-[#1D4ED8] text-white border border-blue-400/50 px-3 py-3 cursor-pointer"
+                        : "w-full rounded-xl bg-transparent border border-white/8 text-slate-300 hover:bg-white/5 hover:text-white px-3 py-3 cursor-pointer"
                     }
                     onClick={() => setSelectedEngineerId(engineer.userId)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedEngineerId(engineer.userId);
+                      }
+                    }}
                   >
                     <div className="grid w-full gap-3 text-left md:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)_120px] md:items-center">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="truncate font-medium">{engineer.name}</span>
+                          <Link href={engineerDetailHref(engineer.id)}>
+                            <span
+                              className="truncate font-medium hover:underline underline-offset-4"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {engineer.name}
+                            </span>
+                          </Link>
                           <FunctionBadge role={engineer.engineerFunction} />
                         </div>
                       </div>
@@ -485,7 +502,7 @@ export default function UsageExplorer() {
                         {formatConsumption(engineer.totalConsumption)} credits
                       </div>
                     </div>
-                  </Button>
+                  </div>
                 ))}
                 </div>
               </div>
@@ -743,7 +760,9 @@ export default function UsageExplorer() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="dashboard-item-title">{engineer.name}</p>
+                        <Link href={engineerDetailHref(engineer.id)}>
+                          <p className="dashboard-item-title hover:underline underline-offset-4 cursor-pointer">{engineer.name}</p>
+                        </Link>
                         <FunctionBadge role={engineer.engineerFunction} />
                       </div>
                       <p className="text-sm text-slate-400">
@@ -793,7 +812,9 @@ export default function UsageExplorer() {
                 <tr key={engineer.userId} className="dashboard-table-row">
                   <td className="dashboard-table-cell-strong">
                     <div className="flex flex-wrap items-center gap-2 text-slate-200 font-medium">
-                      <span>{engineer.name}</span>
+                      <Link href={engineerDetailHref(engineer.id)}>
+                        <span className="hover:underline underline-offset-4 cursor-pointer">{engineer.name}</span>
+                      </Link>
                       <FunctionBadge role={engineer.engineerFunction} />
                     </div>
                   </td>
@@ -843,7 +864,14 @@ export default function UsageExplorer() {
                     </td>
                     <td className="dashboard-table-cell">
                       <div className="flex flex-wrap items-center gap-2 text-slate-300">
-                        <span>{interaction.engineerName}</span>
+                        <Link href={engineerDetailHref(interaction.engineerId)}>
+                          <span
+                            className="hover:underline underline-offset-4 cursor-pointer"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {interaction.engineerName}
+                          </span>
+                        </Link>
                         <FunctionBadge role={interaction.engineerFunction} />
                       </div>
                     </td>

@@ -455,6 +455,14 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function countAcceptedLines(value?: string) {
+  if (!value?.trim()) return 0;
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean).length;
+}
+
 function RankingCard({
   title,
   description,
@@ -551,6 +559,31 @@ function OwnershipPanel({
   }
 
   if (resolved.entityType === "engineer" && resolved.engineer) {
+    const engineerInteractions = getInteractionsForScope({ engineerId: resolved.engineer.userId });
+    const sessionCount = new Set(engineerInteractions.map((interaction) => interaction.conversationId)).size;
+    const acceptedLines = engineerInteractions.reduce(
+      (sum, interaction) => sum + countAcceptedLines(interaction.evidence.acceptedCompletion),
+      0,
+    );
+    const pluginItems = Array.from(
+      engineerInteractions.reduce((acc, interaction) => {
+        if (interaction.pluginName === "Direct Kiro") return acc;
+        acc.set(interaction.pluginName, (acc.get(interaction.pluginName) || 0) + interaction.estimatedCredits);
+        return acc;
+      }, new Map<string, number>()),
+    )
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 3);
+    const mcpItems = Array.from(
+      engineerInteractions.reduce((acc, interaction) => {
+        if (interaction.mcpServer === "No MCP Invoked") return acc;
+        acc.set(interaction.mcpServer, (acc.get(interaction.mcpServer) || 0) + interaction.estimatedCredits);
+        return acc;
+      }, new Map<string, number>()),
+    )
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 3);
+
     return (
       <Card className="bg-[#111827] border-white/5 shadow-lg">
         <CardHeader>
@@ -560,17 +593,54 @@ function OwnershipPanel({
           <div className="grid grid-cols-2 gap-4">
             <MiniMetric label="Subscription Tier" value={resolved.engineer.subscriptionTier} />
             <MiniMetric label="Plan Source" value={resolved.engineer.planSource} />
-            <MiniMetric label="Top Model" value={resolved.engineer.topModel} />
+            <MiniMetric label="Primary Model" value={resolved.engineer.topModel} />
             <MiniMetric label="Top Plugin" value={resolved.engineer.topPlugin} />
+            <MiniMetric label="Sessions" value={String(sessionCount)} />
+            <MiniMetric label="Accepted LoC" value={String(acceptedLines)} />
           </div>
-          <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
-            <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-3">Client Mix</h3>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(resolved.engineer.clientMix).map(([key, value]) => (
-                <Badge key={key} className="bg-white/5 text-slate-300 border-white/10">
-                  {key.replace("KIRO_", "")}: {formatPercent(value)}
-                </Badge>
-              ))}
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
+              <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-3">Client Mix</h3>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(resolved.engineer.clientMix).map(([key, value]) => (
+                  <Badge key={key} className="bg-white/5 text-slate-300 border-white/10">
+                    {key.replace("KIRO_", "")}: {formatPercent(value)}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
+              <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-3">Tools Used</h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.14em] text-slate-500 mb-2">Plugins</p>
+                  <div className="flex flex-wrap gap-2">
+                    {pluginItems.length ? (
+                      pluginItems.map(([label, credits]) => (
+                        <Badge key={label} className="bg-white/5 text-slate-300 border-white/10">
+                          {label}: {formatConsumption(credits)}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-slate-500">Direct Kiro only</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.14em] text-slate-500 mb-2">MCP Servers</p>
+                  <div className="flex flex-wrap gap-2">
+                    {mcpItems.length ? (
+                      mcpItems.map(([label, credits]) => (
+                        <Badge key={label} className="bg-white/5 text-slate-300 border-white/10">
+                          {label}: {formatConsumption(credits)}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-slate-500">No MCP invoked</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -660,6 +730,12 @@ function resolveScope(entityType: string, entityId: string) {
   }
 
   if (engineer) {
+    const engineerInteractions = getInteractionsForScope({ engineerId: engineer.userId });
+    const sessionCount = new Set(engineerInteractions.map((interaction) => interaction.conversationId)).size;
+    const acceptedLines = engineerInteractions.reduce(
+      (sum, interaction) => sum + countAcceptedLines(interaction.evidence.acceptedCompletion),
+      0,
+    );
     return {
       entityType,
       entityLabel: "Engineer",
@@ -675,9 +751,9 @@ function resolveScope(entityType: string, entityId: string) {
       interaction: null,
       metrics: [
         { label: "AI Consumption", value: `${formatConsumption(engineer.totalConsumption)} credits` },
-        { label: "Overrun", value: `${formatConsumption(engineer.overrun)} credits` },
-        { label: "Active Days", value: String(engineer.activeDays) },
-        { label: "Top Use Case", value: engineer.topUseCase, compact: true },
+        { label: "Sessions", value: String(sessionCount) },
+        { label: "Accepted LoC", value: String(acceptedLines) },
+        { label: "Primary Model", value: engineer.topModel, compact: true },
       ],
       tabs: [
         { value: "summary", label: "Summary" },
