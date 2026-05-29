@@ -8,7 +8,6 @@ import {
   Share2,
   X,
 } from "lucide-react";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
 import { ExperienceHeader } from "@/components/experience/ExperienceHeader";
@@ -76,10 +75,11 @@ export default function ReportEvidenceConsole() {
     [selectedReport],
   );
   const topUseCaseMax = reportScope.useCases[0]?.totalConsumption ?? 0;
+  const leadRecommendation = reportScope.recommendations[0] ?? null;
 
   const evidencePacks = useMemo(
     () =>
-      KIRO_DATA.recommendations
+      reportScope.recommendations
         .filter((recommendation) => recommendation.evidenceInteractionIds.length > 0)
         .slice(0, 5)
         .map((recommendation) => ({
@@ -89,18 +89,34 @@ export default function ReportEvidenceConsole() {
           interactionId: recommendation.evidenceInteractionIds[0],
           itemCount: recommendation.evidenceInteractionIds.length,
         })),
-    [],
+    [reportScope],
   );
-  const maxEvidencePackItems = evidencePacks[0]?.itemCount ?? 0;
+  const maxEvidencePackItems = evidencePacks.reduce((max, pack) => Math.max(max, pack.itemCount), 0);
 
   const promptInspections = useMemo(
     () =>
-      KIRO_DATA.interactions
+      [...reportScope.interactions]
         .filter((interaction) => interaction.evidence.chatCount > 0)
+        .sort((left, right) => right.estimatedCredits - left.estimatedCredits)
         .slice(0, 6),
-    [],
+    [reportScope],
+  );
+  const reportEvidenceChain = useMemo(
+    () =>
+      [...reportScope.interactions]
+        .sort((left, right) => right.estimatedCredits - left.estimatedCredits)
+        .slice(0, 3),
+    [reportScope],
   );
   const maxPromptInspectionCredits = promptInspections[0]?.estimatedCredits ?? 0;
+  const reportConfidence = deriveReportConfidence(reportScope.recommendations.length, evidencePacks.length, promptInspections.length);
+  const reportOwner = resolveReportOwner(selectedReport?.audience ?? "Executive Sponsor");
+  const reportReadiness =
+    selectedReport?.status === "Completed"
+      ? "Ready to share"
+      : selectedReport?.status === "Processing"
+        ? "Refresh in progress"
+        : "Needs regeneration";
   const reportStatusMix = useMemo(
     () =>
       [
@@ -119,7 +135,7 @@ export default function ReportEvidenceConsole() {
     {
       label: "Evidence Packs",
       value: `${evidencePacks.length} curated`,
-      note: `${maxEvidencePackItems} linked items in the richest evidence pack.`,
+      note: `${maxEvidencePackItems} linked items in the richest evidence pack for this report.`,
     },
     {
       label: "Prompt Inspections",
@@ -131,7 +147,7 @@ export default function ReportEvidenceConsole() {
     {
       label: "Scope Consumption",
       value: `${formatConsumption(reportScope.totalConsumption)} credits`,
-      note: `${reportScope.recommendations.length} linked recommendations support the active report scope.`,
+      note: `${reportScope.recommendations.length} scoped recommendations support the active report narrative.`,
     },
   ];
   const reportJourney = [
@@ -388,8 +404,15 @@ export default function ReportEvidenceConsole() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <MetricCard label="Report Status" value={reportReadiness} />
+              <MetricCard label="Evidence Confidence" value={reportConfidence} />
+              <MetricCard label="Decision Owner" value={reportOwner} />
+              <MetricCard label="Telemetry Freshness" value={KIRO_DATA.meta.freshness.replace("Last updated: ", "")} />
+            </div>
+
             <section className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
-              <p className="dashboard-eyebrow mb-3">Conclusion</p>
+              <p className="dashboard-eyebrow mb-3">Primary Claim</p>
               <p className="text-sm leading-relaxed text-slate-300">
                 {selectedReport ? selectedReport.executiveSummary : "Select a report to preview the strategic summary."}
               </p>
@@ -403,14 +426,53 @@ export default function ReportEvidenceConsole() {
             </div>
 
             <section className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <p className="dashboard-eyebrow mb-3">Actions</p>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="dashboard-eyebrow">Why We Believe This</p>
+                <span className="text-xs text-slate-500">{reportEvidenceChain.length} direct traces</span>
+              </div>
+              <div className="space-y-3">
+                {reportEvidenceChain.map((interaction) => (
+                  <button
+                    key={interaction.id}
+                    type="button"
+                    onClick={() => setEvidenceInteractionId(interaction.id)}
+                    className="w-full rounded-xl border border-white/5 bg-[#0b1120] p-3 text-left transition-colors hover:bg-white/[0.03]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-slate-100">{interaction.useCaseLabel}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {interaction.engineerName} · {interaction.modelName} · {interaction.requestSource}
+                        </p>
+                      </div>
+                      <Badge className="bg-white/5 text-slate-300 border-white/10">{formatConsumption(interaction.estimatedCredits)} credits</Badge>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
+                      <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                        {interaction.evidence.chatCount} chat traces
+                      </span>
+                      <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                        {interaction.evidence.inlineCount} inline traces
+                      </span>
+                      <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                        {interaction.promptChars.toLocaleString()} prompt chars
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-white/5 bg-black/20 p-4">
+              <p className="dashboard-eyebrow mb-3">Decision Handoff</p>
               <div className="space-y-3">
                 {reportScope.recommendations.slice(0, 2).map((recommendation) => (
                   <div key={recommendation.id} className="rounded-xl border border-white/5 bg-[#0b1120] p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-medium text-slate-100">{recommendation.title}</p>
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-1">{recommendation.recommendedAction}</p>
+                        <p className="text-xs text-slate-400 mt-1">{recommendation.expectedImpact}</p>
+                        <p className="text-xs text-slate-500 mt-2">{recommendation.recommendedAction}</p>
                       </div>
                       <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
                     </div>
@@ -420,7 +482,7 @@ export default function ReportEvidenceConsole() {
             </section>
 
             <section className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <p className="dashboard-eyebrow mb-3">Cost Drivers</p>
+              <p className="dashboard-eyebrow mb-3">Current Cost Drivers</p>
               <div className="space-y-3">
                 {reportScope.useCases.slice(0, 3).map((useCase) => (
                   <div key={useCase.key} className="rounded-xl border border-white/5 bg-[#0b1120] p-3">
@@ -449,6 +511,18 @@ export default function ReportEvidenceConsole() {
         </Card>
 
         <div className="space-y-6">
+          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+            <CardHeader className="bg-black/20 border-b border-white/5">
+              <CardTitle className="dashboard-card-title text-slate-200">Freshness & Trust</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-3 p-4">
+              <SummaryChip label="Status" value={selectedReport?.status ?? "Completed"} />
+              <SummaryChip label="Confidence" value={reportConfidence} />
+              <SummaryChip label="Owner" value={reportOwner} />
+              <SummaryChip label="Lead Action" value={leadRecommendation?.type ?? "No dominant action"} />
+            </CardContent>
+          </Card>
+
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <p className="dashboard-eyebrow">3. Open Evidence</p>
@@ -705,4 +779,17 @@ function MetricCard({ label, value }: { label: string; value: string }) {
       <p className="dashboard-metric-value mt-3">{value}</p>
     </div>
   );
+}
+
+function deriveReportConfidence(recommendationCount: number, evidencePackCount: number, inspectionCount: number) {
+  const confidenceScore = recommendationCount * 2 + evidencePackCount + Math.min(inspectionCount, 3);
+  if (confidenceScore >= 8) return "High confidence";
+  if (confidenceScore >= 5) return "Medium confidence";
+  return "Needs stronger evidence";
+}
+
+function resolveReportOwner(audience: Audience) {
+  if (audience === "Executive Sponsor") return "Governance lead";
+  if (audience === "Delivery Manager") return "Delivery manager";
+  return "Architecture lead";
 }
