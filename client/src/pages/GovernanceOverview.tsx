@@ -325,7 +325,7 @@ export default function GovernanceOverview() {
             </CardHeader>
             <CardContent className="h-[360px] border-t border-white/5 bg-[#0c1220]/50 pt-5">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={KIRO_DATA.dailyTrend} margin={{ top: 12, right: 18, left: 4, bottom: 34 }}>
+                <LineChart data={KIRO_DATA.dailyTrend} margin={{ top: 12, right: 18, left: 4, bottom: 38 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <Legend
                     verticalAlign="top"
@@ -343,12 +343,14 @@ export default function GovernanceOverview() {
                     height={58}
                     tickMargin={10}
                     minTickGap={14}
+                    label={{ value: "Date", position: "insideBottom", dy: 32, fill: "#94A3B8", fontSize: 12 }}
                   />
                   <YAxis
                     stroke="#94a3b8"
                     fontSize={11}
                     tickFormatter={(value) => formatConsumption(Number(value))}
                     width={52}
+                    label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#94A3B8", fontSize: 12 }}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "12px" }}
@@ -408,10 +410,21 @@ export default function GovernanceOverview() {
               </CardHeader>
               <CardContent className="h-[280px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={KIRO_DATA.clientMixByCostCenter} layout="vertical" margin={{ left: 20 }}>
+                  <BarChart data={KIRO_DATA.clientMixByCostCenter} layout="vertical" margin={{ left: 20, bottom: 16 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal vertical={false} />
-                    <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={11} width={110} />
+                    <XAxis
+                      type="number"
+                      hide
+                      label={{ value: "Requests", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      stroke="#cbd5e1"
+                      fontSize={11}
+                      width={110}
+                      label={{ value: "Cost center", angle: -90, position: "insideLeft", dx: -8, fill: "#94A3B8", fontSize: 12 }}
+                    />
                     <Tooltip
                       contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "8px" }}
                       itemStyle={{ color: "#e2e8f0" }}

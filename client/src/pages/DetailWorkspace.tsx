@@ -163,11 +163,22 @@ export default function DetailWorkspace() {
                   <BarChart
                     data={useCases.slice(0, 6).map((item) => ({ name: item.label, consumption: Number(item.totalConsumption.toFixed(2)) }))}
                     layout="vertical"
-                    margin={{ left: 20 }}
+                    margin={{ left: 20, bottom: 16 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal vertical={false} />
-                    <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="name" width={150} stroke="#cbd5e1" fontSize={11} />
+                    <XAxis
+                      type="number"
+                      hide
+                      label={{ value: "Credits", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={150}
+                      stroke="#cbd5e1"
+                      fontSize={11}
+                      label={{ value: "Use case", angle: -90, position: "insideLeft", dx: -12, fill: "#94A3B8", fontSize: 12 }}
+                    />
                     <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "8px" }} />
                     <Bar dataKey="consumption" fill="#3b82f6" radius={[0, 6, 6, 0]} />
                   </BarChart>
@@ -274,10 +285,24 @@ export default function DetailWorkspace() {
             </CardHeader>
             <CardContent className="h-[320px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
               <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart margin={{ top: 16, right: 16, bottom: 16, left: 16 }}>
+                <ScatterChart margin={{ top: 16, right: 16, bottom: 24, left: 16 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis type="number" dataKey="x" name="Prompt Chars" stroke="#cbd5e1" fontSize={12} />
-                  <YAxis type="number" dataKey="y" name="AI Consumption" stroke="#cbd5e1" fontSize={12} />
+                  <XAxis
+                    type="number"
+                    dataKey="x"
+                    name="Prompt Chars"
+                    stroke="#cbd5e1"
+                    fontSize={12}
+                    label={{ value: "Prompt chars", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
+                  />
+                  <YAxis
+                    type="number"
+                    dataKey="y"
+                    name="AI Consumption"
+                    stroke="#cbd5e1"
+                    fontSize={12}
+                    label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#94A3B8", fontSize: 12 }}
+                  />
                   <Tooltip
                     cursor={{ strokeDasharray: "3 3", stroke: "#cbd5e1" }}
                     contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "8px" }}

@@ -400,10 +400,23 @@ export default function PolicySimulationStudio() {
                   <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-4">Intervention Breakdown</h3>
                   <div className="h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={simulation.interventionChart}>
+                      <BarChart data={simulation.interventionChart} margin={{ bottom: 12 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                        <XAxis
+                          dataKey="name"
+                          stroke="#94a3b8"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          label={{ value: "Intervention", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
+                        />
+                        <YAxis
+                          stroke="#94a3b8"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          label={{ value: "Projected credits", angle: -90, position: "insideLeft", fill: "#94A3B8", fontSize: 12 }}
+                        />
                         <Tooltip
                           cursor={{ fill: "rgba(255,255,255,0.04)" }}
                           contentStyle={{

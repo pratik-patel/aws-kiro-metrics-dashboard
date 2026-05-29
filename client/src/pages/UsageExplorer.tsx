@@ -556,9 +556,15 @@ export default function UsageExplorer() {
           <CardContent className="pt-5">
             <div className="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={contributionChartData} layout="vertical" margin={{ top: 8, right: 12, left: 88, bottom: 4 }}>
+                <BarChart data={contributionChartData} layout="vertical" margin={{ top: 8, right: 12, left: 88, bottom: 24 }}>
                   <CartesianGrid stroke={CHART_GRID} strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <XAxis
+                    type="number"
+                    tick={{ fill: "#94A3B8", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                    label={{ value: "Credits", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
+                  />
                   <YAxis
                     type="category"
                     dataKey="name"
@@ -566,6 +572,14 @@ export default function UsageExplorer() {
                     axisLine={false}
                     tickLine={false}
                     tick={<WrappedYAxisTick />}
+                    label={{
+                      value: selectedTeam ? "Engineer" : "Team",
+                      angle: -90,
+                      position: "insideLeft",
+                      dx: -76,
+                      fill: "#94A3B8",
+                      fontSize: 12,
+                    }}
                   />
                   <Tooltip
                     cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
@@ -607,7 +621,7 @@ export default function UsageExplorer() {
           <CardContent className="pt-5">
             <div className="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyTrendData} margin={{ top: 8, right: 12, left: 6, bottom: 24 }}>
+                <LineChart data={dailyTrendData} margin={{ top: 8, right: 12, left: 6, bottom: 30 }}>
                   <CartesianGrid stroke={CHART_GRID} strokeDasharray="3 3" vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -618,8 +632,14 @@ export default function UsageExplorer() {
                     angle={-32}
                     textAnchor="end"
                     height={44}
+                    label={{ value: "Date", position: "insideBottom", dy: 28, fill: "#94A3B8", fontSize: 12 }}
                   />
-                  <YAxis tick={{ fill: "#94A3B8", fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <YAxis
+                    tick={{ fill: "#94A3B8", fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#94A3B8", fontSize: 12 }}
+                  />
                   <Tooltip
                     contentStyle={{
                       background: "#0F172A",
@@ -668,7 +688,7 @@ export default function UsageExplorer() {
           <CardContent className="pt-5">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart margin={{ top: 8, right: 12, left: 12, bottom: 12 }}>
+                <ScatterChart margin={{ top: 8, right: 12, left: 12, bottom: 24 }}>
                   <CartesianGrid stroke={CHART_GRID} strokeDasharray="3 3" />
                   <XAxis
                     type="number"
@@ -677,6 +697,7 @@ export default function UsageExplorer() {
                     tick={{ fill: "#94A3B8", fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
+                    label={{ value: "Active days", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
                   />
                   <YAxis
                     type="number"
@@ -685,6 +706,7 @@ export default function UsageExplorer() {
                     tick={{ fill: "#94A3B8", fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
+                    label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#94A3B8", fontSize: 12 }}
                   />
                   <Tooltip
                     cursor={{ strokeDasharray: "3 3" }}
