@@ -402,7 +402,7 @@ const ENGINEER_TEAM_ASSIGNMENTS: Record<string, string> = {
 
 const ENGINEER_FUNCTION_BY_NAME: Record<string, EngineerFunction> = {
   "Aisha Khan": "AI",
-  "Ben Foster": "QA",
+  "Ben Foster": "BE",
   "Casey Liu": "FE",
   "Chloe Martin": "FE",
   "David Kim": "BE",
