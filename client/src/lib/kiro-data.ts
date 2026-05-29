@@ -348,9 +348,9 @@ const USE_CASES: Record<
     recommendedModelTier: "Lower or balanced reasoning is usually sufficient before escalation",
   },
   "test-generation": {
-    label: "Unit Test Generation & Coverage",
+    label: "Test Generation & Code Coverage",
     category: "Testing",
-    summary: "Generating or refining unit and integration test scaffolds.",
+    summary: "Generating tests, improving code coverage, and refining unit or integration test scaffolds.",
     recommendedModelTier: "Lower-cost coder models first, escalate only for unusual fixture design",
   },
 };

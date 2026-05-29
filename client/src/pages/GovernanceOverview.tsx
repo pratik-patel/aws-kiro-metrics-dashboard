@@ -53,6 +53,98 @@ function formatChartValue(value: number) {
   return `${value.toFixed(1).replace(".0", "")} credits`;
 }
 
+function wrapTreemapLabel(name: string, maxLineLength: number) {
+  const words = name.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+    if (nextLine.length <= maxLineLength) {
+      currentLine = nextLine;
+      return;
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    currentLine = word;
+  });
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+function TreemapTile(props: {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  name?: string;
+  size?: number;
+  fill?: string;
+}) {
+  const { x = 0, y = 0, width = 0, height = 0, name = "", size = 0, fill = "#1D4ED8" } = props;
+
+  if (width <= 0 || height <= 0) {
+    return null;
+  }
+
+  const horizontalPadding = width > 220 ? 18 : 14;
+  const verticalPadding = height > 140 ? 18 : 14;
+  const maxLineLength = width > 260 ? 26 : width > 200 ? 20 : width > 150 ? 16 : 13;
+  const labelLines = wrapTreemapLabel(name, maxLineLength).slice(0, height > 150 ? 3 : 2);
+  const canShowSpend = width >= 190 && height >= 90;
+  const nameFontSize = width > 320 ? 16 : width > 240 ? 15 : width > 180 ? 13 : 12;
+  const lineHeight = nameFontSize + 4;
+  const labelBlockHeight = labelLines.length * lineHeight;
+  const spendY = y + verticalPadding + labelBlockHeight + (canShowSpend ? 18 : 0);
+
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rx={12}
+        ry={12}
+        fill={fill}
+        stroke="rgba(255,255,255,0.08)"
+        strokeWidth={1}
+      />
+      {labelLines.map((line, index) => (
+        <text
+          key={`${name}-${line}-${index}`}
+          x={x + horizontalPadding}
+          y={y + verticalPadding + index * lineHeight}
+          fill="#e2e8f0"
+          fontSize={nameFontSize}
+          fontWeight={index === 0 ? 600 : 500}
+          dominantBaseline="hanging"
+        >
+          {line}
+        </text>
+      ))}
+      {canShowSpend && (
+        <text
+          x={x + horizontalPadding}
+          y={spendY}
+          fill="rgba(226,232,240,0.78)"
+          fontSize={12}
+          fontWeight={500}
+          dominantBaseline="hanging"
+        >
+          {formatConsumption(size)} credits
+        </text>
+      )}
+    </g>
+  );
+}
+
 export default function GovernanceOverview() {
   const [isGovernanceBannerVisible, setIsGovernanceBannerVisible] = useState(true);
 
@@ -391,13 +483,20 @@ export default function GovernanceOverview() {
               </CardHeader>
               <CardContent className="h-[280px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
                 <ResponsiveContainer width="100%" height="100%">
-                  <Treemap data={treemapData} dataKey="size" aspectRatio={4 / 3} stroke="rgba(255,255,255,0.08)">
+                  <Treemap
+                    data={treemapData}
+                    dataKey="size"
+                    aspectRatio={4 / 3}
+                    stroke="rgba(255,255,255,0.08)"
+                    content={<TreemapTile />}
+                  >
                     {treemapData.map((entry) => (
                       <Cell key={entry.name} fill={entry.fill} />
                     ))}
                     <Tooltip
                       contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "8px" }}
                       itemStyle={{ color: "#e2e8f0" }}
+                      formatter={(value: number) => [`${formatConsumption(Number(value))} credits`, "Spend"]}
                     />
                   </Treemap>
                 </ResponsiveContainer>
