@@ -139,7 +139,7 @@ export default function AnalyticsDeepDive() {
           {/* SECTION 1: Ownership & Chargeback */}
           <section>
             <div className="border-b border-white/10 pb-2 mb-6">
-              <h2 className="text-xl font-semibold text-slate-200">Who is consuming, and where is the risk?</h2>
+              <h2 className="dashboard-section-title">Who is consuming, and where is the risk?</h2>
               <p className="text-sm text-slate-400">Engineer-level distribution, outlier detection, and license hygiene watchlist for the selected scope.</p>
             </div>
 
@@ -194,7 +194,7 @@ export default function AnalyticsDeepDive() {
             {/* Chargeback Detail Table */}
             <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-sm font-medium text-slate-200">Chargeback Detail</CardTitle>
+                  <CardTitle className="dashboard-card-title text-slate-200">Chargeback Detail</CardTitle>
                   <CardDescription className="text-slate-400 text-xs">Per-engineer rollup for budget allocation and review.</CardDescription>
                 </CardHeader>
                 <div className="overflow-x-auto">
@@ -266,7 +266,7 @@ export default function AnalyticsDeepDive() {
             {/* SECTION 2: Governance & Optimization */}
           <section>
             <div className="border-b border-white/10 pb-2 mb-6">
-              <h2 className="text-xl font-semibold text-slate-200">Where credits go, and why</h2>
+              <h2 className="dashboard-section-title">Where credits go, and why</h2>
               <p className="text-sm text-slate-400">Model routing, use-case x model hotspots, request-source mix, plugin and MCP impact, and prompt-size outliers.</p>
             </div>
 

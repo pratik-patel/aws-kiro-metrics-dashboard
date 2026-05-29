@@ -71,8 +71,8 @@ export default function Recommendations() {
 
       <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Recommendations</h1>
-          <p className="text-slate-400 text-lg">
+          <h1 className="dashboard-page-title mb-1">Recommendations</h1>
+          <p className="dashboard-page-lead">
             Prioritized governance findings, advisor runs, and report-ready actions.
           </p>
         </div>
@@ -142,7 +142,7 @@ export default function Recommendations() {
         <div className="space-y-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Advisor & Report Runs</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Advisor & Report Runs</CardTitle>
               <CardDescription className="text-slate-400">
                 Unified history for findings synthesis, simulations, and report generation.
               </CardDescription>
@@ -188,7 +188,7 @@ export default function Recommendations() {
               <CardHeader className="bg-black/20 border-b border-white/5">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <CardTitle className="text-lg font-medium text-slate-200">{selectedRun.title}</CardTitle>
+                    <CardTitle className="dashboard-card-title text-slate-200">{selectedRun.title}</CardTitle>
                     <CardDescription className="text-slate-400">{selectedRun.scopeLabel}</CardDescription>
                   </div>
                   <Badge
@@ -257,7 +257,7 @@ function RecommendationSection({
   return (
     <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
       <CardHeader className="bg-black/20 border-b border-white/5">
-        <CardTitle className="text-lg font-medium text-slate-200">{title}</CardTitle>
+        <CardTitle className="dashboard-card-title text-slate-200">{title}</CardTitle>
         <CardDescription className="text-slate-400">{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-6">
@@ -273,8 +273,8 @@ function RecommendationSection({
                     <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
                     <span className="text-xs text-slate-500">{recommendation.scopeLabel}</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-white">{recommendation.title}</h3>
-                  <p className="text-slate-400 mt-2 leading-relaxed">{recommendation.whyItMatters}</p>
+                  <h3 className="dashboard-item-title text-[1.1rem] md:text-[1.2rem]">{recommendation.title}</h3>
+                  <p className="dashboard-muted-body mt-2">{recommendation.whyItMatters}</p>
                 </div>
                 <div className="flex flex-wrap gap-2 lg:justify-end">
                   {interaction && (
@@ -298,10 +298,10 @@ function RecommendationSection({
 
               <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-4 mt-5">
                 <div className="rounded-xl border border-white/5 bg-black/20 p-4">
-                  <h4 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-3">Supporting Signals</h4>
+                  <h4 className="dashboard-eyebrow mb-3">Supporting Signals</h4>
                   <div className="space-y-2">
                     {recommendation.supportingSignals.map((signal: string) => (
-                      <div key={signal} className="flex items-start gap-2 text-sm text-slate-300">
+                      <div key={signal} className="flex items-start gap-2 dashboard-body">
                         <CheckCircle2 className="w-4 h-4 text-teal-300 mt-0.5 shrink-0" />
                         <span>{signal}</span>
                       </div>
@@ -310,8 +310,8 @@ function RecommendationSection({
                 </div>
 
                 <div className="rounded-xl border border-white/5 bg-black/20 p-4">
-                  <h4 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-3">Recommended Action</h4>
-                  <p className="text-sm text-slate-300 leading-relaxed">{recommendation.recommendedAction}</p>
+                  <h4 className="dashboard-eyebrow mb-3">Recommended Action</h4>
+                  <p className="dashboard-body">{recommendation.recommendedAction}</p>
                   <div className="mt-4 rounded-lg bg-blue-500/5 border border-blue-500/10 px-3 py-2">
                     <span className="text-xs uppercase tracking-[0.18em] text-blue-300">Expected Impact</span>
                     <p className="text-sm text-slate-200 mt-1">{recommendation.expectedImpact}</p>
@@ -352,8 +352,8 @@ function SignalCard({
       <CardContent className="pt-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
-            <p className="text-3xl font-semibold text-white mt-2">{value}</p>
+            <p className="dashboard-eyebrow">{label}</p>
+            <p className="dashboard-stat-value mt-2">{value}</p>
             <p className="text-sm text-slate-500 mt-2">{hint}</p>
           </div>
           <div className={`rounded-2xl border border-white/5 bg-black/20 p-3 ${tone}`}>
@@ -368,8 +368,8 @@ function SignalCard({
 function RunMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-white/5 bg-black/20 px-4 py-3">
-      <span className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</span>
-      <p className="text-sm text-slate-200 mt-2">{value}</p>
+      <span className="dashboard-eyebrow">{label}</span>
+      <p className="dashboard-metric-value">{value}</p>
     </div>
   );
 }

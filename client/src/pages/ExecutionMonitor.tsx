@@ -89,8 +89,8 @@ export default function ExecutionMonitor() {
     <div className="p-8 max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Execution Monitor</h1>
-          <p className="text-slate-400">Live console for active runs, jobs, and system tasks.</p>
+          <h1 className="dashboard-page-title mb-1">Execution Monitor</h1>
+          <p className="dashboard-page-lead">Live console for active runs, jobs, and system tasks.</p>
         </div>
       </div>
 
@@ -117,7 +117,7 @@ export default function ExecutionMonitor() {
                   Cancelled
                 </span>
               )}
-              <h2 className="text-xl font-semibold text-slate-200">AI Advisor Run</h2>
+              <h2 className="dashboard-section-title">AI Advisor Run</h2>
               <span className="text-sm font-mono text-slate-500">run-84f92c1</span>
             </div>
             <p className="text-sm text-slate-400">Scope: Enterprise (All Cost Centers) • Initiated by: Admin</p>

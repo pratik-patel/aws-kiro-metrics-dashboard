@@ -81,8 +81,8 @@ export default function UsageExplorer() {
 
       <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Usage Explorer</h1>
-          <p className="text-slate-400 text-lg">
+          <h1 className="dashboard-page-title mb-1">Usage Explorer</h1>
+          <p className="dashboard-page-lead">
             Start with Cost Centers, then drill into Teams, Engineers, and evidence-backed interactions.
           </p>
         </div>
@@ -126,7 +126,7 @@ export default function UsageExplorer() {
       <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1fr] gap-6">
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
-            <CardTitle className="text-lg font-medium text-slate-200">Cost Center Overview</CardTitle>
+            <CardTitle className="dashboard-card-title text-slate-200">Cost Center Overview</CardTitle>
             <CardDescription className="text-slate-400">
               Select a Cost Center to reveal its teams, engineers, use cases, and interaction pressure.
             </CardDescription>
@@ -149,7 +149,7 @@ export default function UsageExplorer() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-lg font-semibold text-white">{costCenter.name}</p>
+                    <p className="dashboard-item-title">{costCenter.name}</p>
                     <p className="text-sm text-slate-400 mt-1">{costCenter.code || "Cost Center"}</p>
                   </div>
                   <Badge className="bg-white/5 text-slate-300 border-white/10">{costCenter.teamCount} teams</Badge>
@@ -167,7 +167,7 @@ export default function UsageExplorer() {
 
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
-            <CardTitle className="text-lg font-medium text-slate-200">Current Scope Summary</CardTitle>
+            <CardTitle className="dashboard-card-title text-slate-200">Current Scope Summary</CardTitle>
             <CardDescription className="text-slate-400">The active drill path and its most important governance signals.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-5">
@@ -203,7 +203,7 @@ export default function UsageExplorer() {
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.9fr] gap-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Teams in {selectedCostCenter.name}</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Teams in {selectedCostCenter.name}</CardTitle>
               <CardDescription className="text-slate-400">
                 Click a team to reveal its engineers and related use-case pressure.
               </CardDescription>
@@ -239,7 +239,7 @@ export default function UsageExplorer() {
 
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Use Cases in Scope</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Use Cases in Scope</CardTitle>
               <CardDescription className="text-slate-400">
                 SDLC-oriented breakdown of what is driving the current slice.
               </CardDescription>
@@ -288,7 +288,7 @@ export default function UsageExplorer() {
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Engineers in {selectedTeam.name}</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Engineers in {selectedTeam.name}</CardTitle>
               <CardDescription className="text-slate-400">
                 Choose an engineer to inspect activity, high-cost interactions, and input drivers.
               </CardDescription>
@@ -323,7 +323,7 @@ export default function UsageExplorer() {
 
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Current Engineer Snapshot</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Current Engineer Snapshot</CardTitle>
               <CardDescription className="text-slate-400">The most useful context before opening interaction evidence or a detail page.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-5">
@@ -366,7 +366,7 @@ export default function UsageExplorer() {
         <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">High-Cost Interactions for {selectedEngineer.name}</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">High-Cost Interactions for {selectedEngineer.name}</CardTitle>
               <CardDescription className="text-slate-400">
                 Click evidence to inspect prompt logs, inline completions, and input drivers.
               </CardDescription>
@@ -413,7 +413,7 @@ export default function UsageExplorer() {
 
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Recommendations in Scope</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Recommendations in Scope</CardTitle>
               <CardDescription className="text-slate-400">The actions most relevant to the current drill path.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-5">
@@ -465,7 +465,7 @@ function ExplorerMetric({
 }) {
   return (
     <div className="rounded-xl border border-white/5 bg-black/20 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="dashboard-metric-label">{label}</p>
       <p className={`mt-2 ${compact ? "text-sm" : "text-base"} font-semibold ${tone}`}>{value}</p>
     </div>
   );

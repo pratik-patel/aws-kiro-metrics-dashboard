@@ -1,4 +1,5 @@
-import { AlertTriangle, ArrowUpRight, Compass, Sparkles, Users, Zap } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, ArrowUpRight, Check, Compass, Sparkles, Users, X, Zap } from "lucide-react";
 import { Link } from "wouter";
 import {
   Bar,
@@ -22,7 +23,16 @@ import { KIRO_DATA, formatConsumption } from "@/lib/kiro-data";
 
 const TREEMAP_COLORS = ["#1D4ED8", "#4F46E5", "#0F766E", "#0369A1", "#7C3AED", "#2563EB"];
 
+function formatChartDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatChartValue(value: number) {
+  return `${value.toFixed(1).replace(".0", "")} credits`;
+}
+
 export default function GovernanceOverview() {
+  const [isGovernanceBannerVisible, setIsGovernanceBannerVisible] = useState(true);
   const treemapData = KIRO_DATA.costCenters.map((costCenter, index) => ({
     name: costCenter.name,
     size: Number(costCenter.totalConsumption.toFixed(2)),
@@ -30,16 +40,29 @@ export default function GovernanceOverview() {
   }));
 
   const topRecommendations = KIRO_DATA.recommendations.slice(0, 4);
+  const highSeverityRecommendations = KIRO_DATA.recommendations.filter(
+    (recommendation) => recommendation.severity === "High",
+  );
+  const { adoptedLicenses, idleThresholdDays, otherActiveAlerts, totalLicenses, unusedLicenses } =
+    KIRO_DATA.licenseSummary;
+  const hasUnusedLicenses = unusedLicenses > 0;
+  const peakDailyConsumption = KIRO_DATA.dailyTrend.reduce(
+    (currentPeak, entry) => (entry.consumption > currentPeak.consumption ? entry : currentPeak),
+    KIRO_DATA.dailyTrend[0],
+  );
+  const peakDailyOverrun = KIRO_DATA.dailyTrend.reduce(
+    (currentPeak, entry) => (entry.overrun > currentPeak.overrun ? entry : currentPeak),
+    KIRO_DATA.dailyTrend[0],
+  );
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-8 max-w-[1720px] mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col xl:flex-row justify-between xl:items-start gap-5">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Kiro AI Consumption Governance</h1>
-          <p className="text-slate-400 text-lg">Enterprise visibility, accountability, and optimization for Kiro telemetry.</p>
-          <p className="text-slate-500 text-sm mt-3 max-w-3xl leading-relaxed">
-            Start with current posture, then move straight into Cost Center ownership, use-case pressure, and the
-            policy decisions most likely to reduce overrun and prompt bloat.
+          <h1 className="dashboard-page-title mb-2">Kiro AI Consumption Governance</h1>
+          <p className="dashboard-page-lead">Enterprise visibility, accountability, and optimization for Kiro telemetry.</p>
+          <p className="text-slate-500 text-sm mt-3 max-w-5xl leading-relaxed text-pretty">
+            Start with current posture, then move straight into Cost Center ownership, use-case pressure, and the policy decisions most likely to reduce overrun and prompt bloat.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -58,42 +81,140 @@ export default function GovernanceOverview() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KpiCard label="Total AI Consumption" value={`${formatConsumption(KIRO_DATA.kpis.totalConsumption)} credits`} hint="Across exported Kiro activity" />
-        <KpiCard label="Overrun" value={`${formatConsumption(KIRO_DATA.kpis.overrun)} credits`} hint="Observed in current dataset" tone="amber" />
-        <KpiCard label="Active Engineers" value={String(KIRO_DATA.kpis.activeEngineers)} hint="Mapped through team and cost center" />
-        <KpiCard label="Consumption / Engineer" value={`${formatConsumption(KIRO_DATA.kpis.consumptionPerEngineer)} credits`} hint="Average across active users" />
-        <KpiCard label="Top Cost Center" value={KIRO_DATA.kpis.topCostCenter} hint="Highest AI consumption" compact />
-        <KpiCard label="Top Use Case" value={KIRO_DATA.kpis.topUseCase} hint="Most expensive SDLC workflow" compact />
+      {isGovernanceBannerVisible && (
+        <Card
+          className={
+            hasUnusedLicenses
+              ? "bg-amber-500/8 border-amber-500/18 shadow-lg"
+              : "bg-blue-500/8 border-blue-500/18 shadow-lg"
+          }
+        >
+          <CardContent className="pt-5">
+            <div className="flex items-start justify-between gap-4">
+              <Link href="/recommendations">
+                <div className="flex items-start gap-3 cursor-pointer">
+                  <div
+                    className={
+                      hasUnusedLicenses
+                        ? "mt-0.5 rounded-full bg-amber-500/12 p-2 text-amber-300"
+                        : "mt-0.5 rounded-full bg-blue-500/12 p-2 text-blue-300"
+                    }
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className={`dashboard-eyebrow ${hasUnusedLicenses ? "text-amber-300" : "text-blue-300"}`}>
+                        {hasUnusedLicenses ? "Governance Warning" : "Governance Signal"}
+                      </span>
+                      <span className={`text-sm font-medium ${hasUnusedLicenses ? "text-amber-100" : "text-blue-100"}`}>
+                        System Advice
+                      </span>
+                    </div>
+                    <p className="dashboard-body text-slate-200">
+                      {hasUnusedLicenses
+                        ? `${unusedLicenses} current licenses have been idle for more than ${idleThresholdDays} days.`
+                        : `${adoptedLicenses} / ${totalLicenses} active licenses show recent usage.`}
+                      {otherActiveAlerts > 0 ? ` (+ ${otherActiveAlerts} other active alerts)` : ""}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-white/10 bg-black/20 hover:bg-white/5 hover:text-white"
+                  onClick={() => setIsGovernanceBannerVisible(false)}
+                >
+                  <Check className="w-3.5 h-3.5 mr-2" />
+                  Acknowledge
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-slate-400 hover:text-white hover:bg-white/5"
+                  onClick={() => setIsGovernanceBannerVisible(false)}
+                  aria-label="Close governance signal"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 gap-4 items-start">
+        <KpiCard
+          label="Total AI Consumption"
+          value={`${formatConsumption(KIRO_DATA.kpis.totalConsumption)} credits`}
+          hint="Across exported Kiro activity"
+          href="/explorer"
+        />
+        <KpiCard
+          label="Overrun"
+          value={`${formatConsumption(KIRO_DATA.kpis.overrun)} credits`}
+          hint="Observed in current dataset"
+          tone="amber"
+          href="/recommendations"
+        />
+        <KpiCard
+          label="Active License Adoption"
+          value={`${adoptedLicenses} / ${totalLicenses}`}
+          hint={`${unusedLicenses} currently unused licenses`}
+          compact
+          href="/recommendations"
+        />
+        <KpiCard
+          label="Consumption / Engineer"
+          value={`${formatConsumption(KIRO_DATA.kpis.consumptionPerEngineer)} credits`}
+          hint="Average across active users"
+          href="/explorer"
+        />
+        <KpiCard
+          label="Priority Risks"
+          value={String(highSeverityRecommendations.length)}
+          hint="High-severity recommendations"
+          compact
+          href="/recommendations"
+        />
+        <KpiCard
+          label="Recommended Actions"
+          value={String(KIRO_DATA.recommendations.length)}
+          hint="Evidence-backed actions in scope"
+          compact
+          href="/recommendations"
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4 gap-4 items-start">
         <OverviewTile
           title="Top Cost Centers"
           metric={KIRO_DATA.kpis.topCostCenter}
           detail={`${formatConsumption(KIRO_DATA.costCenters[0]?.totalConsumption ?? 0)} credits`}
-          description="Largest concentration of spend in the current period."
+          description="Largest concentration of spend this period."
           href={`/detail/cost-center/${KIRO_DATA.costCenters[0]?.id ?? ""}`}
         />
         <OverviewTile
           title="Top Teams"
           metric={KIRO_DATA.kpis.topTeam}
           detail={`${formatConsumption(KIRO_DATA.teams[0]?.totalConsumption ?? 0)} credits`}
-          description="Best next drill point for ownership review."
+          description="Best drill point for ownership review."
           href={`/detail/team/${KIRO_DATA.teams[0]?.id ?? ""}`}
         />
         <OverviewTile
           title="Top Use Cases"
           metric={KIRO_DATA.kpis.topUseCase}
           detail={`${formatConsumption(KIRO_DATA.useCases[0]?.totalConsumption ?? 0)} credits`}
-          description="Where optimization and routing guidance will matter most."
+          description="Primary optimization hotspot for routing and prompt discipline."
           href="/explorer"
         />
         <OverviewTile
           title="Top Risk Signals"
           metric={topRecommendations[0]?.title ?? "Review concentration risk"}
           detail={`${topRecommendations.length} priority actions`}
-          description="Action-oriented recommendations synthesized from telemetry."
+          description="Priority actions synthesized from telemetry."
           href="/recommendations"
           alert
         />
@@ -102,31 +223,80 @@ export default function GovernanceOverview() {
       <div className="grid grid-cols-1 xl:grid-cols-[1.45fr_0.95fr] gap-6">
         <div className="space-y-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg font-medium text-slate-200">Daily AI Consumption Trend</CardTitle>
-              <CardDescription className="text-slate-400">Credit usage and overrun trend across the exported activity window.</CardDescription>
+            <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <CardTitle className="dashboard-card-title text-slate-200">Daily AI Consumption Trend</CardTitle>
+                <CardDescription className="text-slate-400">Credit usage and overrun trend across the exported activity window.</CardDescription>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge className="bg-blue-500/10 text-blue-200 border-blue-500/20">
+                  Peak consumption: {formatConsumption(peakDailyConsumption.consumption)} on {formatChartDate(peakDailyConsumption.date)}
+                </Badge>
+                <Badge className="bg-amber-500/10 text-amber-200 border-amber-500/20">
+                  Peak overrun: {formatConsumption(peakDailyOverrun.overrun)} on {formatChartDate(peakDailyOverrun.date)}
+                </Badge>
+              </div>
             </CardHeader>
-            <CardContent className="h-[320px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
+            <CardContent className="h-[360px] border-t border-white/5 bg-[#0c1220]/50 pt-5">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={KIRO_DATA.dailyTrend}>
+                <LineChart data={KIRO_DATA.dailyTrend} margin={{ top: 12, right: 18, left: 4, bottom: 34 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="date" stroke="#cbd5e1" fontSize={12} tickFormatter={(value) => value.slice(5)} />
-                  <YAxis stroke="#cbd5e1" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "8px" }}
-                    itemStyle={{ color: "#e2e8f0" }}
+                  <Legend
+                    verticalAlign="top"
+                    align="right"
+                    iconType="circle"
+                    wrapperStyle={{ paddingBottom: "12px", fontSize: "12px", color: "#94a3b8" }}
                   />
-                  <Line type="monotone" dataKey="consumption" stroke="#3b82f6" strokeWidth={3} dot={false} name="Consumption" />
-                  <Line type="monotone" dataKey="overrun" stroke="#f59e0b" strokeWidth={2} dot={false} name="Overrun" />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#94a3b8"
+                    fontSize={11}
+                    tickFormatter={formatChartDate}
+                    angle={-35}
+                    textAnchor="end"
+                    height={58}
+                    tickMargin={10}
+                    minTickGap={14}
+                  />
+                  <YAxis
+                    stroke="#94a3b8"
+                    fontSize={11}
+                    tickFormatter={(value) => formatConsumption(Number(value))}
+                    width={52}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "12px" }}
+                    itemStyle={{ color: "#e2e8f0" }}
+                    labelFormatter={(value) => formatChartDate(String(value))}
+                    formatter={(value: number, name: string) => [formatChartValue(Number(value)), name === "Consumption" ? "Consumption" : "Overrun"]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="consumption"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ r: 7, fill: "#3b82f6", stroke: "#e2e8f0", strokeWidth: 2 }}
+                    name="Consumption"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="overrun"
+                    stroke="#f59e0b"
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 7, fill: "#f59e0b", stroke: "#f8fafc", strokeWidth: 2 }}
+                    name="Overrun"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <Card className="bg-[#111827] border-white/5 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg font-medium text-slate-200">Spend Concentration</CardTitle>
+                <CardTitle className="dashboard-card-title text-slate-200">Spend Concentration</CardTitle>
                 <CardDescription className="text-slate-400">Cost center-level view of where AI consumption is clustered.</CardDescription>
               </CardHeader>
               <CardContent className="h-[280px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
@@ -146,7 +316,7 @@ export default function GovernanceOverview() {
 
             <Card className="bg-[#111827] border-white/5 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg font-medium text-slate-200">Client Type Mix by Cost Center</CardTitle>
+                <CardTitle className="dashboard-card-title text-slate-200">Client Type Mix by Cost Center</CardTitle>
                 <CardDescription className="text-slate-400">IDE, CLI, and plugin balance across the organization.</CardDescription>
               </CardHeader>
               <CardContent className="h-[280px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
@@ -171,11 +341,11 @@ export default function GovernanceOverview() {
 
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Top Cost Centers & Teams</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Top Cost Centers & Teams</CardTitle>
               <CardDescription className="text-slate-400">Best starting points for deeper ownership analysis.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/5">
+              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/5 items-start">
                 <RankedList
                   title="Cost Centers"
                   items={KIRO_DATA.costCenters.slice(0, 4).map((item) => ({
@@ -202,7 +372,7 @@ export default function GovernanceOverview() {
         <div className="space-y-6">
           <Card className="bg-gradient-to-br from-[#1a1646] to-[#111827] border-indigo-500/20 shadow-lg overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium text-indigo-300 flex items-center">
+              <CardTitle className="dashboard-card-title text-indigo-300 flex items-center">
                 <Sparkles className="w-4 h-4 mr-2" />
                 Next Recommended Move
               </CardTitle>
@@ -210,9 +380,8 @@ export default function GovernanceOverview() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-xl border border-white/5 bg-black/20 p-4">
-                <p className="text-sm text-slate-200 leading-relaxed">
-                  Start in Explorer, open <span className="font-medium text-white">{KIRO_DATA.costCenters[0]?.name}</span>, and follow the
-                  top use-case path into the highest-cost engineer interactions. That route gives the strongest model-routing and prompt-discipline story.
+                <p className="text-sm text-slate-200 leading-relaxed text-pretty">
+                  Start in Explorer, open <span className="font-medium text-white">{KIRO_DATA.costCenters[0]?.name}</span>, then follow the top use-case path into the highest-cost engineer interactions for the clearest model-routing and prompt-discipline story.
                 </p>
               </div>
               <Link href="/explorer">
@@ -226,7 +395,7 @@ export default function GovernanceOverview() {
 
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Recent Recommendations</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Recent Recommendations</CardTitle>
               <CardDescription className="text-slate-400">Evidence-backed actions synthesized from the current dataset.</CardDescription>
             </CardHeader>
             <CardContent className="divide-y divide-white/5 p-0">
@@ -264,7 +433,7 @@ export default function GovernanceOverview() {
 
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Advisor Runs & Status</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Advisor Runs & Status</CardTitle>
               <CardDescription className="text-slate-400">Most recent AI Advisor, simulation, and report activity.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-6">
@@ -303,22 +472,34 @@ function KpiCard({
   hint,
   compact = false,
   tone = "text-white",
+  href,
 }: {
   label: string;
   value: string;
   hint: string;
   compact?: boolean;
   tone?: string;
+  href?: string;
 }) {
-  return (
-    <Card className="bg-[#111827] border-white/5 shadow-lg">
-      <CardContent className="pt-5">
-        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
-        <p className={`mt-3 ${compact ? "text-xl" : "text-3xl"} font-semibold ${tone}`}>{value}</p>
-        <p className="text-sm text-slate-500 mt-2">{hint}</p>
+  const card = (
+    <Card className="bg-[#111827] border-white/5 shadow-lg transition-colors hover:bg-[#131c2d] hover:border-blue-500/18">
+      <CardContent className="pt-5 pb-5">
+        <p className="dashboard-eyebrow">{label}</p>
+        <p
+          className={`mt-3 ${compact ? "text-[1.08rem] md:text-[1.2rem]" : "text-[1.28rem] md:text-[1.42rem]"} leading-[1.16] font-semibold text-balance md:whitespace-nowrap ${tone}`}
+        >
+          {value}
+        </p>
+        <p className="dashboard-muted-body mt-2">{hint}</p>
       </CardContent>
     </Card>
   );
+
+  if (!href) {
+    return card;
+  }
+
+  return <Link href={href}>{card}</Link>;
 }
 
 function OverviewTile({
@@ -336,16 +517,22 @@ function OverviewTile({
   href: string;
   alert?: boolean;
 }) {
+  const metricClassName = alert
+    ? "text-[0.98rem] md:text-[1.08rem] leading-[1.24]"
+    : "text-[1.08rem] md:text-[1.2rem] leading-[1.2]";
+
   return (
     <Link href={href}>
       <Card className="bg-[#111827] border-white/5 shadow-lg hover:border-blue-500/20 hover:bg-[#131c2d] transition-colors cursor-pointer">
-        <CardContent className="pt-5">
+        <CardContent className="pt-5 pb-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{title}</p>
-              <p className="text-xl font-semibold text-white mt-3">{metric}</p>
-              <p className={`text-sm mt-1 ${alert ? "text-amber-300" : "text-slate-300"}`}>{detail}</p>
-              <p className="text-sm text-slate-500 mt-3 leading-relaxed">{description}</p>
+            <div className="min-w-0 pr-2">
+              <p className="dashboard-eyebrow">{title}</p>
+              <p className={`${metricClassName} font-semibold text-white mt-3 text-balance`}>
+                {metric}
+              </p>
+              <p className={`dashboard-body mt-1 ${alert ? "text-amber-300" : "text-slate-300"}`}>{detail}</p>
+              <p className="dashboard-muted-body mt-2 text-pretty">{description}</p>
             </div>
             {alert ? (
               <AlertTriangle className="w-5 h-5 text-amber-300 shrink-0" />

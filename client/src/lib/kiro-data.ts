@@ -283,6 +283,13 @@ export interface KiroDataset {
     topTeam: string;
     topUseCase: string;
   };
+  licenseSummary: {
+    totalLicenses: number;
+    adoptedLicenses: number;
+    unusedLicenses: number;
+    idleThresholdDays: number;
+    otherActiveAlerts: number;
+  };
   costCenters: CostCenterSummary[];
   teams: TeamSummary[];
   engineers: EngineerSummary[];
@@ -348,6 +355,11 @@ const USE_CASES: Record<
 const DETERMINISTIC_SOURCES = new Set(["hook", "automation", "mcp-tool", "plugin-action", "slash-command"]);
 const LOWER_COST_MODEL_HINTS = ["Qwen3 Coder Next", "DeepSeek V3.2"];
 const REVIEW_DRIVEN_SOURCES = new Set(["review"]);
+const EXECUTIVE_LICENSE_SCENARIO = {
+  totalLicenses: 60,
+  unusedLicenses: 12,
+  idleThresholdDays: 7,
+} as const;
 const RECOMMENDATION_PRIORITY: RecommendationType[] = [
   "Steering Scope",
   "Use Case Optimization",
@@ -1037,9 +1049,16 @@ function buildDataset(): KiroDataset {
     }
 
     if (["test-generation", "guardrail-evaluation", "platform-hardening"].includes(useCase.key) && useCase.deterministicShare >= 0.35) {
+      const deterministicTitle =
+        useCase.key === "platform-hardening"
+          ? "Automate deterministic CI/CD and validation steps"
+          : useCase.key === "guardrail-evaluation"
+            ? "Automate deterministic review and validation checks"
+            : "Automate deterministic test-generation steps";
+
       addRecommendation({
         id: `rec-deterministic-${useCase.key}`,
-        title: `Move deterministic ${useCase.label.toLowerCase()} steps into hooks or Kiro powers`,
+        title: deterministicTitle,
         type: "Use Case Optimization",
         severity: "High",
         scopeType: "Use Case",
@@ -1051,7 +1070,7 @@ function buildDataset(): KiroDataset {
           `Top request source: ${useCase.topRequestSource}`,
           `Dominant plugin/MCP: ${useCase.dominantPlugin} / ${useCase.dominantMcp}`,
         ],
-        recommendedAction: "Use hooks, scripts, or Kiro powers for repeatable checks such as CI validation, security or quality gates, and test execution. Keep Kiro focused on increasing coverage, interpreting failures, and deciding what to fix next.",
+        recommendedAction: "Move repeatable checks into hooks, scripts, or workflow automation for steps such as CI validation, security gates, quality checks, and test execution. Keep Kiro focused on interpretation, exception handling, and deciding what to fix next.",
         expectedImpact: "Reduces chat-driven spend and produces more repeatable, policy-controlled validation behavior.",
         evidenceInteractionIds: interactions
           .filter((interaction) => interaction.useCaseKey === useCase.key)
@@ -1127,7 +1146,7 @@ function buildDataset(): KiroDataset {
           `Top request source: ${useCase.topRequestSource}`,
           `Dominant plugin/MCP: ${useCase.dominantPlugin} / ${useCase.dominantMcp}`,
         ],
-        recommendedAction: "Inspect whether the same plugin sequence is being repeated. Where the outcome is deterministic, move it into hooks or Kiro powers and reserve plugin-assisted reasoning for exception handling.",
+        recommendedAction: "Inspect whether the same plugin sequence is being repeated. Where the outcome is deterministic, move it into hooks, scripts, or a narrower direct workflow and reserve plugin-assisted reasoning for exception handling.",
         expectedImpact: "Cuts tool-amplified input growth and keeps augmentation focused on non-deterministic reasoning steps.",
         evidenceInteractionIds: interactions
           .filter((interaction) => interaction.useCaseKey === useCase.key)
@@ -1175,22 +1194,24 @@ function buildDataset(): KiroDataset {
   const lowUtilizationEngineers = engineers.filter(
     (engineer) => engineer.subscriptionStatus.toLowerCase() === "active" && engineer.activeDays <= 3,
   );
-  if (lowUtilizationEngineers.length) {
+  if (EXECUTIVE_LICENSE_SCENARIO.unusedLicenses > 0 || lowUtilizationEngineers.length) {
     addRecommendation({
       id: "rec-license-hygiene-global",
-      title: "Review low-utilization active seats",
+      title: "Reclaim or reassign idle active licenses",
       type: "License Hygiene",
       severity: "Medium",
       scopeType: "Enterprise",
       scopeId: "enterprise",
       scopeLabel: "Enterprise",
-      whyItMatters: "Several active subscriptions are not being used enough to justify their current allocation.",
+      whyItMatters: "Idle seats dilute license adoption and make it harder to justify the current subscription footprint.",
       supportingSignals: [
-        `${lowUtilizationEngineers.length} active engineers have 3 or fewer active days.`,
-        `Most affected scope: ${lowUtilizationEngineers[0].costCenterName}`,
+        `${EXECUTIVE_LICENSE_SCENARIO.unusedLicenses} current licenses have been idle for more than ${EXECUTIVE_LICENSE_SCENARIO.idleThresholdDays} days.`,
+        lowUtilizationEngineers[0]
+          ? `Most affected observed scope: ${lowUtilizationEngineers[0].costCenterName}`
+          : `Executive license posture is modeled at ${EXECUTIVE_LICENSE_SCENARIO.totalLicenses} total licenses.`,
       ],
-      recommendedAction: "Coach or reassign low-utilization seats before the next billing cycle.",
-      expectedImpact: "Improves license efficiency and reduces avoidable subscription waste.",
+      recommendedAction: "Reclaim, reassign, or coach idle seats before the next billing cycle so active licenses align with current demand.",
+      expectedImpact: "Improves license efficiency and reduces avoidable subscription waste without limiting active delivery teams.",
       evidenceInteractionIds: [],
     });
   }
@@ -1394,6 +1415,15 @@ function buildDataset(): KiroDataset {
     },
   ];
 
+  const highSeverityCount = recommendations.filter((recommendation) => recommendation.severity === "High").length;
+  const licenseSummary = {
+    totalLicenses: EXECUTIVE_LICENSE_SCENARIO.totalLicenses,
+    adoptedLicenses: EXECUTIVE_LICENSE_SCENARIO.totalLicenses - EXECUTIVE_LICENSE_SCENARIO.unusedLicenses,
+    unusedLicenses: EXECUTIVE_LICENSE_SCENARIO.unusedLicenses,
+    idleThresholdDays: EXECUTIVE_LICENSE_SCENARIO.idleThresholdDays,
+    otherActiveAlerts: Math.max(highSeverityCount - 1, 0),
+  };
+
   return {
     meta: {
       mode: "Connected Mode",
@@ -1411,6 +1441,7 @@ function buildDataset(): KiroDataset {
       topTeam: teams[0]?.name || "N/A",
       topUseCase: useCases[0]?.label || "N/A",
     },
+    licenseSummary,
     costCenters,
     teams,
     engineers,

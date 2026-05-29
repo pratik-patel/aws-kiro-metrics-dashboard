@@ -105,6 +105,56 @@
   }
 }
 
+@layer components {
+  .dashboard-page-title {
+    @apply text-[2rem] md:text-[2.35rem] font-bold tracking-tight text-white;
+  }
+
+  .dashboard-page-lead {
+    @apply text-base md:text-[1.0625rem] text-slate-400;
+  }
+
+  .dashboard-page-support {
+    @apply text-sm md:text-[0.95rem] leading-relaxed text-slate-500;
+  }
+
+  .dashboard-card-title {
+    @apply text-base md:text-[1.0625rem] font-medium leading-tight;
+  }
+
+  .dashboard-section-title {
+    @apply text-lg md:text-[1.2rem] font-semibold text-slate-200;
+  }
+
+  .dashboard-eyebrow {
+    @apply text-xs uppercase tracking-[0.18em] text-slate-400;
+  }
+
+  .dashboard-item-title {
+    @apply text-[1.02rem] md:text-[1.1rem] font-semibold leading-tight text-white;
+  }
+
+  .dashboard-body {
+    @apply text-sm leading-relaxed text-slate-300;
+  }
+
+  .dashboard-muted-body {
+    @apply text-sm leading-relaxed text-slate-400;
+  }
+
+  .dashboard-stat-value {
+    @apply text-[1.65rem] md:text-[1.85rem] font-semibold text-white;
+  }
+
+  .dashboard-metric-label {
+    @apply text-xs uppercase tracking-[0.18em] text-slate-500;
+  }
+
+  .dashboard-metric-value {
+    @apply mt-2 text-sm font-semibold text-slate-200;
+  }
+}
+
 /* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 8px;

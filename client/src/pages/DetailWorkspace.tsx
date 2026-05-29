@@ -114,8 +114,8 @@ export default function DetailWorkspace() {
             <Badge className="bg-white/5 text-slate-300 border-white/10">{resolved.entityLabel}</Badge>
             {resolved.scopeLabel ? <Badge className="bg-blue-500/10 text-blue-300 border-blue-500/20">{resolved.scopeLabel}</Badge> : null}
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">{resolved.title}</h1>
-          <p className="text-slate-400 text-lg">{resolved.description}</p>
+          <h1 className="dashboard-page-title mb-2">{resolved.title}</h1>
+          <p className="dashboard-page-lead">{resolved.description}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/recommendations">
@@ -156,7 +156,7 @@ export default function DetailWorkspace() {
           <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
             <Card className="bg-[#111827] border-white/5 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg font-medium text-slate-200">Top Use Cases</CardTitle>
+                <CardTitle className="dashboard-card-title text-slate-200">Top Use Cases</CardTitle>
                 <CardDescription className="text-slate-400">Where this scope is spending the most AI consumption today.</CardDescription>
               </CardHeader>
               <CardContent className="h-[320px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
@@ -178,7 +178,7 @@ export default function DetailWorkspace() {
 
             <Card className="bg-[#111827] border-white/5 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg font-medium text-slate-200">Scope Recommendations</CardTitle>
+                <CardTitle className="dashboard-card-title text-slate-200">Scope Recommendations</CardTitle>
                 <CardDescription className="text-slate-400">The most relevant actions for this exact slice.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-5">
@@ -219,7 +219,7 @@ export default function DetailWorkspace() {
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <CardTitle className="text-lg font-medium text-slate-200">{useCase.label}</CardTitle>
+                      <CardTitle className="dashboard-card-title text-slate-200">{useCase.label}</CardTitle>
                       <CardDescription className="text-slate-400">{useCase.category}</CardDescription>
                     </div>
                     <Badge className="bg-white/5 text-slate-300 border-white/10">
@@ -272,7 +272,7 @@ export default function DetailWorkspace() {
           </div>
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-lg font-medium text-slate-200">Prompt Size vs AI Consumption</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Prompt Size vs AI Consumption</CardTitle>
               <CardDescription className="text-slate-400">Use this to spot prompt-heavy interactions that are expensive relative to their output.</CardDescription>
             </CardHeader>
             <CardContent className="h-[320px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
@@ -295,7 +295,7 @@ export default function DetailWorkspace() {
         <TabsContent value="recommendations" className="mt-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-lg font-medium text-slate-200">Recommendations in Scope</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Recommendations in Scope</CardTitle>
               <CardDescription className="text-slate-400">Actions tied to this entity plus enterprise recommendations that still apply here.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-5">
@@ -332,7 +332,7 @@ export default function DetailWorkspace() {
         <TabsContent value="evidence" className="mt-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Interaction Evidence</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Interaction Evidence</CardTitle>
               <CardDescription className="text-slate-400">High-cost interactions with direct access to prompt and inline evidence.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -379,7 +379,7 @@ export default function DetailWorkspace() {
         <TabsContent value="reports" className="mt-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-lg font-medium text-slate-200">Reports & Exports</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Reports & Exports</CardTitle>
               <CardDescription className="text-slate-400">Generate a report for this scope or jump to the evidence console.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-5">
@@ -451,7 +451,7 @@ function RankingCard({
   return (
     <Card className="bg-[#111827] border-white/5 shadow-lg">
       <CardHeader>
-        <CardTitle className="text-lg font-medium text-slate-200">{title}</CardTitle>
+        <CardTitle className="dashboard-card-title text-slate-200">{title}</CardTitle>
         <CardDescription className="text-slate-400">{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 pt-5">
@@ -487,7 +487,7 @@ function OwnershipPanel({
     return (
       <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
         <CardHeader className="bg-black/20 border-b border-white/5">
-          <CardTitle className="text-lg font-medium text-slate-200">Teams in Scope</CardTitle>
+          <CardTitle className="dashboard-card-title text-slate-200">Teams in Scope</CardTitle>
           <CardDescription className="text-slate-400">Ownership view for the selected cost center.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-5">
@@ -514,7 +514,7 @@ function OwnershipPanel({
     return (
       <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
         <CardHeader className="bg-black/20 border-b border-white/5">
-          <CardTitle className="text-lg font-medium text-slate-200">Engineers in Scope</CardTitle>
+          <CardTitle className="dashboard-card-title text-slate-200">Engineers in Scope</CardTitle>
           <CardDescription className="text-slate-400">Ownership view for the selected team.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-5">
@@ -540,7 +540,7 @@ function OwnershipPanel({
     return (
       <Card className="bg-[#111827] border-white/5 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-lg font-medium text-slate-200">Engineer Activity Snapshot</CardTitle>
+          <CardTitle className="dashboard-card-title text-slate-200">Engineer Activity Snapshot</CardTitle>
           <CardDescription className="text-slate-400">Useful context before investigating interactions or input drivers.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-6 pt-5">

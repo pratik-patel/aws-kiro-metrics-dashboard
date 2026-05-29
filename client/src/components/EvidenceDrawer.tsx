@@ -31,7 +31,7 @@ export function EvidenceDrawer({ open, onOpenChange, interactionId }: EvidenceDr
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="bg-[#0B1120] border-white/10 text-white max-h-[90vh]">
           <DrawerHeader className="border-b border-white/5 pb-4 px-6 bg-[#121A2B]">
-            <DrawerTitle className="text-lg font-medium text-slate-200 flex items-center">
+            <DrawerTitle className="dashboard-card-title text-slate-200 flex items-center">
               <Eye className="w-5 h-5 mr-2 text-slate-400" />
               Interaction Evidence
             </DrawerTitle>
@@ -49,7 +49,7 @@ export function EvidenceDrawer({ open, onOpenChange, interactionId }: EvidenceDr
       <DrawerContent className="bg-[#0B1120] border-white/10 text-white max-h-[90vh] lg:max-h-[88vh]">
         <DrawerHeader className="border-b border-white/5 pb-4 px-6 flex justify-between items-center bg-[#121A2B]">
           <div>
-            <DrawerTitle className="text-lg font-medium text-slate-200 flex items-center">
+            <DrawerTitle className="dashboard-card-title text-slate-200 flex items-center">
               <Eye className="w-5 h-5 mr-2 text-teal-400" />
               Interaction Evidence
             </DrawerTitle>
@@ -66,7 +66,7 @@ export function EvidenceDrawer({ open, onOpenChange, interactionId }: EvidenceDr
           <div className="max-w-[1280px] mx-auto grid grid-cols-1 xl:grid-cols-[0.92fr_1.08fr] gap-6">
             <div className="space-y-6">
               <section className="bg-[#121A2B] border border-white/5 rounded-xl p-5 shadow-lg">
-                <h3 className="text-sm font-medium text-slate-300 mb-4 uppercase tracking-wider">Interaction Summary</h3>
+                <h3 className="dashboard-eyebrow mb-4 text-slate-300">Interaction Summary</h3>
                 <div className="space-y-4">
                   <SummaryPair label="Engineer" value={interaction.engineerName} />
                   <SummaryPair label="Cost Center" value={interaction.costCenterName} />
@@ -91,7 +91,7 @@ export function EvidenceDrawer({ open, onOpenChange, interactionId }: EvidenceDr
               </section>
 
               <section className="bg-[#121A2B] border border-white/5 rounded-xl p-5 shadow-lg">
-                <h3 className="text-sm font-medium text-slate-300 mb-4 uppercase tracking-wider flex items-center">
+                <h3 className="dashboard-eyebrow mb-4 text-slate-300 flex items-center">
                   <Sparkles className="w-4 h-4 mr-2 text-indigo-300" />
                   Input Drivers
                 </h3>
@@ -217,7 +217,7 @@ function SummaryPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs text-slate-500 mb-1">{label}</p>
-      <p className="text-sm font-medium text-slate-200">{value}</p>
+      <p className="dashboard-metric-value">{value}</p>
     </div>
   );
 }
@@ -226,7 +226,7 @@ function MetricPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs text-slate-500 mb-1">{label}</p>
-      <p className="text-base font-semibold text-white">{value}</p>
+      <p className="dashboard-item-title text-base">{value}</p>
     </div>
   );
 }
@@ -251,8 +251,8 @@ function EvidenceBlock({
 
   return (
     <div className={`border rounded-xl p-5 shadow-lg ${toneClass}`}>
-      <h3 className="text-sm font-medium text-slate-300 mb-4 uppercase tracking-wider flex items-center">{icon}{title}</h3>
-      <p className="text-sm text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">{content}</p>
+      <h3 className="dashboard-eyebrow mb-4 text-slate-300 flex items-center">{icon}{title}</h3>
+      <p className="dashboard-body font-mono whitespace-pre-wrap">{content}</p>
     </div>
   );
 }
@@ -268,7 +268,7 @@ function CodePanel({
 }) {
   return (
     <div className={`rounded-lg border ${highlight ? "border-blue-500/20 bg-blue-900/10" : "border-white/5 bg-black/20"} p-4`}>
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">{label}</p>
+      <p className="dashboard-metric-label mb-3">{label}</p>
       <pre className="whitespace-pre-wrap text-sm text-slate-300 font-mono leading-relaxed">{content}</pre>
     </div>
   );

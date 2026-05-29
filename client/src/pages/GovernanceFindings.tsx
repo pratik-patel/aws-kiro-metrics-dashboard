@@ -23,8 +23,8 @@ export default function GovernanceFindings() {
       />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Governance Findings</h1>
-          <p className="text-slate-400">Automated insights, risk detection, and optimization opportunities.</p>
+          <h1 className="dashboard-page-title mb-1">Governance Findings</h1>
+          <p className="dashboard-page-lead">Automated insights, risk detection, and optimization opportunities.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="bg-[#111827] border-white/10 hover:bg-white/5 hover:text-white">
@@ -52,7 +52,7 @@ export default function GovernanceFindings() {
                 }`}>
                   {finding.severity === 'High' ? <ShieldAlert className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
                 </div>
-                <h3 className="text-lg font-medium text-slate-200">{finding.title}</h3>
+                <h3 className="dashboard-card-title text-slate-200">{finding.title}</h3>
                 <span className="px-2 py-0.5 rounded text-xs font-medium bg-black/40 text-slate-400 border border-white/5">
                   {finding.category}
                 </span>

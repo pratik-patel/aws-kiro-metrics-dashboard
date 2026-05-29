@@ -210,8 +210,8 @@ export default function ReportEvidenceConsole() {
 
       <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Reports & Evidence</h1>
-          <p className="text-slate-400 text-lg">
+          <h1 className="dashboard-page-title mb-1">Reports & Evidence</h1>
+          <p className="dashboard-page-lead">
             Generate strategic reports, inspect evidence packs, and prepare executive-ready governance outputs.
           </p>
         </div>
@@ -264,7 +264,7 @@ export default function ReportEvidenceConsole() {
       <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.25fr_0.8fr] gap-6">
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
-            <CardTitle className="text-lg font-medium text-slate-200">Report Queue</CardTitle>
+            <CardTitle className="dashboard-card-title text-slate-200">Report Queue</CardTitle>
             <CardDescription className="text-slate-400">
               Reports generated across enterprise, cost-center, team, and engineer scopes.
             </CardDescription>
@@ -309,7 +309,7 @@ export default function ReportEvidenceConsole() {
           <CardHeader className="bg-black/20 border-b border-white/5">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
               <div>
-                <CardTitle className="text-lg font-medium text-slate-200">
+                <CardTitle className="dashboard-card-title text-slate-200">
                   {selectedReport?.title ?? "Report Preview"}
                 </CardTitle>
                 <CardDescription className="text-slate-400">
@@ -390,7 +390,7 @@ export default function ReportEvidenceConsole() {
         <div className="space-y-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Evidence Packs</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Evidence Packs</CardTitle>
               <CardDescription className="text-slate-400">
                 Curated interaction clusters tied to the top recommendations.
               </CardDescription>
@@ -423,7 +423,7 @@ export default function ReportEvidenceConsole() {
 
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Recent Prompt Inspections</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Recent Prompt Inspections</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
@@ -565,7 +565,7 @@ function ModalField({
 }) {
   return (
     <div className="space-y-2">
-      <label className="text-sm text-slate-300">{label}</label>
+      <label className="dashboard-body">{label}</label>
       {children}
     </div>
   );
@@ -589,8 +589,8 @@ function SignalCard({
       <CardContent className="pt-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
-            <p className="text-2xl font-semibold text-white mt-2">{value}</p>
+            <p className="dashboard-eyebrow">{label}</p>
+            <p className="dashboard-stat-value mt-2">{value}</p>
             <p className="text-sm text-slate-500 mt-2">{hint}</p>
           </div>
           <div className={`rounded-2xl border border-white/5 bg-black/20 p-3 ${tone}`}>
@@ -605,8 +605,8 @@ function SignalCard({
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="text-lg font-semibold text-white mt-3">{value}</p>
+      <p className="dashboard-metric-label">{label}</p>
+      <p className="dashboard-metric-value mt-3">{value}</p>
     </div>
   );
 }

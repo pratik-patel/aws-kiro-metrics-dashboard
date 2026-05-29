@@ -157,8 +157,8 @@ export default function PolicySimulationStudio() {
     <div className="p-8 max-w-[1640px] mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Policy & Simulation Studio</h1>
-          <p className="text-slate-400 text-lg">
+          <h1 className="dashboard-page-title mb-1">Policy & Simulation Studio</h1>
+          <p className="dashboard-page-lead">
             Test model routing, prompt discipline, tool governance, and seat policies against observed Kiro telemetry.
           </p>
         </div>
@@ -206,7 +206,7 @@ export default function PolicySimulationStudio() {
       <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.25fr_1fr] gap-6 items-start">
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
-            <CardTitle className="text-lg font-medium text-slate-200 flex items-center">
+            <CardTitle className="dashboard-card-title text-slate-200 flex items-center">
               <Settings2 className="w-4 h-4 mr-2 text-slate-400" />
               Scenario Configuration
             </CardTitle>
@@ -324,7 +324,7 @@ export default function PolicySimulationStudio() {
         <div className="space-y-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200">Current State vs Proposed Policy</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Current State vs Proposed Policy</CardTitle>
               <CardDescription className="text-slate-400">
                 Baseline usage for {resolvedScope.label} with the pressure pockets the advisor is evaluating.
               </CardDescription>
@@ -405,7 +405,7 @@ export default function PolicySimulationStudio() {
         <div className="space-y-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-blue-950/35 to-transparent border-b border-white/5">
-              <CardTitle className="text-lg font-medium text-slate-200 flex items-center">
+              <CardTitle className="dashboard-card-title text-slate-200 flex items-center">
                 <ShieldCheck className="w-4 h-4 mr-2 text-blue-300" />
                 Projected Impact
               </CardTitle>
