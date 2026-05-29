@@ -103,10 +103,10 @@ export default function AnalyticsDeepDive() {
               </div>
               <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={[{name: 'Seller / Servicer Experience Squad', val: 2850}]} layout="vertical" margin={{ left: 100, top: 20 }}>
+                  <BarChart data={[{name: 'Seller / Servicer Experience Squad', val: 2850}]} layout="vertical" margin={{ left: 100, top: 20, bottom: 16 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
-                    <XAxis type="number" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} tickFormatter={(v) => v === 0 ? '0' : v} domain={[0, 3000]} tickCount={5} />
-                    <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickFormatter={() => 'Seller / Servicer...'} />
+                    <XAxis type="number" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} tickFormatter={(v) => v === 0 ? '0' : v} domain={[0, 3000]} tickCount={5} label={{ value: "Credits", position: "insideBottom", offset: -6, fill: "#cbd5e1", fontSize: 11 }} />
+                    <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickFormatter={() => 'Seller / Servicer...'} label={{ value: "Team", angle: -90, position: "insideLeft", dx: -18, fill: "#cbd5e1", fontSize: 11 }} />
                     <RechartsTooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                     <Bar dataKey="val" fill="#60a5fa" />
                   </BarChart>
@@ -124,10 +124,10 @@ export default function AnalyticsDeepDive() {
                   <AreaChart data={Array.from({length: 26}).map((_, i) => ({
                     date: `${(i+1).toString().padStart(2, '0')}`,
                     val: Math.floor(Math.random() * 250) + 20 + (Math.sin(i/2) * 20)
-                  }))} margin={{ top: 20 }}>
+                  }))} margin={{ top: 20, bottom: 16 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} horizontal={true} />
-                    <XAxis dataKey="date" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} />
-                    <YAxis stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickCount={5} domain={[0, 280]} />
+                    <XAxis dataKey="date" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} label={{ value: "Date", position: "insideBottom", offset: -6, fill: "#cbd5e1", fontSize: 11 }} />
+                    <YAxis stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickCount={5} domain={[0, 280]} label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#cbd5e1", fontSize: 11 }} />
                     <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                     <Area type="monotone" dataKey="val" stroke="#60a5fa" strokeWidth={2} fill="none" />
                   </AreaChart>
@@ -152,10 +152,10 @@ export default function AnalyticsDeepDive() {
                 </div>
                 <div className="flex-1 min-h-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                    <ScatterChart margin={{ top: 10, right: 10, bottom: 16, left: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis type="number" dataKey="days" name="Active days" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickCount={5} domain={[0, 20]} />
-                      <YAxis type="number" dataKey="consumption" name="Credits" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickCount={5} domain={[0, 1400]} />
+                      <XAxis type="number" dataKey="days" name="Active days" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickCount={5} domain={[0, 20]} label={{ value: "Active days", position: "insideBottom", offset: -6, fill: "#cbd5e1", fontSize: 11 }} />
+                      <YAxis type="number" dataKey="consumption" name="Credits" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickCount={5} domain={[0, 1400]} label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#cbd5e1", fontSize: 11 }} />
                       <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                       <Scatter name="Engineers" data={[
                         { days: 5, consumption: 50 },
@@ -281,8 +281,8 @@ export default function AnalyticsDeepDive() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={MOCK_DATA.clientMix} maxBarSize={60} margin={{ bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => val.split(' ')[0]} />
-                      <YAxis stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
+                      <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => val.split(' ')[0]} label={{ value: "Cost center", position: "insideBottom", offset: -6, fill: "#cbd5e1", fontSize: 11 }} />
+                      <YAxis stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} label={{ value: "Model volume", angle: -90, position: "insideLeft", fill: "#cbd5e1", fontSize: 11 }} />
                       <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                       <Legend iconType="square" wrapperStyle={{ fontSize: '10px', bottom: -10 }} />
                       <Bar dataKey="ide" stackId="a" fill="#eab308" name="Auto" />
@@ -308,10 +308,10 @@ export default function AnalyticsDeepDive() {
                       { name: 'ui-chat', val: 560 },
                       { name: 'mcp-tool', val: 420 },
                       { name: 'inline', val: 390 }
-                    ]} layout="vertical" barSize={24} margin={{ left: 20 }}>
+                    ]} layout="vertical" barSize={24} margin={{ left: 20, bottom: 16 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} vertical={true} />
-                      <XAxis type="number" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
+                      <XAxis type="number" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} label={{ value: "Credits", position: "insideBottom", offset: -6, fill: "#cbd5e1", fontSize: 11 }} />
+                      <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} label={{ value: "Source", angle: -90, position: "insideLeft", fill: "#cbd5e1", fontSize: 11 }} />
                       <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
                       <Bar dataKey="val" fill="#60a5fa" radius={[0, 4, 4, 0]} />
                     </BarChart>
@@ -432,10 +432,10 @@ export default function AnalyticsDeepDive() {
                 </div>
                 <div className="flex-1 min-h-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                    <ScatterChart margin={{ top: 10, right: 10, bottom: 16, left: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis type="number" dataKey="size" name="Prompt chars" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} />
-                      <YAxis type="number" dataKey="consumption" name="Credits" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} />
+                      <XAxis type="number" dataKey="size" name="Prompt chars" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} label={{ value: "Prompt chars", position: "insideBottom", offset: -6, fill: "#cbd5e1", fontSize: 11 }} />
+                      <YAxis type="number" dataKey="consumption" name="Credits" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#cbd5e1", fontSize: 11 }} />
                       <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                       <Scatter data={promptSizeData} fill="#34d399" opacity={0.6} />
                     </ScatterChart>
@@ -451,10 +451,10 @@ export default function AnalyticsDeepDive() {
                 </div>
                 <div className="flex-1 min-h-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                    <ScatterChart margin={{ top: 10, right: 10, bottom: 16, left: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis type="number" dataKey="size" name="Response chars" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} />
-                      <YAxis type="number" dataKey="consumption" name="Credits" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} />
+                      <XAxis type="number" dataKey="size" name="Response chars" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} label={{ value: "Response chars", position: "insideBottom", offset: -6, fill: "#cbd5e1", fontSize: 11 }} />
+                      <YAxis type="number" dataKey="consumption" name="Credits" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#cbd5e1", fontSize: 11 }} />
                       <RechartsTooltip cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                       <Scatter data={responseSizeData} fill="#34d399" opacity={0.6} />
                     </ScatterChart>

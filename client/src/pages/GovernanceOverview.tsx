@@ -414,7 +414,10 @@ export default function GovernanceOverview() {
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal vertical={false} />
                     <XAxis
                       type="number"
-                      hide
+                      tick={false}
+                      axisLine={false}
+                      tickLine={false}
+                      height={22}
                       label={{ value: "Requests", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
                     />
                     <YAxis
