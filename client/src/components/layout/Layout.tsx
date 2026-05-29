@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -29,8 +30,48 @@ const navItems = [
   { href: "/reports", label: "Reports & Evidence", icon: FileText },
 ];
 
+const pageMeta = [
+  {
+    href: "/",
+    label: "Overview",
+    module: "Control Tower",
+    phase: "Detect",
+    summary: "Establish where spend, risk, and unused capacity are concentrating.",
+  },
+  {
+    href: "/explorer",
+    label: "Explorer",
+    module: "Scope Drilldown",
+    phase: "Explain",
+    summary: "Move from cost center to team to engineer and trace the pressure path.",
+  },
+  {
+    href: "/recommendations",
+    label: "Recommendations",
+    module: "Decision Queue",
+    phase: "Prioritize",
+    summary: "Rank actions by severity, evidence strength, and intervention type.",
+  },
+  {
+    href: "/studio",
+    label: "Studio",
+    module: "Policy Lab",
+    phase: "Simulate",
+    summary: "Test policy levers before rolling changes into live governance.",
+  },
+  {
+    href: "/reports",
+    label: "Reports",
+    module: "Executive Output",
+    phase: "Prove",
+    summary: "Package the narrative, evidence, and actions into reusable decision artifacts.",
+  },
+];
+
 export default function Layout({ children, onLogout }: LayoutProps) {
   const [location] = useLocation();
+  const currentMeta =
+    pageMeta.find((item) => item.href === "/" ? location === "/" : location.startsWith(item.href)) ?? pageMeta[0];
 
   return (
     <div className="min-h-screen bg-[#0a0f18] text-slate-200 flex flex-col font-sans">
@@ -86,12 +127,17 @@ export default function Layout({ children, onLogout }: LayoutProps) {
             </kbd>
           </Button>
 
-          {/* Badges */}
-            <div className="hidden xl:flex items-center gap-2">
-              <div className="flex items-center px-2.5 py-1 rounded-full bg-slate-800 border border-white/5 text-slate-300 text-xs font-medium">
-                {KIRO_DATA.meta.freshness}
-              </div>
+          <div className="hidden xl:flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-full border border-sky-400/14 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-100">
+              <span className="rounded-full bg-sky-400/20 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-sky-200">
+                {currentMeta.phase}
+              </span>
+              <span>{currentMeta.module}</span>
             </div>
+            <div className="flex items-center px-2.5 py-1 rounded-full bg-slate-800 border border-white/5 text-slate-300 text-xs font-medium">
+              {KIRO_DATA.meta.freshness}
+            </div>
+          </div>
 
           <div className="flex items-center gap-1">
             <Button 
@@ -126,6 +172,33 @@ export default function Layout({ children, onLogout }: LayoutProps) {
           </div>
         </div>
       </header>
+
+      <div className="border-b border-white/6 bg-[#0a111d]/86 backdrop-blur">
+        <div className="mx-auto flex max-w-[1680px] flex-col gap-3 px-6 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+            {pageMeta.map((item, index) => {
+              const isActive = currentMeta.href === item.href;
+              return (
+                <div key={item.href} className="flex items-center gap-2">
+                  {index > 0 ? <ArrowRight className="h-3.5 w-3.5 text-slate-600" /> : null}
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      isActive
+                        ? "border-sky-400/24 bg-sky-500/10 text-sky-100"
+                        : "border-white/8 bg-white/[0.03] text-slate-400"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="max-w-3xl text-sm leading-relaxed text-slate-400">
+            <span className="font-medium text-slate-200">{currentMeta.module}:</span> {currentMeta.summary}
+          </p>
+        </div>
+      </div>
 
       {/* Main Workspace Content */}
       <main className="flex-1 overflow-auto bg-gradient-to-b from-[#0a0f18] to-[#05080f]">

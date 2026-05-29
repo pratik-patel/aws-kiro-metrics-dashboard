@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ExperienceHeader } from "@/components/experience/ExperienceHeader";
 import {
   KIRO_DATA,
   formatConsumption,
@@ -141,38 +142,79 @@ export default function PolicySimulationStudio() {
   const flaggedReduction = Math.max(0, simulation.flaggedBefore - simulation.flaggedAfter);
   const projectedConsumption = Math.max(0, resolvedScope.totalConsumption - simulation.totalDelta);
   const projectedOverrun = Math.max(0, resolvedScope.overrun - simulation.overrunDelta);
+  const headerStats = [
+    {
+      label: "Scenario Scope",
+      value: resolvedScope.label,
+      note: `${resolvedScope.interactions.length} interactions are informing this simulation.`,
+    },
+    {
+      label: "Projected Consumption",
+      value: `${formatConsumption(projectedConsumption)} credits`,
+      note: `${formatConsumption(simulation.totalDelta)} credits could be removed with the current lever set.`,
+    },
+    {
+      label: "Projected Overrun",
+      value: `${formatConsumption(projectedOverrun)} credits`,
+      note: `${formatConsumption(simulation.overrunDelta)} credits of overrun pressure may be reduced.`,
+    },
+    {
+      label: "Flagged Findings",
+      value: `${simulation.flaggedAfter} residual`,
+      note: `${flaggedReduction} findings are currently projected to clear.`,
+    },
+  ];
+  const studioJourney = [
+    {
+      label: "Scope",
+      detail: "Anchor the scenario in the business unit or engineer you want to protect.",
+      state: "complete" as const,
+    },
+    {
+      label: "Tune",
+      detail: "Adjust model, token, MCP, and agentic-step controls together.",
+      state: "active" as const,
+    },
+    {
+      label: "Forecast",
+      detail: "Compare the operational delta before changing live policy behavior.",
+      state: "upcoming" as const,
+    },
+    {
+      label: "Approve",
+      detail: "Move the scenario into reports or operating action once it holds up.",
+      state: "upcoming" as const,
+    },
+  ];
 
   const runSimulation = () => setSimulationRunCount((count) => count + 1);
 
   return (
     <div className="p-6 md:p-8 max-w-[1640px] mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col xl:flex-row justify-between xl:items-start gap-5">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-blue-200">
-            <Beaker className="w-3.5 h-3.5" />
-            Simulation studio
-          </div>
-          <h1 className="dashboard-page-title mb-1">Policy & Simulation Studio</h1>
-          <p className="dashboard-page-lead max-w-4xl">
-            Adjust policy levers, compare projected impact, and decide before changing live behavior.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/recommendations">
-            <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
-              <History className="w-4 h-4 mr-2" />
-              Review Recommendations
+      <ExperienceHeader
+        eyebrow="Policy Lab"
+        title="Policy & Simulation Studio"
+        lead="Adjust policy levers, compare projected impact, and decide before changing live behavior."
+        stats={headerStats}
+        journey={studioJourney}
+        actions={
+          <>
+            <Link href="/recommendations">
+              <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
+                <History className="w-4 h-4 mr-2" />
+                Review Recommendations
+              </Button>
+            </Link>
+            <Button
+              onClick={runSimulation}
+              className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white border-0 shadow-[0_0_24px_rgba(99,102,241,0.24)]"
+            >
+              <PlayCircle className="w-4 h-4 mr-2" />
+              Run Simulation
             </Button>
-          </Link>
-          <Button
-            onClick={runSimulation}
-            className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white border-0 shadow-[0_0_24px_rgba(99,102,241,0.24)]"
-          >
-            <PlayCircle className="w-4 h-4 mr-2" />
-            Run Simulation
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <Card className="overflow-hidden border-white/5 bg-[linear-gradient(135deg,rgba(30,41,59,0.95),rgba(15,23,42,0.95)_45%,rgba(15,23,42,0.72))] shadow-[0_24px_80px_rgba(2,6,23,0.35)]">
         <CardContent className="p-6 md:p-7">

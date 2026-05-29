@@ -12,7 +12,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Scatter,
   ScatterChart,
@@ -22,6 +21,8 @@ import {
 } from "recharts";
 
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
+import { ExperienceHeader } from "@/components/experience/ExperienceHeader";
+import { IntensityMatrix } from "@/components/experience/IntensityMatrix";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -90,6 +91,109 @@ export default function DetailWorkspace() {
       })),
     [interactions],
   );
+  const topInteractions = useMemo(
+    () => [...interactions].sort((left, right) => right.estimatedCredits - left.estimatedCredits).slice(0, 6),
+    [interactions],
+  );
+  const scopeConsumption = interactions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0);
+  const useCaseModelMatrix = useMemo(() => {
+    const topUseCases = useCases.slice(0, 4);
+    const topModels = modelsAndTools.models.slice(0, 4).map(([label]) => label);
+
+    return {
+      columns: topModels.map((label) => ({ key: label, label })),
+      rows: topUseCases.map((useCase) => ({
+        key: useCase.key,
+        label: useCase.label,
+        summary: `${formatConsumption(useCase.totalConsumption)} credits · ${useCase.interactionCount} interactions`,
+        cells: topModels.map((model) => {
+          const credits = interactions
+            .filter((interaction) => interaction.useCaseKey === useCase.key && interaction.modelName === model)
+            .reduce((sum, interaction) => sum + interaction.estimatedCredits, 0);
+
+          return {
+            key: model,
+            value: Number(credits.toFixed(1)),
+            displayValue: credits ? formatConsumption(credits) : "—",
+          };
+        }),
+      })),
+    };
+  }, [interactions, modelsAndTools.models, useCases]);
+  const modelSourceMatrix = useMemo(() => {
+    const topModels = modelsAndTools.models.slice(0, 4).map(([label]) => label);
+    const topSources = modelsAndTools.channels.slice(0, 4).map(([label]) => label);
+
+    return {
+      columns: topSources.map((label) => ({ key: label, label })),
+      rows: topModels.map((model) => ({
+        key: model,
+        label: model,
+        summary: `${formatConsumption(
+          interactions
+            .filter((interaction) => interaction.modelName === model)
+            .reduce((sum, interaction) => sum + interaction.estimatedCredits, 0),
+        )} credits`,
+        cells: topSources.map((source) => {
+          const credits = interactions
+            .filter((interaction) => interaction.modelName === model && interaction.requestSource === source)
+            .reduce((sum, interaction) => sum + interaction.estimatedCredits, 0);
+
+          return {
+            key: source,
+            value: Number(credits.toFixed(1)),
+            displayValue: credits ? formatConsumption(credits) : "—",
+          };
+        }),
+      })),
+    };
+  }, [interactions, modelsAndTools.channels, modelsAndTools.models]);
+  const headerStats = [
+    {
+      label: "Focus",
+      value: resolved.entityLabel,
+      note: resolved.scopeLabel || resolved.description,
+    },
+    {
+      label: "Consumption in Scope",
+      value: `${formatConsumption(scopeConsumption)} credits`,
+      note: `${interactions.length} scoped interactions are included in this workspace.`,
+    },
+    {
+      label: "Top Use Case",
+      value: useCases[0]?.label ?? "No dominant use case",
+      note: useCases[0] ? `${formatConsumption(useCases[0].totalConsumption)} credits` : "Awaiting scoped activity.",
+    },
+    {
+      label: "Actionable Findings",
+      value: `${recommendations.length} recommendations`,
+      note: topInteractions[0]
+        ? `Largest interaction: ${formatConsumption(topInteractions[0].estimatedCredits)} credits`
+        : "No high-cost interactions are currently in view.",
+    },
+  ];
+  const detailJourney = [
+    {
+      label: "Context",
+      detail: "Anchor this workspace in the exact scope that needs a decision.",
+      state: "complete" as const,
+    },
+    {
+      label: "Diagnose",
+      detail: "Compare use cases, model pressure, and high-cost interactions in the same surface.",
+      state: "active" as const,
+    },
+    {
+      label: "Validate",
+      detail: "Open evidence and confirm the recommendations before acting.",
+      state: "upcoming" as const,
+    },
+    {
+      label: "Escalate",
+      detail: "Move the scoped signal into reports or simulation when it is decision-ready.",
+      state: "upcoming" as const,
+    },
+  ];
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
@@ -108,30 +212,35 @@ export default function DetailWorkspace() {
         <span className="capitalize text-slate-300">{resolved.entityLabel}</span>
       </div>
 
-      <div className="flex flex-col xl:flex-row justify-between xl:items-start gap-5">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Badge className="bg-white/5 text-slate-300 border-white/10">{resolved.entityLabel}</Badge>
-            {resolved.scopeLabel ? <Badge className="bg-blue-500/10 text-blue-300 border-blue-500/20">{resolved.scopeLabel}</Badge> : null}
-          </div>
-          <h1 className="dashboard-page-title mb-2">{resolved.title}</h1>
-          <p className="dashboard-page-lead">{resolved.description}</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/recommendations">
-            <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
-              <Sparkles className="w-4 h-4 mr-2 text-indigo-300" />
-              View Recommendations
-            </Button>
-          </Link>
-          <Link href="/studio">
-            <Button className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40">
-              <Zap className="w-4 h-4 mr-2" />
-              Run Advisor on Scope
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <ExperienceHeader
+        eyebrow={`${resolved.entityLabel} Workspace`}
+        title={resolved.title}
+        lead={resolved.description}
+        stats={headerStats}
+        journey={detailJourney}
+        actions={
+          <>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-white/5 text-slate-300 border-white/10">{resolved.entityLabel}</Badge>
+              {resolved.scopeLabel ? (
+                <Badge className="bg-blue-500/10 text-blue-300 border-blue-500/20">{resolved.scopeLabel}</Badge>
+              ) : null}
+            </div>
+            <Link href="/recommendations">
+              <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
+                <Sparkles className="w-4 h-4 mr-2 text-indigo-300" />
+                View Recommendations
+              </Button>
+            </Link>
+            <Link href="/studio">
+              <Button className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40">
+                <Zap className="w-4 h-4 mr-2" />
+                Run Advisor on Scope
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {resolved.metrics.map((metric) => (
@@ -218,6 +327,67 @@ export default function DetailWorkspace() {
               </CardContent>
             </Card>
           </div>
+
+          {useCaseModelMatrix.columns.length && useCaseModelMatrix.rows.length ? (
+            <IntensityMatrix
+              title="Use Case x Model Pressure"
+              description="This matrix shows where scope consumption is concentrating across the most important use cases and the models carrying them."
+              columns={useCaseModelMatrix.columns}
+              rows={useCaseModelMatrix.rows}
+            />
+          ) : null}
+
+          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+            <CardHeader className="bg-black/20 border-b border-white/5">
+              <CardTitle className="dashboard-card-title text-slate-200">High-Cost Interactions</CardTitle>
+              <CardDescription className="text-slate-400">
+                The fastest way to validate whether the biggest scoped costs are justified.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-5">
+              {topInteractions.length ? (
+                topInteractions.map((interaction) => (
+                  <div key={interaction.id} className="rounded-2xl border border-white/5 bg-black/20 p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className="bg-white/5 text-slate-300 border-white/10">{interaction.modelName}</Badge>
+                          <Badge className="bg-blue-500/10 text-blue-300 border-blue-500/20">{interaction.requestSource}</Badge>
+                        </div>
+                        <p className="mt-3 text-sm font-semibold text-slate-100">{interaction.useCaseLabel}</p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          {interaction.engineerName} · {interaction.pluginName} · {interaction.mcpServer}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-slate-100">
+                            {formatConsumption(interaction.estimatedCredits)} credits
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {interaction.promptChars.toLocaleString()} / {interaction.responseChars.toLocaleString()} chars
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white"
+                          onClick={() => setEvidenceInteractionId(interaction.id)}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Inspect
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-10 text-center text-sm text-slate-500">
+                  No interaction detail was available in this scope.
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="ownership" className="mt-6">
@@ -282,6 +452,14 @@ export default function DetailWorkspace() {
               items={modelsAndTools.mcps.map(([label, value]) => ({ label, value: `${formatConsumption(value)} credits` }))}
             />
           </div>
+          {modelSourceMatrix.columns.length && modelSourceMatrix.rows.length ? (
+            <IntensityMatrix
+              title="Model x Source Pressure"
+              description="Read across to see where the most expensive models are being activated and which request sources are responsible."
+              columns={modelSourceMatrix.columns}
+              rows={modelSourceMatrix.rows}
+            />
+          ) : null}
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader>
               <CardTitle className="dashboard-card-title text-slate-200">Prompt Size vs AI Consumption</CardTitle>

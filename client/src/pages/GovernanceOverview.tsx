@@ -2,8 +2,6 @@ import { useState } from "react";
 import { AlertTriangle, ArrowUpRight, Check, Compass, Sparkles, X, Zap } from "lucide-react";
 import { Link } from "wouter";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   Legend,
@@ -19,6 +17,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExperienceHeader } from "@/components/experience/ExperienceHeader";
+import { IntensityMatrix } from "@/components/experience/IntensityMatrix";
+import { SignalRing } from "@/components/experience/SignalRing";
 import { KIRO_DATA, formatConsumption } from "@/lib/kiro-data";
 
 const TREEMAP_COLORS = ["#1D4ED8", "#4F46E5", "#0F766E", "#0369A1", "#7C3AED", "#2563EB"];
@@ -263,21 +264,98 @@ export default function GovernanceOverview() {
       emphasis: "alert",
     },
   ];
+  const clientMixColumns = [
+    { key: "ide", label: "IDE" },
+    { key: "cli", label: "CLI" },
+    { key: "plugin", label: "Plugin" },
+  ];
+  const clientMixRows = KIRO_DATA.clientMixByCostCenter.map((item) => ({
+    key: item.name,
+    label: item.name,
+    summary: `${item.ide + item.cli + item.plugin} requests`,
+    cells: clientMixColumns.map((column) => ({
+      key: column.key,
+      value: Number(item[column.key as keyof typeof item] ?? 0),
+      displayValue: String(item[column.key as keyof typeof item] ?? 0),
+    })),
+  }));
+  const governancePressureItems = [
+    {
+      label: "High Severity",
+      value: highSeverityRecommendations.length,
+      color: "#f97316",
+      note: "Leadership interventions that should not wait for another reporting cycle.",
+    },
+    {
+      label: "Idle Licenses",
+      value: unusedLicenses,
+      color: "#38bdf8",
+      note: "Licenses not producing current value and ready for reassignment or cleanup.",
+    },
+    {
+      label: "Active Alerts",
+      value: otherActiveAlerts,
+      color: "#818cf8",
+      note: "Additional system signals that support the current governance posture.",
+    },
+  ];
+
+  const headerStats = [
+    {
+      label: "Cost Pressure",
+      value: `${formatConsumption(KIRO_DATA.kpis.overrun)} credits`,
+      note: `${highSeverityRecommendations.length} high-severity signals are linked to active overrun.`,
+    },
+    {
+      label: "License Readiness",
+      value: `${adoptedLicenses}/${totalLicenses} active`,
+      note: `${unusedLicenses} seats have been idle beyond the ${idleThresholdDays}-day threshold.`,
+    },
+    {
+      label: "Top Ownership Hotspot",
+      value: aiDeliveryCostCenterName,
+      note: `${formatConsumption(aiDeliveryCostCenterCredits)} credits across ${aiDeliveryTeamSplits.length} lead teams.`,
+    },
+    {
+      label: "Next Move",
+      value: leadRecommendation?.type ?? "Governance Review",
+      note: leadRecommendation?.title ?? "Review concentration risk and open the guided explorer path.",
+    },
+  ];
+
+  const journey = [
+    {
+      label: "Detect",
+      detail: "Surface overrun, unused capacity, and concentration before they spread.",
+      state: "active" as const,
+    },
+    {
+      label: "Explain",
+      detail: "Follow the highest-pressure cost center into the teams and engineers driving it.",
+      state: "upcoming" as const,
+    },
+    {
+      label: "Prioritize",
+      detail: "Move into the ranked intervention queue with evidence already attached.",
+      state: "upcoming" as const,
+    },
+    {
+      label: "Act",
+      detail: "Simulate policy changes and package the outcome into a report.",
+      state: "upcoming" as const,
+    },
+  ];
 
   return (
     <div className="p-8 max-w-[1680px] mx-auto space-y-6 animate-in fade-in duration-500">
-      <div className="rounded-[28px] border border-white/6 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.18),transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(7,12,24,0.98))] px-7 py-7 shadow-[0_24px_70px_rgba(2,6,23,0.45)]">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="space-y-4">
-            <div>
-              <h1 className="dashboard-page-title mb-2">Kiro AI Consumption Governance</h1>
-              <p className="dashboard-page-lead max-w-4xl">
-                Executive posture for Kiro consumption, license efficiency, and the next actions most likely to reduce
-                overrun.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
+      <ExperienceHeader
+        eyebrow="Governance Control Tower"
+        title="Kiro AI Consumption Governance"
+        lead="Executive posture for Kiro consumption, license efficiency, and the next actions most likely to reduce overrun."
+        stats={headerStats}
+        journey={journey}
+        actions={
+          <>
             <Link href="/reports">
               <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
                 <Sparkles className="w-4 h-4 mr-2 text-indigo-300" />
@@ -290,9 +368,9 @@ export default function GovernanceOverview() {
                 Run AI Advisor
               </Button>
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {isGovernanceBannerVisible && (
         <Card
@@ -503,43 +581,20 @@ export default function GovernanceOverview() {
               </CardContent>
             </Card>
 
-            <Card className="bg-[#111827] border-white/5 shadow-lg">
-              <CardHeader>
-                <CardTitle className="dashboard-card-title text-slate-200">Client Type Mix by Cost Center</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[280px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={KIRO_DATA.clientMixByCostCenter} layout="vertical" margin={{ left: 20, bottom: 16 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal vertical={false} />
-                    <XAxis
-                      type="number"
-                      tick={false}
-                      axisLine={false}
-                      tickLine={false}
-                      height={22}
-                      label={{ value: "Requests", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      stroke="#cbd5e1"
-                      fontSize={11}
-                      width={110}
-                      label={{ value: "Cost center", angle: -90, position: "insideLeft", dx: -8, fill: "#94A3B8", fontSize: 12 }}
-                    />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "8px" }}
-                      itemStyle={{ color: "#e2e8f0" }}
-                    />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: "11px" }} />
-                    <Bar dataKey="ide" stackId="a" fill="#3b82f6" name="IDE" />
-                    <Bar dataKey="cli" stackId="a" fill="#8b5cf6" name="CLI" />
-                    <Bar dataKey="plugin" stackId="a" fill="#14b8a6" name="Plugin" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            <SignalRing
+              title="Governance Pressure Mix"
+              centerLabel="priority signals"
+              centerValue={String(governancePressureItems.reduce((sum, item) => sum + item.value, 0))}
+              items={governancePressureItems}
+            />
           </div>
+
+          <IntensityMatrix
+            title="Client Type x Cost Center Activity"
+            description="A denser view of where IDE, CLI, and plugin activity are actually concentrating across the enterprise."
+            columns={clientMixColumns}
+            rows={clientMixRows}
+          />
 
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">

@@ -10,9 +10,11 @@ import {
   Zap,
 } from "lucide-react";
 import { Link } from "wouter";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
+import { ExperienceHeader } from "@/components/experience/ExperienceHeader";
+import { LollipopRanking } from "@/components/experience/LollipopRanking";
+import { SignalRing } from "@/components/experience/SignalRing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,10 +113,54 @@ export default function Recommendations() {
     [sortedRecommendations],
   );
   const maxEvidenceLinks = sortedRecommendations[0]?.evidenceInteractionIds.length ?? 0;
-
   const primaryEvidence = selectedRecommendation ? getInteractionById(selectedRecommendation.evidenceInteractionIds[0]) : null;
   const highSeverityCount = sortedRecommendations.filter((recommendation) => recommendation.severity === "High").length;
   const topSignals = selectedRecommendation?.supportingSignals.slice(0, 3) ?? [];
+  const recentRuns = KIRO_DATA.runs.slice(0, 3);
+  const headerStats = [
+    {
+      label: "Decision Queue",
+      value: `${sortedRecommendations.length} actions`,
+      note: `${highSeverityCount} items are in leadership focus right now.`,
+    },
+    {
+      label: "Evidence Strength",
+      value: `${totalEvidenceLinks} links`,
+      note: `${maxEvidenceLinks} linked interactions support the strongest single recommendation.`,
+    },
+    {
+      label: "Intervention Breadth",
+      value: `${actionTypeCount} action types`,
+      note: `${actionMix[0]?.type ?? "Model Routing"} appears most often in the active queue.`,
+    },
+    {
+      label: "Current Lead Motion",
+      value: selectedRecommendation?.type ?? "Governance action",
+      note: selectedRecommendation?.title ?? "Select a recommendation to inspect the action brief.",
+    },
+  ];
+  const journey = [
+    {
+      label: "Prioritize",
+      detail: "Separate leadership actions from background optimization noise.",
+      state: "active" as const,
+    },
+    {
+      label: "Inspect",
+      detail: "Open the recommendation, then validate it against concrete signals and evidence.",
+      state: "upcoming" as const,
+    },
+    {
+      label: "Simulate",
+      detail: "Send the selected action into the policy studio before rollout.",
+      state: "upcoming" as const,
+    },
+    {
+      label: "Execute",
+      detail: "Publish the decision path into reports and operating handoffs.",
+      state: "upcoming" as const,
+    },
+  ];
 
   return (
     <div className="p-8 max-w-[1760px] mx-auto space-y-6 animate-in fade-in duration-500">
@@ -124,21 +170,14 @@ export default function Recommendations() {
         interactionId={evidenceInteractionId}
       />
 
-      <div className="rounded-[28px] border border-white/6 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(7,12,24,0.98))] px-7 py-7 shadow-[0_24px_70px_rgba(2,6,23,0.45)]">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-          <div className="max-w-4xl space-y-3">
-            <div>
-              <h1 className="dashboard-page-title mb-2">Recommendations</h1>
-            </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <SummaryChip label="High severity" value={String(highSeverityCount)} />
-                <SummaryChip label="Queue" value={String(sortedRecommendations.length)} />
-                <SummaryChip label="Evidence links" value={String(totalEvidenceLinks)} />
-                <SummaryChip label="Action types" value={String(actionTypeCount)} />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
+      <ExperienceHeader
+        eyebrow="Decision Queue"
+        title="Recommendations"
+        lead="Prioritize the interventions with the clearest business signal, inspect the evidence, and route the right actions into simulation or reporting."
+        stats={headerStats}
+        journey={journey}
+        actions={
+          <>
             <Link href="/explorer">
               <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
                 <Target className="w-4 h-4 mr-2 text-slate-300" />
@@ -157,247 +196,373 @@ export default function Recommendations() {
                 Generate Strategic Report
               </Button>
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(320px,0.88fr)_minmax(0,1.12fr)] 2xl:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.1fr)_minmax(280px,0.76fr)]">
         <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[0.82fr_1.18fr]">
+          <div className="grid grid-cols-1 gap-6 2xl:hidden">
             <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
               <CardHeader className="bg-black/20 border-b border-white/5">
-                <CardTitle className="dashboard-card-title text-slate-100">Priority Mix</CardTitle>
+                <CardTitle className="dashboard-card-title text-slate-100">Priority Pressure</CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-[140px_1fr] items-center gap-4 pt-5">
-                <div className="h-[124px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={severityMix}
-                        dataKey="value"
-                        innerRadius={34}
-                        outerRadius={54}
-                        stroke="rgba(255,255,255,0.06)"
-                        strokeWidth={2}
-                        paddingAngle={3}
-                      >
-                        {severityMix.map((entry) => (
-                          <Cell key={entry.name} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.1)", borderRadius: "12px" }}
-                        itemStyle={{ color: "#e2e8f0" }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+              <CardContent className="space-y-4 pt-5">
+                <SignalRing
+                  title="Severity distribution"
+                  centerLabel="total actions"
+                  centerValue={String(sortedRecommendations.length)}
+                  items={severityMix.map((item) => ({
+                    label: item.name,
+                    value: item.value,
+                    color: item.color,
+                  }))}
+                />
+                <div className="grid gap-3 md:grid-cols-3">
+                  <SummaryChip label="Leadership" value={`${highSeverityCount} immediate`} />
+                  <SummaryChip label="Program" value={String(recommendationSections.find((section) => section.title === "Program")?.recommendations.length ?? 0)} />
+                  <SummaryChip label="Background" value={String(recommendationSections.find((section) => section.title === "Background")?.recommendations.length ?? 0)} />
                 </div>
-                <div className="space-y-3">
-                  {severityMix.map((item) => (
-                    <SeverityRail
-                      key={item.name}
-                      label={item.name}
-                      value={item.value}
-                      max={sortedRecommendations.length}
-                      color={item.color}
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-              <CardHeader className="bg-black/20 border-b border-white/5">
-                <CardTitle className="dashboard-card-title text-slate-100">Action Coverage</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-5">
-                {actionMix.map((item) => (
-                  <ActionCoverageRail
-                    key={item.type}
-                    label={item.type}
-                    value={item.count}
-                    max={actionMix[0]?.count ?? item.count}
-                  />
-                ))}
               </CardContent>
             </Card>
           </div>
 
-        <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-          <CardHeader className="bg-black/20 border-b border-white/5">
-            <CardTitle className="dashboard-card-title text-slate-100">Recommendation Queue</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5 pt-5">
-            {recommendationSections.map((section) => (
-              <div key={section.title} className="space-y-3">
-                <div className="flex items-end justify-between gap-3">
-                  <p className="dashboard-section-title">{section.title}</p>
-                  <Badge className="bg-white/5 text-slate-300 border-white/10">{section.recommendations.length}</Badge>
+          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+            <CardHeader className="bg-black/20 border-b border-white/5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="dashboard-card-title text-slate-100">Recommendation Queue</CardTitle>
+                  <p className="mt-2 text-sm text-slate-400">Scan by urgency, then open a recommendation to inspect the action brief.</p>
                 </div>
-                <div className="space-y-2">
-                  {section.recommendations.map((recommendation) => (
-                    <button
-                      key={recommendation.id}
-                      type="button"
-                      onClick={() => setSelectedRecommendationId(recommendation.id)}
-                      className={`w-full rounded-2xl border p-4 text-left transition-all ${
-                        recommendation.id === selectedRecommendation?.id
-                          ? "border-blue-500/40 bg-blue-500/10 shadow-[0_0_0_1px_rgba(59,130,246,0.16)]"
-                          : "border-white/6 bg-[#0b1120] hover:bg-white/[0.03]"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-3 min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge className={severityStyles[recommendation.severity]}>{recommendation.severity}</Badge>
-                            <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
-                          </div>
-                          <p className="dashboard-item-title">{recommendation.title}</p>
-                          <p className="dashboard-muted-body">{recommendation.scopeLabel}</p>
-                          <div className="flex items-center gap-3">
-                            <div className="h-2 flex-1 rounded-full bg-white/6 overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#8b5cf6)]"
-                                style={{
-                                  width: `${maxEvidenceLinks ? Math.max(16, (recommendation.evidenceInteractionIds.length / maxEvidenceLinks) * 100) : 16}%`,
-                                }}
-                              />
+                <Badge className="bg-white/5 text-slate-300 border-white/10">{sortedRecommendations.length}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5 pt-5">
+              {recommendationSections.map((section) => (
+                <div key={section.title} className="space-y-3">
+                  <div className="flex items-end justify-between gap-3">
+                    <p className="dashboard-section-title">{section.title}</p>
+                    <Badge className="bg-white/5 text-slate-300 border-white/10">{section.recommendations.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {section.recommendations.map((recommendation) => (
+                      <button
+                        key={recommendation.id}
+                        type="button"
+                        onClick={() => setSelectedRecommendationId(recommendation.id)}
+                        className={`w-full rounded-2xl border p-4 text-left transition-all ${
+                          recommendation.id === selectedRecommendation?.id
+                            ? "border-blue-500/40 bg-blue-500/10 shadow-[0_0_0_1px_rgba(59,130,246,0.16)]"
+                            : "border-white/6 bg-[#0b1120] hover:bg-white/[0.03]"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1 space-y-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge className={severityStyles[recommendation.severity]}>{recommendation.severity}</Badge>
+                              <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
                             </div>
-                            <span className="text-xs text-slate-500 whitespace-nowrap">
-                              {recommendation.evidenceInteractionIds.length} evidence
-                            </span>
+                            <p className="dashboard-item-title">{recommendation.title}</p>
+                            <p className="dashboard-muted-body">{recommendation.scopeLabel}</p>
+                            <div className="flex items-center gap-3">
+                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/6">
+                                <div
+                                  className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#8b5cf6)]"
+                                  style={{
+                                    width: `${maxEvidenceLinks ? Math.max(16, (recommendation.evidenceInteractionIds.length / maxEvidenceLinks) * 100) : 16}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="whitespace-nowrap text-xs text-slate-500">
+                                {recommendation.evidenceInteractionIds.length} evidence
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              ))}
+            </CardContent>
+          </Card>
         </div>
 
         {selectedRecommendation ? (
-          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-            <CardHeader className="bg-black/20 border-b border-white/5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={severityStyles[selectedRecommendation.severity]}>{selectedRecommendation.severity}</Badge>
-                    <Badge className="bg-white/5 text-slate-300 border-white/10">{selectedRecommendation.type}</Badge>
-                    <Badge className="bg-white/5 text-slate-300 border-white/10">{selectedRecommendation.scopeType}</Badge>
-                  </div>
-                  <div>
-                    <CardTitle className="text-[1.45rem] leading-tight text-white">{selectedRecommendation.title}</CardTitle>
-                    <p className="mt-2 text-sm text-slate-400">{selectedRecommendation.scopeLabel}</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 lg:justify-end">
-                  {primaryEvidence ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 2xl:hidden">
+              <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+                <CardHeader className="bg-black/20 border-b border-white/5">
+                  <CardTitle className="dashboard-card-title text-slate-100">Intervention Spectrum</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-5">
+                  <LollipopRanking
+                    title="Action coverage ladder"
+                    description="Shows which intervention types dominate the queue right now."
+                    items={actionMix.map((item) => ({
+                      label: item.type,
+                      value: item.count,
+                      displayValue: `${item.count}`,
+                    }))}
+                  />
+                </CardContent>
+              </Card>
+
+              {primaryEvidence ? (
+                <div className="rounded-2xl border border-white/6 bg-[#111827] p-5 shadow-lg">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="dashboard-eyebrow">Primary Evidence Anchor</p>
+                      <p className="mt-2 text-sm font-medium text-slate-200">
+                        {primaryEvidence.useCaseLabel} · {primaryEvidence.engineerName}
+                      </p>
+                    </div>
                     <Button
-                      variant="outline"
-                      className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white"
+                      variant="ghost"
+                      size="sm"
+                      className="text-slate-300 hover:text-white hover:bg-white/5"
                       onClick={() => setEvidenceInteractionId(primaryEvidence.id)}
                     >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Open Evidence
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Inspect
                     </Button>
-                  ) : null}
-                  <Link href="/studio">
-                    <Button className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40">
-                      <Zap className="w-4 h-4 mr-2" />
-                      Simulate Policy
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-5 pt-6">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <SummaryChip label="Scope" value={selectedRecommendation.scopeLabel} />
-                <SummaryChip label="Type" value={selectedRecommendation.type} />
-                <SummaryChip label="Evidence" value={`${selectedRecommendation.evidenceInteractionIds.length} linked`} />
-              </div>
-
-              <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
-                <p className="dashboard-eyebrow mb-3">Action</p>
-                <p className="dashboard-body text-slate-100">{selectedRecommendation.recommendedAction}</p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[0.88fr_1.12fr]">
-                <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
-                  <div className="flex items-center justify-between gap-3 mb-4">
-                    <h3 className="dashboard-section-title">Evidence Signals</h3>
-                    <span className="dashboard-eyebrow">{topSignals.length}</span>
                   </div>
+                  <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <MiniMetric label="Credits" value={`${formatConsumption(primaryEvidence.estimatedCredits)}`} />
+                    <MiniMetric label="Model" value={primaryEvidence.modelName} />
+                    <MiniMetric label="Source" value={primaryEvidence.requestSource} />
+                  </div>
+                </div>
+              ) : (
+                <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+                  <CardHeader className="bg-black/20 border-b border-white/5">
+                    <CardTitle className="dashboard-card-title text-slate-100">Intervention Spectrum</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-5">
+                    <LollipopRanking
+                      title="Action coverage ladder"
+                      description="Shows which intervention types dominate the queue right now."
+                      items={actionMix.map((item) => ({
+                        label: item.type,
+                        value: item.count,
+                        displayValue: `${item.count}`,
+                      }))}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+              <CardHeader className="bg-black/20 border-b border-white/5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-3">
-                    {topSignals.map((signal) => (
-                      <div key={signal} className="flex items-start gap-3 rounded-xl border border-white/5 bg-black/20 px-3 py-3">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-300" />
-                        <span className="dashboard-body">{signal}</span>
-                      </div>
-                    ))}
-                    {!topSignals.length ? (
-                      <div className="flex items-start gap-3 rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3">
-                        <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                        <span className="dashboard-muted-body">No stronger-than-baseline signals were attached to this recommendation.</span>
-                      </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className={severityStyles[selectedRecommendation.severity]}>{selectedRecommendation.severity}</Badge>
+                      <Badge className="bg-white/5 text-slate-300 border-white/10">{selectedRecommendation.type}</Badge>
+                      <Badge className="bg-white/5 text-slate-300 border-white/10">{selectedRecommendation.scopeType}</Badge>
+                    </div>
+                    <div>
+                      <CardTitle className="text-[1.45rem] leading-tight text-white">{selectedRecommendation.title}</CardTitle>
+                      <p className="mt-2 text-sm text-slate-400">{selectedRecommendation.scopeLabel}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 lg:justify-end">
+                    {primaryEvidence ? (
+                      <Button
+                        variant="outline"
+                        className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white"
+                        onClick={() => setEvidenceInteractionId(primaryEvidence.id)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Open Evidence
+                      </Button>
                     ) : null}
+                    <Link href="/studio">
+                      <Button className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40">
+                        <Zap className="w-4 h-4 mr-2" />
+                        Simulate Policy
+                      </Button>
+                    </Link>
                   </div>
                 </div>
+              </CardHeader>
+              <CardContent className="space-y-5 pt-6">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <SummaryChip label="Scope" value={selectedRecommendation.scopeLabel} />
+                  <SummaryChip label="Type" value={selectedRecommendation.type} />
+                  <SummaryChip label="Evidence" value={`${selectedRecommendation.evidenceInteractionIds.length} linked`} />
+                </div>
 
-                <div className="space-y-4">
-                  {primaryEvidence ? (
-                    <div className="rounded-2xl border border-white/6 bg-black/20 p-5">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="dashboard-eyebrow">Primary Evidence Anchor</p>
-                          <p className="mt-2 text-sm font-medium text-slate-200">
-                            {primaryEvidence.useCaseLabel} · {primaryEvidence.engineerName}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-slate-300 hover:text-white hover:bg-white/5"
-                          onClick={() => setEvidenceInteractionId(primaryEvidence.id)}
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Inspect
-                        </Button>
+                <div className="grid gap-4 xl:grid-cols-[1.12fr_0.88fr]">
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
+                      <p className="mb-3 dashboard-eyebrow">Action</p>
+                      <p className="dashboard-body text-slate-100">{selectedRecommendation.recommendedAction}</p>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <h3 className="dashboard-section-title">Evidence Signals</h3>
+                        <span className="dashboard-eyebrow">{topSignals.length}</span>
                       </div>
-                      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                        <MiniMetric label="Credits" value={`${formatConsumption(primaryEvidence.estimatedCredits)}`} />
-                        <MiniMetric label="Model" value={primaryEvidence.modelName} />
-                        <MiniMetric label="Source" value={primaryEvidence.requestSource} />
+                      <div className="space-y-3">
+                        {topSignals.map((signal) => (
+                          <div key={signal} className="flex items-start gap-3 rounded-xl border border-white/5 bg-black/20 px-3 py-3">
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-300" />
+                            <span className="dashboard-body">{signal}</span>
+                          </div>
+                        ))}
+                        {!topSignals.length ? (
+                          <div className="flex items-start gap-3 rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3">
+                            <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                            <span className="dashboard-muted-body">No stronger-than-baseline signals were attached to this recommendation.</span>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
-                  ) : null}
+                  </div>
 
-                  <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-                    <CardHeader className="bg-black/20 border-b border-white/5">
-                      <CardTitle className="dashboard-card-title text-slate-100">Decision Runs</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3 pt-5">
-                      {KIRO_DATA.runs.slice(0, 3).map((run) => (
-                        <div key={run.id} className="rounded-2xl border border-white/6 bg-[#0b1120] p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-medium text-slate-100">{run.title}</p>
-                              <p className="mt-1 text-sm text-slate-400">{run.scopeLabel}</p>
-                            </div>
-                            <Badge className={statusStyles[run.status]}>{run.status}</Badge>
+                  <div className="space-y-4 2xl:hidden">
+                    {primaryEvidence ? (
+                      <div className="rounded-2xl border border-white/6 bg-black/20 p-5">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="dashboard-eyebrow">Primary Evidence Anchor</p>
+                            <p className="mt-2 text-sm font-medium text-slate-200">
+                              {primaryEvidence.useCaseLabel} · {primaryEvidence.engineerName}
+                            </p>
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-300 hover:text-white hover:bg-white/5"
+                            onClick={() => setEvidenceInteractionId(primaryEvidence.id)}
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Inspect
+                          </Button>
                         </div>
-                      ))}
-                    </CardContent>
-                  </Card>
+                        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                          <MiniMetric label="Credits" value={`${formatConsumption(primaryEvidence.estimatedCredits)}`} />
+                          <MiniMetric label="Model" value={primaryEvidence.modelName} />
+                          <MiniMetric label="Source" value={primaryEvidence.requestSource} />
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+                      <CardHeader className="bg-black/20 border-b border-white/5">
+                        <CardTitle className="dashboard-card-title text-slate-100">Decision Runs</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3 pt-5">
+                        {recentRuns.map((run) => (
+                          <div key={run.id} className="rounded-2xl border border-white/6 bg-[#0b1120] p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-medium text-slate-100">{run.title}</p>
+                                <p className="mt-1 text-sm text-slate-400">{run.scopeLabel}</p>
+                              </div>
+                              <Badge className={statusStyles[run.status]}>{run.status}</Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : null}
+
+        <div className="hidden space-y-6 2xl:block">
+          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+            <CardHeader className="bg-black/20 border-b border-white/5">
+              <CardTitle className="dashboard-card-title text-slate-100">Priority Pressure</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-5">
+              <SignalRing
+                title="Severity distribution"
+                centerLabel="total actions"
+                centerValue={String(sortedRecommendations.length)}
+                items={severityMix.map((item) => ({
+                  label: item.name,
+                  value: item.value,
+                  color: item.color,
+                }))}
+              />
+              <div className="grid gap-3">
+                <SummaryChip label="Leadership" value={`${highSeverityCount} immediate`} />
+                <SummaryChip label="Program" value={String(recommendationSections.find((section) => section.title === "Program")?.recommendations.length ?? 0)} />
+                <SummaryChip label="Background" value={String(recommendationSections.find((section) => section.title === "Background")?.recommendations.length ?? 0)} />
               </div>
             </CardContent>
           </Card>
-        ) : null}
+
+          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+            <CardHeader className="bg-black/20 border-b border-white/5">
+              <CardTitle className="dashboard-card-title text-slate-100">Intervention Spectrum</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-5">
+              <LollipopRanking
+                title="Action coverage ladder"
+                description="Shows which intervention types dominate the queue right now."
+                items={actionMix.map((item) => ({
+                  label: item.type,
+                  value: item.count,
+                  displayValue: `${item.count}`,
+                }))}
+              />
+            </CardContent>
+          </Card>
+
+          {primaryEvidence ? (
+            <div className="rounded-2xl border border-white/6 bg-[#111827] p-5 shadow-lg">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="dashboard-eyebrow">Primary Evidence Anchor</p>
+                  <p className="mt-2 text-sm font-medium text-slate-200">
+                    {primaryEvidence.useCaseLabel} · {primaryEvidence.engineerName}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-300 hover:text-white hover:bg-white/5"
+                  onClick={() => setEvidenceInteractionId(primaryEvidence.id)}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Inspect
+                </Button>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-3">
+                <MiniMetric label="Credits" value={`${formatConsumption(primaryEvidence.estimatedCredits)}`} />
+                <MiniMetric label="Model" value={primaryEvidence.modelName} />
+                <MiniMetric label="Source" value={primaryEvidence.requestSource} />
+              </div>
+            </div>
+          ) : null}
+
+          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+            <CardHeader className="bg-black/20 border-b border-white/5">
+              <CardTitle className="dashboard-card-title text-slate-100">Decision Runs</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-5">
+              {recentRuns.map((run) => (
+                <div key={run.id} className="rounded-2xl border border-white/6 bg-[#0b1120] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-slate-100">{run.title}</p>
+                      <p className="mt-1 text-sm text-slate-400">{run.scopeLabel}</p>
+                    </div>
+                    <Badge className={statusStyles[run.status]}>{run.status}</Badge>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
@@ -408,55 +573,6 @@ function SummaryChip({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-4">
       <p className="dashboard-eyebrow">{label}</p>
       <p className="mt-2 text-sm font-semibold leading-snug text-white text-balance">{value}</p>
-    </div>
-  );
-}
-
-function SeverityRail({
-  label,
-  value,
-  max,
-  color,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color: string;
-}) {
-  return (
-    <div className="rounded-xl border border-white/6 bg-black/20 px-3 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-slate-200">{label}</p>
-        <span className="text-xs text-slate-400">{value}</span>
-      </div>
-      <div className="mt-2 h-2 rounded-full bg-white/6 overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${max ? Math.max(12, (value / max) * 100) : 12}%`, backgroundColor: color }} />
-      </div>
-    </div>
-  );
-}
-
-function ActionCoverageRail({
-  label,
-  value,
-  max,
-}: {
-  label: string;
-  value: number;
-  max: number;
-}) {
-  return (
-    <div className="rounded-xl border border-white/6 bg-black/20 px-3 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-slate-200">{label}</p>
-        <span className="text-xs text-slate-400">{value}</span>
-      </div>
-      <div className="mt-2 h-2.5 rounded-full bg-white/6 overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#60a5fa)]"
-          style={{ width: `${max ? Math.max(14, (value / max) * 100) : 14}%` }}
-        />
-      </div>
     </div>
   );
 }

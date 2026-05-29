@@ -11,6 +11,7 @@ import {
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
+import { ExperienceHeader } from "@/components/experience/ExperienceHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,10 +106,56 @@ export default function ReportEvidenceConsole() {
       [
         { name: "Completed", value: generatedReports.filter((report) => report.status === "Completed").length, color: "#14b8a6" },
         { name: "Processing", value: generatedReports.filter((report) => report.status === "Processing").length, color: "#3b82f6" },
-        { name: "Queued", value: generatedReports.filter((report) => report.status === "Queued").length, color: "#f59e0b" },
+        { name: "Stale", value: generatedReports.filter((report) => report.status === "Stale").length, color: "#f59e0b" },
       ].filter((item) => item.value > 0),
     [generatedReports],
   );
+  const headerStats = [
+    {
+      label: "Report Queue",
+      value: `${generatedReports.length} outputs`,
+      note: `${reportStatusMix.find((item) => item.name === "Processing")?.value ?? 0} are currently refreshing.`,
+    },
+    {
+      label: "Evidence Packs",
+      value: `${evidencePacks.length} curated`,
+      note: `${maxEvidencePackItems} linked items in the richest evidence pack.`,
+    },
+    {
+      label: "Prompt Inspections",
+      value: `${promptInspections.length} traces`,
+      note: maxPromptInspectionCredits
+        ? `${formatConsumption(maxPromptInspectionCredits)} credits is the heaviest inspection in view.`
+        : "No prompt inspections are currently attached.",
+    },
+    {
+      label: "Scope Consumption",
+      value: `${formatConsumption(reportScope.totalConsumption)} credits`,
+      note: `${reportScope.recommendations.length} linked recommendations support the active report scope.`,
+    },
+  ];
+  const reportJourney = [
+    {
+      label: "Queue",
+      detail: "Select or generate the report you want to package.",
+      state: "complete" as const,
+    },
+    {
+      label: "Summarize",
+      detail: "Read the executive conclusion and the scoped operating metrics.",
+      state: "active" as const,
+    },
+    {
+      label: "Evidence",
+      detail: "Open the supporting prompt, interaction, and recommendation packs.",
+      state: "upcoming" as const,
+    },
+    {
+      label: "Export",
+      detail: "Turn the recommendation path into a reusable stakeholder artifact.",
+      state: "upcoming" as const,
+    },
+  ];
 
   const handleGenerate = () => {
     const option = scopeOptions.find((item) => item.id === draftScopeId);
@@ -217,49 +264,55 @@ export default function ReportEvidenceConsole() {
         </div>
       ) : null}
 
-      <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
-        <div>
-          <h1 className="dashboard-page-title mb-1">Reports & Evidence</h1>
-          <p className="dashboard-page-lead max-w-4xl">
-            Choose a report, scan the conclusion, then open the supporting evidence.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
-            <Share2 className="w-4 h-4 mr-2" />
-            Share Hub
-          </Button>
-          <Button
-            className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40 shadow-[0_0_20px_rgba(37,99,235,0.2)]"
-            onClick={() => setShowGenerateModal(true)}
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            Generate Strategic Report
-          </Button>
-        </div>
-      </div>
+      <ExperienceHeader
+        eyebrow="Executive Output"
+        title="Reports & Evidence"
+        lead="Choose a report, scan the conclusion, and open the supporting evidence without breaking the decision narrative."
+        stats={headerStats}
+        journey={reportJourney}
+        actions={
+          <>
+            <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
+              <Share2 className="w-4 h-4 mr-2" />
+              Share Hub
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40 shadow-[0_0_20px_rgba(37,99,235,0.2)]"
+              onClick={() => setShowGenerateModal(true)}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Generate Strategic Report
+            </Button>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.72fr_1.28fr]">
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
-            <CardTitle className="dashboard-card-title text-slate-200">Report Status</CardTitle>
+            <CardTitle className="dashboard-card-title text-slate-200">Report Production Board</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-[140px_1fr] items-center gap-4 pt-5">
-            <div className="h-[120px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={reportStatusMix} dataKey="value" innerRadius={34} outerRadius={52} paddingAngle={3} stroke="rgba(255,255,255,0.06)" strokeWidth={2}>
-                    {reportStatusMix.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-3">
+          <CardContent className="space-y-4 pt-5">
+            <div className="grid gap-3 md:grid-cols-3">
               {reportStatusMix.map((item) => (
                 <SummaryRail key={item.name} label={item.name} value={item.value} max={generatedReports.length} color={item.color} />
               ))}
+            </div>
+            <div className="rounded-2xl border border-white/6 bg-[#0b1120] px-4 py-4">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                {reportStatusMix.map((item, index) => (
+                  <div key={`${item.name}-${index}`} className="flex items-center gap-2">
+                    {index > 0 ? <span className="text-slate-600">→</span> : null}
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                      {item.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                The reporting surface now reads as a production flow rather than a static pie, making it easier to understand what is fresh, what is in motion, and what needs regeneration.
+              </p>
             </div>
           </CardContent>
         </Card>

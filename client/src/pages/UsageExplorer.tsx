@@ -11,10 +11,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -24,6 +21,9 @@ import {
 } from "recharts";
 
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
+import { ExperienceHeader } from "@/components/experience/ExperienceHeader";
+import { LollipopRanking } from "@/components/experience/LollipopRanking";
+import { SignalRing } from "@/components/experience/SignalRing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,9 +40,6 @@ import {
 } from "@/lib/kiro-data";
 
 const CHART_BLUE = "#4B8BFF";
-const CHART_BLUE_SOFT = "#80AFFF";
-const CHART_AMBER = "#FFB443";
-const CHART_SLATE = "#1B2740";
 const CHART_GRID = "rgba(148, 163, 184, 0.12)";
 
 type ScopeType = "Cost Center" | "Team" | "Engineer";
@@ -79,40 +76,6 @@ function groupInteractionsByDay(interactions: ReturnType<typeof getInteractionsF
       consumption: Number(consumption.toFixed(1)),
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
-}
-
-function renderWrappedTick(value: string, maxLineLength = 16) {
-  const words = value.split(" ");
-  const lines: string[] = [];
-  let currentLine = "";
-
-  words.forEach((word) => {
-    const nextLine = currentLine ? `${currentLine} ${word}` : word;
-    if (nextLine.length > maxLineLength && currentLine) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else {
-      currentLine = nextLine;
-    }
-  });
-
-  if (currentLine) lines.push(currentLine);
-  return lines;
-}
-
-function WrappedYAxisTick({ x, y, payload }: any) {
-  const lines = renderWrappedTick(String(payload.value), 14);
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text x={-12} y={0} textAnchor="end" fill="#CBD5E1" fontSize={12}>
-        {lines.map((line, index) => (
-          <tspan key={`${line}-${index}`} x={-12} dy={index === 0 ? 0 : 14}>
-            {line}
-          </tspan>
-        ))}
-      </text>
-    </g>
-  );
 }
 
 function formatWindowLabel(startDate?: string, endDate?: string) {
@@ -291,6 +254,9 @@ export default function UsageExplorer() {
     (max, row) => Math.max(max, ...row.weeks.map((week) => week.credits)),
     0,
   );
+  const hasWeeklyOverrunHighlights = weeklyEngineerMatrix.some(
+    (row) => row.engineer.overrun > 0 && row.weeks.some((week) => week.credits > 0),
+  );
 
   const watchlistEngineers = useMemo(() => {
     return engineersForScope
@@ -337,6 +303,73 @@ export default function UsageExplorer() {
     ? formatWindowLabel(dailyTrendData[0].date, dailyTrendData[dailyTrendData.length - 1].date)
     : "Selected activity window";
   const isContributionTruncated = contributionChartData.length < teamContributionData.length;
+  const scopedConsumption = scopedInteractions.reduce((sum, interaction) => sum + interaction.estimatedCredits, 0);
+  const contributionRankingItems = contributionChartData.map((entry) => ({
+    label: entry.name,
+    value: entry.credits,
+    displayValue: `${formatConsumption(entry.credits)} credits`,
+    note: entry.overrun > 0 ? `${formatConsumption(entry.overrun)} credits overrun` : "Within current plan",
+    accent: entry.overrun > 0 ? ("alert" as const) : ("default" as const),
+    onClick: () => handleContributionClick(entry),
+  }));
+  const requestSourceMix = Array.from(
+    scopedInteractions.reduce((acc, interaction) => {
+      acc.set(interaction.requestSource, (acc.get(interaction.requestSource) || 0) + interaction.estimatedCredits);
+      return acc;
+    }, new Map<string, number>()),
+  )
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 4)
+    .map(([label, value], index) => ({
+      label,
+      value: Number(value.toFixed(1)),
+      color: ["#38bdf8", "#818cf8", "#14b8a6", "#f59e0b"][index % 4],
+      note: `${formatConsumption(value)} credits`,
+    }));
+  const explorerHeaderStats = [
+    {
+      label: "Current Focus",
+      value: currentScope?.label ?? "Enterprise drilldown",
+      note: currentScope?.subtitle ?? "Choose a cost center, team, or engineer to begin the drill path.",
+    },
+    {
+      label: "Scoped Consumption",
+      value: `${formatConsumption(scopedConsumption)} credits`,
+      note: `${scopedInteractions.length} interactions across ${selectedWindow.toLowerCase()}.`,
+    },
+    {
+      label: "Highest Pressure Day",
+      value: peakDay.date ? formatChartDate(peakDay.date) : "No peak yet",
+      note: peakDay.consumption ? `${formatConsumption(peakDay.consumption)} credits` : "Awaiting scoped interactions.",
+    },
+    {
+      label: "Evidence Coverage",
+      value: `${evidenceRichCount} traces`,
+      note: `${scopedRecommendations.length} recommendations are already linked to this scope.`,
+    },
+  ];
+  const explorerJourney = [
+    {
+      label: "Focus",
+      detail: "Lock onto the cost center or team that needs explanation first.",
+      state: "complete" as const,
+    },
+    {
+      label: "Compare",
+      detail: "Balance contribution, trend, and engineer activity without leaving the same page.",
+      state: "active" as const,
+    },
+    {
+      label: "Trace",
+      detail: "Open evidence-rich interactions and follow the scope into detailed workspaces.",
+      state: "upcoming" as const,
+    },
+    {
+      label: "Chargeback",
+      detail: "Hand finance-grade allocation details back to the operating teams.",
+      state: "upcoming" as const,
+    },
+  ];
 
   function handleContributionClick(payload: { teamId?: string; engineerUserId?: string } | undefined) {
     if (!payload) return;
@@ -358,24 +391,14 @@ export default function UsageExplorer() {
         interactionId={evidenceInteractionId}
       />
 
-      <div className="rounded-[28px] border border-white/6 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.16),transparent_30%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(7,12,24,0.98))] px-7 py-7 shadow-[0_24px_70px_rgba(2,6,23,0.45)]">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="space-y-3">
-            <div>
-              <h1 className="dashboard-page-title mb-2">Usage Explorer</h1>
-            </div>
-            {currentScope ? (
-              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
-                <Compass className="w-4 h-4 text-slate-500" />
-                <span>{selectedCostCenter?.name}</span>
-                {selectedTeam ? <ArrowRight className="w-4 h-4 text-slate-600" /> : null}
-                {selectedTeam ? <span>{selectedTeam.name}</span> : null}
-                {selectedEngineer ? <ArrowRight className="w-4 h-4 text-slate-600" /> : null}
-                {selectedEngineer ? <span>{selectedEngineer.name}</span> : null}
-              </div>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap gap-3">
+      <ExperienceHeader
+        eyebrow="Scope Drilldown"
+        title="Usage Explorer"
+        lead="Move from cost center to engineer, compare spend patterns, and find the evidence trail behind recommendations."
+        stats={explorerHeaderStats}
+        journey={explorerJourney}
+        actions={
+          <>
             <Link href="/recommendations">
               <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
                 <Sparkles className="w-4 h-4 mr-2 text-blue-300" />
@@ -396,9 +419,9 @@ export default function UsageExplorer() {
                 Simulate Policy
               </Button>
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
         <CardHeader className="bg-black/20 border-b border-white/5">
@@ -595,51 +618,11 @@ export default function UsageExplorer() {
             </div>
           </CardHeader>
           <CardContent className="pt-5">
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={contributionChartData} layout="vertical" margin={{ top: 8, right: 12, left: 88, bottom: 24 }}>
-                  <CartesianGrid stroke={CHART_GRID} strokeDasharray="3 3" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    tick={{ fill: "#94A3B8", fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                    label={{ value: "Credits", position: "insideBottom", offset: -6, fill: "#94A3B8", fontSize: 12 }}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={140}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={<WrappedYAxisTick />}
-                    label={{
-                      value: selectedTeam ? "Engineer" : "Team",
-                      angle: -90,
-                      position: "insideLeft",
-                      dx: -76,
-                      fill: "#94A3B8",
-                      fontSize: 12,
-                    }}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
-                    contentStyle={{
-                      background: "#0F172A",
-                      borderColor: "rgba(148,163,184,0.14)",
-                      borderRadius: 16,
-                      color: "#E2E8F0",
-                    }}
-                    formatter={(value: number) => [`${formatConsumption(value)} credits`, "Consumption"]}
-                  />
-                  <Bar dataKey="credits" radius={[0, 10, 10, 0]} onClick={handleContributionClick}>
-                    {contributionChartData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.overrun > 0 ? CHART_AMBER : CHART_BLUE} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <LollipopRanking
+              title={selectedTeam ? "Engineer Consumption Ladder" : "Team Consumption Ladder"}
+              description="A more decision-friendly comparison of who is driving spend and which rows already carry overrun."
+              items={contributionRankingItems}
+            />
           </CardContent>
         </Card>
 
@@ -706,6 +689,13 @@ export default function UsageExplorer() {
         </Card>
       </div>
 
+      <SignalRing
+        title="Request Source Pressure"
+        centerLabel="scoped sources"
+        centerValue={String(requestSourceMix.length)}
+        items={requestSourceMix}
+      />
+
       <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
@@ -718,11 +708,22 @@ export default function UsageExplorer() {
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-[#0B1120] px-3 py-1">
                   Last {weeklyEngineerMatrix[0]?.weeks.length ?? 0} weekly buckets
                 </span>
+                {hasWeeklyOverrunHighlights ? (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-amber-200">
+                    <span className="h-2 w-2 rounded-full bg-amber-300" />
+                    Peak week for engineers with overrun
+                  </span>
+                ) : null}
               </div>
             </div>
           </CardHeader>
           <CardContent className="pt-5">
             <div className="space-y-3">
+              {hasWeeklyOverrunHighlights ? (
+                <p className="text-xs text-slate-400">
+                  Amber cells mark each overrun engineer&apos;s heaviest week in the selected window.
+                </p>
+              ) : null}
               {weeklyEngineerMatrix.length ? (
                 <>
                   <div className="grid grid-cols-[minmax(0,1.35fr)_repeat(6,minmax(0,0.8fr))_110px] gap-2 px-2">
@@ -735,43 +736,54 @@ export default function UsageExplorer() {
                     <div className="text-right text-[11px] uppercase tracking-[0.18em] text-slate-500">Total</div>
                   </div>
                   {weeklyEngineerMatrix.map((row) => (
-                    <div
-                      key={row.engineer.userId}
-                      className="grid grid-cols-[minmax(0,1.35fr)_repeat(6,minmax(0,0.8fr))_110px] items-center gap-2 rounded-2xl border border-white/6 bg-[#0B1120] px-3 py-3"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Link href={engineerDetailHref(row.engineer.id)}>
-                            <span className="text-sm font-medium text-slate-100 hover:underline underline-offset-4">
-                              {row.engineer.name}
-                            </span>
-                          </Link>
-                          <FunctionBadge role={row.engineer.engineerFunction} />
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">{row.engineer.activeDays} active days</p>
-                      </div>
-                      {row.weeks.map((week) => {
-                        const intensity = weeklyEngineerMax ? week.credits / weeklyEngineerMax : 0;
-                        const fillClass =
-                          week.credits === 0
-                            ? "bg-white/[0.04] text-slate-600"
-                            : row.engineer.overrun > 0 && week.credits === Math.max(...row.weeks.map((item) => item.credits))
-                              ? "bg-amber-500/22 text-amber-200 border border-amber-500/20"
-                              : "bg-blue-500/12 text-blue-100 border border-blue-500/14";
-                        return (
-                          <div
-                            key={`${row.engineer.userId}-${week.key}`}
-                            className={`rounded-xl px-2 py-2 text-center text-xs font-medium ${fillClass}`}
-                            style={{ opacity: week.credits === 0 ? 1 : 0.45 + intensity * 0.55 }}
-                          >
-                            {week.credits > 0 ? formatConsumption(week.credits) : "—"}
+                    (() => {
+                      const peakWeekCredits = Math.max(...row.weeks.map((item) => item.credits));
+                      return (
+                        <div
+                          key={row.engineer.userId}
+                          className="grid grid-cols-[minmax(0,1.35fr)_repeat(6,minmax(0,0.8fr))_110px] items-center gap-2 rounded-2xl border border-white/6 bg-[#0B1120] px-3 py-3"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Link href={engineerDetailHref(row.engineer.id)}>
+                                <span className="text-sm font-medium text-slate-100 hover:underline underline-offset-4">
+                                  {row.engineer.name}
+                                </span>
+                              </Link>
+                              <FunctionBadge role={row.engineer.engineerFunction} />
+                            </div>
+                            <p className="mt-1 text-xs text-slate-500">{row.engineer.activeDays} active days</p>
                           </div>
-                        );
-                      })}
-                      <div className="text-right text-sm font-medium text-slate-200">
-                        {formatConsumption(row.engineer.totalConsumption)} credits
-                      </div>
-                    </div>
+                          {row.weeks.map((week) => {
+                            const intensity = weeklyEngineerMax ? week.credits / weeklyEngineerMax : 0;
+                            const isOverrunPeakWeek =
+                              row.engineer.overrun > 0 && week.credits > 0 && week.credits === peakWeekCredits;
+                            const fillClass =
+                              week.credits === 0
+                                ? "bg-white/[0.04] text-slate-600"
+                                : isOverrunPeakWeek
+                                  ? "bg-amber-500/22 text-amber-200 border border-amber-500/20"
+                                  : "bg-blue-500/12 text-blue-100 border border-blue-500/14";
+                            const label = isOverrunPeakWeek
+                              ? `${row.engineer.name} peak overrun week on ${week.label}: ${formatConsumption(week.credits)} credits`
+                              : `${row.engineer.name} on ${week.label}: ${week.credits > 0 ? `${formatConsumption(week.credits)} credits` : "no spend"}`;
+                            return (
+                              <div
+                                key={`${row.engineer.userId}-${week.key}`}
+                                className={`rounded-xl px-2 py-2 text-center text-xs font-medium ${fillClass}`}
+                                style={{ opacity: week.credits === 0 ? 1 : 0.45 + intensity * 0.55 }}
+                                title={label}
+                              >
+                                {week.credits > 0 ? formatConsumption(week.credits) : "—"}
+                              </div>
+                            );
+                          })}
+                          <div className="text-right text-sm font-medium text-slate-200">
+                            {formatConsumption(row.engineer.totalConsumption)} credits
+                          </div>
+                        </div>
+                      );
+                    })()
                   ))}
                 </>
               ) : (
