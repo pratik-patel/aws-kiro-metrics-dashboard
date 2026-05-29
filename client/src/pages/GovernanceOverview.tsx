@@ -72,7 +72,7 @@ export default function GovernanceOverview() {
   const leadRecommendation = topRecommendations[0];
   const supportingRecommendations = topRecommendations.slice(1, 4);
   const aiDeliveryCostCenterId = KIRO_DATA.costCenters[0]?.id ?? "CC-4402";
-  const aiDeliveryCostCenterName = KIRO_DATA.costCenters[0]?.name ?? "AI Delivery Acceleration";
+  const aiDeliveryCostCenterName = KIRO_DATA.costCenters[0]?.name ?? "Loan Origination Operations";
   const aiDeliveryTeamSplits = KIRO_DATA.teams
     .filter((team) => team.costCenterId === aiDeliveryCostCenterId)
     .sort((left, right) => right.totalConsumption - left.totalConsumption)
@@ -153,7 +153,7 @@ export default function GovernanceOverview() {
     },
     {
       title: "Lead Team in Cost Center",
-      metric: aiDeliveryTeamSplits[0]?.name ?? "Specification Experience Squad",
+      metric: aiDeliveryTeamSplits[0]?.name ?? "Origination Workflow Squad",
       detail: `${formatConsumption(aiDeliveryTeamSplits[0]?.credits ?? 0)} credits`,
       href: `/detail/cost-center/${aiDeliveryCostCenterId}`,
     },
@@ -313,9 +313,6 @@ export default function GovernanceOverview() {
             <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <CardTitle className="dashboard-card-title text-slate-200">Daily AI Consumption Trend</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Trendline for usage and overrun across the exported activity window.
-                </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge className="bg-blue-500/10 text-blue-200 border-blue-500/20">
@@ -389,7 +386,6 @@ export default function GovernanceOverview() {
             <Card className="bg-[#111827] border-white/5 shadow-lg">
               <CardHeader>
                 <CardTitle className="dashboard-card-title text-slate-200">Spend Concentration</CardTitle>
-                <CardDescription className="text-slate-400">Where enterprise consumption is clustered.</CardDescription>
               </CardHeader>
               <CardContent className="h-[280px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
                 <ResponsiveContainer width="100%" height="100%">
@@ -409,7 +405,6 @@ export default function GovernanceOverview() {
             <Card className="bg-[#111827] border-white/5 shadow-lg">
               <CardHeader>
                 <CardTitle className="dashboard-card-title text-slate-200">Client Type Mix by Cost Center</CardTitle>
-                <CardDescription className="text-slate-400">IDE, CLI, and plugin balance by cost center.</CardDescription>
               </CardHeader>
               <CardContent className="h-[280px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
                 <ResponsiveContainer width="100%" height="100%">
@@ -434,7 +429,6 @@ export default function GovernanceOverview() {
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-200">Next Ownership Queues</CardTitle>
-              <CardDescription className="text-slate-400">Follow-on cost centers and representative AI Delivery teams.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/5 items-start">
@@ -448,7 +442,7 @@ export default function GovernanceOverview() {
                   }))}
                 />
                 <RankedList
-                  title="AI Delivery Teams"
+                  title="Lead Teams"
                   items={aiDeliveryTeamSplits.map((item) => ({
                     id: item.name,
                     label: item.name,
@@ -468,7 +462,6 @@ export default function GovernanceOverview() {
                 <Sparkles className="w-4 h-4 mr-2" />
                 Executive Brief
               </CardTitle>
-              <CardDescription className="text-slate-400">The clearest story from posture to action.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="rounded-2xl border border-indigo-400/15 bg-black/20 p-4">
@@ -519,7 +512,6 @@ export default function GovernanceOverview() {
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-200">Supporting Actions</CardTitle>
-              <CardDescription className="text-slate-400">Related high-priority actions beyond the lead recommendation.</CardDescription>
             </CardHeader>
             <CardContent className="divide-y divide-white/5 p-0">
               {supportingRecommendations.map((recommendation) => (

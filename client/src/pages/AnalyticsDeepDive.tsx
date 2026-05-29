@@ -69,7 +69,7 @@ export default function AnalyticsDeepDive() {
           <span className="text-slate-400 text-sm">Focus:</span>
           <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded text-sm text-slate-200">
             <span className="text-slate-400">Cost Center:</span>
-            <span className="font-medium">Platform Reliability</span>
+            <span className="font-medium">Servicing &amp; Collateral Operations</span>
             <button className="text-slate-500 hover:text-slate-300 ml-1">
               <X className="w-3 h-3" />
             </button>
@@ -103,10 +103,10 @@ export default function AnalyticsDeepDive() {
               </div>
               <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={[{name: 'QA & Automation Team', val: 2850}]} layout="vertical" margin={{ left: 100, top: 20 }}>
+                  <BarChart data={[{name: 'Seller / Servicer Experience Squad', val: 2850}]} layout="vertical" margin={{ left: 100, top: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
                     <XAxis type="number" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={true} tickFormatter={(v) => v === 0 ? '0' : v} domain={[0, 3000]} tickCount={5} />
-                    <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickFormatter={() => 'QA & Automation...'} />
+                    <YAxis type="category" dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={true} axisLine={true} tickFormatter={() => 'Seller / Servicer...'} />
                     <RechartsTooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                     <Bar dataKey="val" fill="#60a5fa" />
                   </BarChart>
@@ -215,7 +215,7 @@ export default function AnalyticsDeepDive() {
                     <tbody className="divide-y divide-white/5 text-slate-300">
                       <tr className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-4 font-medium text-white">Elena Garcia</td>
-                        <td className="px-6 py-4">Platform Reliability</td>
+                        <td className="px-6 py-4">Servicing &amp; Collateral Operations</td>
                         <td className="px-6 py-4">QA &amp; Automation Team</td>
                         <td className="px-6 py-4">Power</td>
                         <td className="px-6 py-4"><span className="text-blue-400 text-xs font-medium bg-blue-500/10 px-2 py-0.5 rounded">ACTIVE</span></td>
@@ -226,7 +226,7 @@ export default function AnalyticsDeepDive() {
                       </tr>
                       <tr className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-4 font-medium text-white">Victor Chen</td>
-                        <td className="px-6 py-4">Platform Reliability</td>
+                        <td className="px-6 py-4">Servicing &amp; Collateral Operations</td>
                         <td className="px-6 py-4">QA &amp; Automation Team</td>
                         <td className="px-6 py-4">ProPlus</td>
                         <td className="px-6 py-4"><span className="text-blue-400 text-xs font-medium bg-blue-500/10 px-2 py-0.5 rounded">ACTIVE</span></td>
@@ -237,7 +237,7 @@ export default function AnalyticsDeepDive() {
                       </tr>
                       <tr className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-4 font-medium text-white">Sam Walker</td>
-                        <td className="px-6 py-4">Platform Reliability</td>
+                        <td className="px-6 py-4">Servicing &amp; Collateral Operations</td>
                         <td className="px-6 py-4">QA &amp; Automation Team</td>
                         <td className="px-6 py-4">Pro</td>
                         <td className="px-6 py-4"><span className="text-blue-400 text-xs font-medium bg-blue-500/10 px-2 py-0.5 rounded">ACTIVE</span></td>
@@ -248,7 +248,7 @@ export default function AnalyticsDeepDive() {
                       </tr>
                       <tr className="hover:bg-white/[0.02] transition-colors border-l-2 border-l-red-500">
                         <td className="px-6 py-4 font-medium text-white">Lucy Chen</td>
-                        <td className="px-6 py-4">Platform Reliability</td>
+                        <td className="px-6 py-4">Servicing &amp; Collateral Operations</td>
                         <td className="px-6 py-4">QA &amp; Automation Team</td>
                         <td className="px-6 py-4">ProPlus</td>
                         <td className="px-6 py-4"><span className="text-red-400 text-xs font-medium bg-red-500/10 px-2 py-0.5 rounded">CANCELED</span></td>

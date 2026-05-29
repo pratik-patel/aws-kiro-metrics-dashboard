@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   ArrowRight,
   Compass,
   Eye,
@@ -145,9 +144,13 @@ export default function UsageExplorer() {
 
   const selectedTeam = teamsForCostCenter.find((team) => team.id === selectedTeamId) ?? null;
   const engineersForScope = useMemo(() => {
-    if (selectedTeam) return getEngineersForTeam(selectedTeam.id);
+    if (selectedTeam) {
+      return getEngineersForTeam(selectedTeam.id).sort((left, right) => right.totalConsumption - left.totalConsumption);
+    }
     if (selectedCostCenter) {
-      return KIRO_DATA.engineers.filter((engineer) => engineer.costCenterId === selectedCostCenter.id);
+      return KIRO_DATA.engineers
+        .filter((engineer) => engineer.costCenterId === selectedCostCenter.id)
+        .sort((left, right) => right.totalConsumption - left.totalConsumption);
     }
     return [];
   }, [selectedCostCenter, selectedTeam]);
@@ -281,6 +284,8 @@ export default function UsageExplorer() {
     () => [...scopedInteractions].sort((a, b) => b.estimatedCredits - a.estimatedCredits).slice(0, 6),
     [scopedInteractions],
   );
+  const topEngineerFocusRows = engineersForScope.slice(0, 5);
+  const topEngineerCreditsMax = topEngineerFocusRows[0]?.totalConsumption ?? 0;
 
   const chargebackRows = useMemo(
     () => [...engineersForScope].sort((a, b) => b.totalConsumption - a.totalConsumption),
@@ -327,9 +332,6 @@ export default function UsageExplorer() {
           <div className="space-y-3">
             <div>
               <h1 className="dashboard-page-title mb-2">Usage Explorer</h1>
-              <p className="dashboard-page-lead max-w-4xl">
-                Start with cost center ownership, then move into teams, engineers, and evidence-backed interactions.
-              </p>
             </div>
             {currentScope ? (
               <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
@@ -370,9 +372,6 @@ export default function UsageExplorer() {
       <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
         <CardHeader className="bg-black/20 border-b border-white/5">
           <CardTitle className="dashboard-card-title text-slate-100">Explorer Scope</CardTitle>
-          <CardDescription className="text-slate-400">
-            Narrow the investigation path without jumping into secondary analytics.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5 pt-5">
           <div className="relative max-w-xl">
@@ -439,7 +438,7 @@ export default function UsageExplorer() {
           {engineersForScope.length ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="dashboard-eyebrow">Engineers</p>
+                <p className="dashboard-eyebrow">Top Engineers</p>
                 {selectedEngineer ? (
                   <Button
                     type="button"
@@ -452,23 +451,43 @@ export default function UsageExplorer() {
                   </Button>
                 ) : null}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {engineersForScope.map((engineer) => (
+              <div className="rounded-2xl border border-white/6 bg-[#0B1120] p-2">
+                <div className="space-y-2">
+                {topEngineerFocusRows.map((engineer) => (
                   <Button
                     key={engineer.userId}
                     type="button"
                     variant={selectedEngineer?.userId === engineer.userId ? "default" : "outline"}
                     className={
                       selectedEngineer?.userId === engineer.userId
-                        ? "bg-[#1D4ED8] text-white border border-blue-400/50"
-                        : "bg-[#0B1120] border-white/10 text-slate-300 hover:bg-white/5 hover:text-white"
+                        ? "w-full h-auto rounded-xl bg-[#1D4ED8] text-white border border-blue-400/50 px-3 py-3"
+                        : "w-full h-auto rounded-xl bg-transparent border-white/8 text-slate-300 hover:bg-white/5 hover:text-white px-3 py-3"
                     }
                     onClick={() => setSelectedEngineerId(engineer.userId)}
                   >
-                    <span>{engineer.name}</span>
-                    <FunctionBadge role={engineer.engineerFunction} />
+                    <div className="grid w-full gap-3 text-left md:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)_120px] md:items-center">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="truncate font-medium">{engineer.name}</span>
+                          <FunctionBadge role={engineer.engineerFunction} />
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="h-2 rounded-full bg-white/6 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${selectedEngineer?.userId === engineer.userId ? "bg-white/75" : "bg-blue-400/85"}`}
+                            style={{ width: `${topEngineerCreditsMax ? (engineer.totalConsumption / topEngineerCreditsMax) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <p className="mt-1 text-xs text-slate-400">{engineer.activeDays} active days</p>
+                      </div>
+                      <div className="text-sm font-medium md:text-right">
+                        {formatConsumption(engineer.totalConsumption)} credits
+                      </div>
+                    </div>
                   </Button>
                 ))}
+                </div>
               </div>
             </div>
           ) : null}
@@ -523,6 +542,9 @@ export default function UsageExplorer() {
                   <span className="h-2 w-2 rounded-full bg-[#FFB443]" />
                   Overrun present
                 </span>
+                <span className="rounded-full border border-white/8 bg-[#0B1120] px-3 py-1">
+                  Click to focus
+                </span>
                 {isContributionTruncated ? (
                   <span className="rounded-full border border-white/8 bg-[#0B1120] px-3 py-1">
                     Showing top {contributionChartData.length}
@@ -562,10 +584,6 @@ export default function UsageExplorer() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-              <span>Numbers on the X-axis are credits in the selected window.</span>
-              <span>{selectedTeam ? "Click a bar to focus an engineer." : "Click a bar to focus a team."}</span>
             </div>
           </CardContent>
         </Card>
@@ -619,17 +637,12 @@ export default function UsageExplorer() {
                     strokeWidth={3}
                     dot={{ r: 0 }}
                     activeDot={{ r: 6, fill: CHART_BLUE, stroke: "#F8FAFC", strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 text-xs text-slate-500">Line values are daily credits inside the selected scope.</div>
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
           </CardContent>
         </Card>
-      </div>
-
-      <div className="space-y-2">
-        <h2 className="dashboard-section-title">Who is consuming, and where is the risk?</h2>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
@@ -694,19 +707,12 @@ export default function UsageExplorer() {
                 </ScatterChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-              <span>X-axis: active days in the selected window.</span>
-              <span>Y-axis: credits in the selected window.</span>
-            </div>
           </CardContent>
         </Card>
 
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
             <CardTitle className="dashboard-card-title text-slate-100">License Hygiene Watchlist</CardTitle>
-            <CardDescription className="text-slate-400">
-              Subset of scoped engineers that need license or utilization follow-up.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 pt-5">
             {watchlistEngineers.length ? (
@@ -748,9 +754,6 @@ export default function UsageExplorer() {
       <Card className="dashboard-panel">
         <CardHeader className="dashboard-panel-header">
           <CardTitle className="dashboard-card-title text-slate-100">Chargeback Detail</CardTitle>
-          <CardDescription className="text-slate-400">
-            All scoped engineers. The watchlist above is only the flagged subset.
-          </CardDescription>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <table className="dashboard-table min-w-[980px]">
@@ -792,9 +795,7 @@ export default function UsageExplorer() {
         <Card className="dashboard-panel">
           <CardHeader className="dashboard-panel-header">
             <CardTitle className="dashboard-card-title text-slate-100">High-Cost Interactions</CardTitle>
-            <CardDescription className="text-slate-400">
-              Click a row to inspect prompt evidence and interaction context for the most expensive requests.
-            </CardDescription>
+            <CardDescription className="text-slate-400">Open evidence from any row.</CardDescription>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <table className="dashboard-table min-w-[900px]">
@@ -847,9 +848,6 @@ export default function UsageExplorer() {
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
             <CardTitle className="dashboard-card-title text-slate-100">Recommendations in Scope</CardTitle>
-            <CardDescription className="text-slate-400">
-              Keep follow-through close to the evidence instead of splitting it into a secondary analysis surface.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-5">
             {scopedRecommendations.slice(0, 4).map((recommendation) => (
@@ -866,21 +864,6 @@ export default function UsageExplorer() {
                 </div>
               </div>
             ))}
-
-            <div className="rounded-2xl border border-blue-500/16 bg-blue-500/8 px-4 py-4">
-              <div className="flex items-start gap-3">
-                <div className="rounded-full bg-blue-500/12 p-2">
-                  <AlertTriangle className="w-4 h-4 text-blue-300" />
-                </div>
-                <div className="space-y-1">
-                  <p className="dashboard-item-title">Why this view matters</p>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    Use this page to isolate the owner, confirm the risky pattern, and jump into evidence. Deeper model and
-                    tooling analytics belong downstream, not in the first scan.
-                  </p>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

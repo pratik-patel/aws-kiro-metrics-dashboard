@@ -254,9 +254,6 @@ export default function Recommendations() {
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
             <CardTitle className="dashboard-card-title text-slate-100">Recommendation Queue</CardTitle>
-            <CardDescription className="text-slate-400">
-              Scan the stack quickly, then keep the center panel focused on one decision at a time.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 pt-5">
             {recommendationSections.map((section) => (
@@ -264,7 +261,6 @@ export default function Recommendations() {
                 <div className="flex items-end justify-between gap-3">
                   <div>
                     <p className="dashboard-section-title">{section.title}</p>
-                    <p className="dashboard-page-support mt-1">{section.description}</p>
                   </div>
                   <Badge className="bg-white/5 text-slate-300 border-white/10">{section.recommendations.length}</Badge>
                 </div>
@@ -425,9 +421,6 @@ export default function Recommendations() {
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-100">Program Mix</CardTitle>
-              <CardDescription className="text-slate-400">
-                See where the recommendation queue is clustering before changing policy.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 pt-5">
               {categoryMix.map((item) => {
@@ -450,9 +443,6 @@ export default function Recommendations() {
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-100">Advisor & Report Runs</CardTitle>
-              <CardDescription className="text-slate-400">
-                Compact run control modeled after the denser explorer side panels.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 pt-5">
               {KIRO_DATA.runs.map((run) => (

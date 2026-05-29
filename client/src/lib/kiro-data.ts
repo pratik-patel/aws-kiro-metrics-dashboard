@@ -376,21 +376,28 @@ const RECOMMENDATION_PRIORITY: RecommendationType[] = [
   "Team Coaching",
 ];
 
+const COST_CENTER_DISPLAY_NAMES: Record<string, string> = {
+  "CC-4402": "Loan Origination Operations",
+  "CC-4101": "Underwriting & Risk Controls",
+  "CC-4308": "Servicing & Collateral Operations",
+  "CC-4204": "Capital Markets & Regulatory Insights",
+};
+
 const ENGINEER_TEAM_ASSIGNMENTS: Record<string, string> = {
-  "Aisha Khan": "Specification Experience Squad",
-  "Ben Foster": "Delivery Guardrails Squad",
-  "Chloe Martin": "Specification Experience Squad",
-  "Ethan Brooks": "Payments Platform Squad",
-  "Marco Silva": "Payments Platform Squad",
-  "Priya Nair": "Checkout Experience Squad",
-  "Elena Garcia": "Platform Controls Squad",
-  "Lucy Chen": "Release Assurance Squad",
-  "Sam Walker": "Platform Controls Squad",
-  "Victor Chen": "Release Assurance Squad",
-  "Casey Liu": "Decision Intelligence Squad",
-  "David Kim": "Merch Insights Squad",
-  "Nina Patel": "Merch Insights Squad",
-  "Omar Haddad": "Decision Intelligence Squad",
+  "Aisha Khan": "Origination Workflow Squad",
+  "Ben Foster": "Loan Product & Pricing Squad",
+  "Chloe Martin": "Origination Workflow Squad",
+  "Ethan Brooks": "Underwriting Decisioning Squad",
+  "Marco Silva": "Eligibility & Rules Controls Squad",
+  "Priya Nair": "Underwriting Decisioning Squad",
+  "Elena Garcia": "Seller / Servicer Experience Squad",
+  "Lucy Chen": "Collateral & Appraisal Operations Squad",
+  "Sam Walker": "Seller / Servicer Experience Squad",
+  "Victor Chen": "Collateral & Appraisal Operations Squad",
+  "Casey Liu": "Capital Markets Delivery Squad",
+  "David Kim": "Reporting & Regulatory Insights Squad",
+  "Nina Patel": "Capital Markets Delivery Squad",
+  "Omar Haddad": "Reporting & Regulatory Insights Squad",
 };
 
 const ENGINEER_FUNCTION_BY_NAME: Record<string, EngineerFunction> = {
@@ -412,6 +419,11 @@ const ENGINEER_FUNCTION_BY_NAME: Record<string, EngineerFunction> = {
 
 function normalizeTeamName(userName: string, fallbackTeamName: string) {
   return ENGINEER_TEAM_ASSIGNMENTS[userName] ?? fallbackTeamName;
+}
+
+function normalizeCostCenterName(costCenterCode: string | undefined, fallbackCostCenterName: string) {
+  if (!costCenterCode) return fallbackCostCenterName;
+  return COST_CENTER_DISPLAY_NAMES[costCenterCode] ?? fallbackCostCenterName;
 }
 
 function getEngineerFunction(name: string): EngineerFunction {
@@ -632,6 +644,7 @@ function buildDataset(): KiroDataset {
     const teamName = normalizeTeamName(mapping.User_Name, mapping.Group_Name);
     const teamId = slugify(teamName);
     const costCenterId = mapping.Cost_Center || slugify(mapping.Box_Name);
+    const costCenterName = normalizeCostCenterName(mapping.Cost_Center, mapping.Box_Name);
     if (!userMetrics.has(engineerId)) {
       userMetrics.set(engineerId, {
         userId: engineerId,
@@ -640,7 +653,7 @@ function buildDataset(): KiroDataset {
         teamId,
         teamName,
         costCenterId,
-        costCenterName: mapping.Box_Name,
+        costCenterName,
         costCenterCode: mapping.Cost_Center,
         engineeringManager: mapping.Engineering_Manager,
         subscriptionTier: subscription?.tier || mapping.Subscription_Tier,
@@ -674,6 +687,7 @@ function buildDataset(): KiroDataset {
     const mapping = mappingByUserId.get(row.UserId);
     const teamName = normalizeTeamName(row.User_Name, mapping?.Group_Name || row.Group_Name);
     const costCenterName = mapping?.Box_Name || row.Box_Name;
+    const normalizedCostCenterName = normalizeCostCenterName(mapping?.Cost_Center, costCenterName);
     const costCenterId = mapping?.Cost_Center || slugify(costCenterName);
     const teamId = slugify(teamName);
     const engineerId = row.UserId;
@@ -696,7 +710,7 @@ function buildDataset(): KiroDataset {
       teamId,
       teamName,
       costCenterId,
-      costCenterName,
+      costCenterName: normalizedCostCenterName,
       costCenterCode: mapping?.Cost_Center || "",
       useCaseKey: row.Workflow_Area,
       useCaseLabel: useCaseMeta.label,
@@ -1407,16 +1421,16 @@ function buildDataset(): KiroDataset {
       id: "run-sim-002",
       title: "Model Routing Scenario",
       mode: "Policy Simulation",
-      scopeLabel: "Payments Transformation",
+      scopeLabel: "Underwriting & Risk Controls",
       status: "Running",
       startedAt: `${latestDate} 11:35`,
       summary: "Testing lighter-model routing for transformation and test-generation tasks.",
     },
     {
       id: "run-report-003",
-      title: "Retail Intelligence Strategic Report",
+      title: "Capital Markets & Regulatory Insights Strategic Report",
       mode: "Strategic Report",
-      scopeLabel: "Retail Intelligence",
+      scopeLabel: "Capital Markets & Regulatory Insights",
       status: "Queued",
       startedAt: `${latestDate} 13:00`,
       summary: "Preparing report with overrun and plugin governance emphasis.",
@@ -1435,17 +1449,17 @@ function buildDataset(): KiroDataset {
     },
     {
       id: "rep-payments-ops",
-      title: "Payments Transformation Optimization Review",
-      scopeLabel: "Payments Transformation",
+      title: "Underwriting & Risk Controls Optimization Review",
+      scopeLabel: "Underwriting & Risk Controls",
       audience: "Delivery Manager",
       status: "Completed",
       generatedAt: `${latestDate} 08:40`,
-      executiveSummary: "Payments Transformation shows high concentration and repeated context-heavy modernization prompts that warrant routing and prompt-template changes.",
+      executiveSummary: "Underwriting & Risk Controls shows high concentration and repeated context-heavy decisioning prompts that warrant routing and prompt-template changes.",
     },
     {
       id: "rep-retail-risk",
-      title: "Retail Intelligence Overage Watch",
-      scopeLabel: "Retail Intelligence",
+      title: "Capital Markets & Regulatory Insights Overage Watch",
+      scopeLabel: "Capital Markets & Regulatory Insights",
       audience: "Architect",
       status: "Processing",
       generatedAt: `${latestDate} 12:55`,

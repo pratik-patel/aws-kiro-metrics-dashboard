@@ -157,7 +157,6 @@ export default function DetailWorkspace() {
             <Card className="bg-[#111827] border-white/5 shadow-lg">
               <CardHeader>
                 <CardTitle className="dashboard-card-title text-slate-200">Top Use Cases</CardTitle>
-                <CardDescription className="text-slate-400">Where this scope is spending the most AI consumption today.</CardDescription>
               </CardHeader>
               <CardContent className="h-[320px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
                 <ResponsiveContainer width="100%" height="100%">
@@ -179,7 +178,6 @@ export default function DetailWorkspace() {
             <Card className="bg-[#111827] border-white/5 shadow-lg">
               <CardHeader>
                 <CardTitle className="dashboard-card-title text-slate-200">Scope Recommendations</CardTitle>
-                <CardDescription className="text-slate-400">The most relevant actions for this exact slice.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-5">
                 {recommendations.slice(0, 4).map((recommendation) => (
@@ -273,7 +271,6 @@ export default function DetailWorkspace() {
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader>
               <CardTitle className="dashboard-card-title text-slate-200">Prompt Size vs AI Consumption</CardTitle>
-              <CardDescription className="text-slate-400">Use this to spot prompt-heavy interactions that are expensive relative to their output.</CardDescription>
             </CardHeader>
             <CardContent className="h-[320px] border-t border-white/5 bg-[#0c1220]/50 pt-6">
               <ResponsiveContainer width="100%" height="100%">
@@ -296,7 +293,6 @@ export default function DetailWorkspace() {
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader>
               <CardTitle className="dashboard-card-title text-slate-200">Recommendations in Scope</CardTitle>
-              <CardDescription className="text-slate-400">Actions tied to this entity plus enterprise recommendations that still apply here.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-5">
               {recommendations.map((recommendation) => (
@@ -333,7 +329,6 @@ export default function DetailWorkspace() {
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-200">Interaction Evidence</CardTitle>
-              <CardDescription className="text-slate-400">High-cost interactions with direct access to prompt and inline evidence.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -380,15 +375,8 @@ export default function DetailWorkspace() {
           <Card className="bg-[#111827] border-white/5 shadow-lg">
             <CardHeader>
               <CardTitle className="dashboard-card-title text-slate-200">Reports & Exports</CardTitle>
-              <CardDescription className="text-slate-400">Generate a report for this scope or jump to the evidence console.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-5">
-              <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  This scope can be summarized into an executive report that includes top cost drivers, use-case findings,
-                  model/tool observations, and the caveats around observed versus estimated input contributors.
-                </p>
-              </div>
               <div className="flex flex-wrap gap-3">
                 <Link href="/reports">
                   <Button className="bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40">
@@ -488,7 +476,6 @@ function OwnershipPanel({
       <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
         <CardHeader className="bg-black/20 border-b border-white/5">
           <CardTitle className="dashboard-card-title text-slate-200">Teams in Scope</CardTitle>
-          <CardDescription className="text-slate-400">Ownership view for the selected cost center.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-5">
           {teams.map((team) => (
@@ -515,7 +502,6 @@ function OwnershipPanel({
       <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
         <CardHeader className="bg-black/20 border-b border-white/5">
           <CardTitle className="dashboard-card-title text-slate-200">Engineers in Scope</CardTitle>
-          <CardDescription className="text-slate-400">Ownership view for the selected team.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-5">
           {engineers.map((engineer) => (
@@ -541,7 +527,6 @@ function OwnershipPanel({
       <Card className="bg-[#111827] border-white/5 shadow-lg">
         <CardHeader>
           <CardTitle className="dashboard-card-title text-slate-200">Engineer Activity Snapshot</CardTitle>
-          <CardDescription className="text-slate-400">Useful context before investigating interactions or input drivers.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-6 pt-5">
           <div className="grid grid-cols-2 gap-4">

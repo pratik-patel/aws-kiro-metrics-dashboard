@@ -222,9 +222,6 @@ export default function ReportEvidenceConsole() {
       <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
         <div>
           <h1 className="dashboard-page-title mb-1">Reports & Evidence</h1>
-          <p className="dashboard-page-lead">
-            Generate reports, review evidence, and export a clean governance snapshot.
-          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
@@ -276,7 +273,6 @@ export default function ReportEvidenceConsole() {
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
             <CardTitle className="dashboard-card-title text-slate-200">Report Queue</CardTitle>
-            <CardDescription className="text-slate-400">All saved report scopes in one queue.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-white/5">
@@ -410,7 +406,6 @@ export default function ReportEvidenceConsole() {
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-200">Evidence Packs</CardTitle>
-              <CardDescription className="text-slate-400">Evidence linked to the highest-priority recommendations.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
@@ -441,7 +436,6 @@ export default function ReportEvidenceConsole() {
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-200">Recent Prompt Inspections</CardTitle>
-              <CardDescription className="text-slate-400">Recent high-signal interactions worth reviewing.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">

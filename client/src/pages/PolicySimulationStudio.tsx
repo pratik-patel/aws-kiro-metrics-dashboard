@@ -24,7 +24,7 @@ import {
 } from "recharts";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   KIRO_DATA,
@@ -168,9 +168,6 @@ export default function PolicySimulationStudio() {
             Working studio
           </div>
           <h1 className="dashboard-page-title mb-1">Policy & Simulation Studio</h1>
-          <p className="dashboard-page-lead max-w-4xl">
-            Test model routing, prompt discipline, tool governance, and seat policies against observed Kiro telemetry.
-          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/recommendations">
@@ -205,12 +202,6 @@ export default function PolicySimulationStudio() {
                   {resolvedScope.interactions.length} interactions
                 </Badge>
               </div>
-              <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-300">
-                The current configuration concentrates on <span className="text-white">{topUseCase?.label ?? "the leading use case"}</span>,
-                where prompt-heavy interactions and model-routing mismatches are creating the clearest optimization path.
-                This scenario estimates <span className="text-white">{formatConsumption(simulation.totalDelta)} credits</span> of
-                avoidable consumption if the selected controls are adopted consistently.
-              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-px bg-white/5 sm:grid-cols-3 xl:grid-cols-1">
@@ -271,9 +262,6 @@ export default function PolicySimulationStudio() {
               <Settings2 className="w-4 h-4 mr-2 text-slate-400" />
               Scenario Configuration
             </CardTitle>
-            <CardDescription className="text-slate-400">
-              Scope the simulation, select a governance lens, then tune the policy levers.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
             <div className="grid grid-cols-1 gap-3 rounded-2xl border border-white/5 bg-[#0b1120] p-4">
@@ -286,9 +274,6 @@ export default function PolicySimulationStudio() {
                   {resolvedScope.affectedScopesLabel}
                 </Badge>
               </div>
-              <p className="text-sm leading-6 text-slate-400">
-                Tune the thresholds below, then run the simulation to compare today&apos;s usage against a stricter policy posture.
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -336,12 +321,7 @@ export default function PolicySimulationStudio() {
             </div>
 
             <div className="space-y-5 border-t border-white/5 pt-5">
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Policy levers</p>
-                <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Balance model choice, prompt discipline, tool usage, and seat hygiene to see how governance changes shift spend.
-                </p>
-              </div>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Policy levers</p>
               <SliderField
                 label="Model Routing Strictness"
                 value={levers.routingStrictness}
@@ -407,9 +387,6 @@ export default function PolicySimulationStudio() {
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-200">Current State vs Proposed Policy</CardTitle>
-              <CardDescription className="text-slate-400">
-                Baseline usage for {resolvedScope.label} with the pressure pockets the advisor is evaluating.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -504,9 +481,6 @@ export default function PolicySimulationStudio() {
                 <ShieldCheck className="w-4 h-4 mr-2 text-blue-300" />
                 Projected Impact
               </CardTitle>
-              <CardDescription className="text-slate-400">
-                Deterministic scenario output grounded in the current Kiro telemetry slice.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5 pt-6">
               <div className="grid grid-cols-2 gap-4">
