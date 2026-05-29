@@ -444,6 +444,14 @@ export default function PolicySimulationStudio() {
                             {formatConsumption(useCase.totalConsumption)} credits
                           </Badge>
                         </div>
+                        <div className="mt-3 h-2.5 rounded-full bg-white/6 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#14b8a6)]"
+                            style={{
+                              width: `${resolvedScope.useCases[0]?.totalConsumption ? Math.max(18, (useCase.totalConsumption / resolvedScope.useCases[0].totalConsumption) * 100) : 18}%`,
+                            }}
+                          />
+                        </div>
                         <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
                           <span className="rounded-full border border-white/8 bg-black/20 px-2.5 py-1">
                             {useCase.interactionCount} interactions

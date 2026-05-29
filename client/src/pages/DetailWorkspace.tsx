@@ -199,7 +199,7 @@ export default function DetailWorkspace() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium text-slate-100">{recommendation.title}</p>
-                        <p className="text-sm text-slate-400 mt-2 leading-relaxed">{recommendation.whyItMatters}</p>
+                        <p className="text-sm text-slate-400 mt-2 leading-relaxed">{recommendation.recommendedAction}</p>
                       </div>
                       <Badge
                         className={
@@ -342,8 +342,7 @@ export default function DetailWorkspace() {
                         <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
                       </div>
                       <p className="text-lg font-medium text-slate-100">{recommendation.title}</p>
-                      <p className="text-sm text-slate-400 mt-2 leading-relaxed">{recommendation.whyItMatters}</p>
-                      <p className="text-sm text-slate-200 mt-3">{recommendation.recommendedAction}</p>
+                      <p className="text-sm text-slate-400 mt-2 leading-relaxed">{recommendation.recommendedAction}</p>
                     </div>
                     <span className="text-xs text-slate-500">{recommendation.scopeLabel}</span>
                   </div>

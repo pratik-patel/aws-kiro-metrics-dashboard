@@ -89,6 +89,7 @@ export default function ReportEvidenceConsole() {
         })),
     [],
   );
+  const maxEvidencePackItems = evidencePacks[0]?.itemCount ?? 0;
 
   const promptInspections = useMemo(
     () =>
@@ -364,16 +365,23 @@ export default function ReportEvidenceConsole() {
               <p className="dashboard-eyebrow">3. Open Evidence</p>
               <CardTitle className="dashboard-card-title text-slate-200">Evidence Packs</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-white/5">
+            <CardContent className="space-y-3 p-4">
                 {evidencePacks.map((pack) => (
-                  <div key={pack.id} className="p-4">
+                  <div key={pack.id} className="rounded-2xl border border-white/6 bg-[#0b1120] p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium text-slate-100">{pack.title}</p>
                         <p className="text-xs text-slate-400 mt-1">{pack.scopeLabel}</p>
                       </div>
                       <Badge className="bg-white/5 text-slate-300 border-white/10">{pack.itemCount} items</Badge>
+                    </div>
+                    <div className="mt-3 h-2.5 rounded-full bg-white/6 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#8b5cf6)]"
+                        style={{
+                          width: `${maxEvidencePackItems ? Math.max(18, (pack.itemCount / maxEvidencePackItems) * 100) : 18}%`,
+                        }}
+                      />
                     </div>
                     <Button
                       variant="outline"
@@ -386,7 +394,6 @@ export default function ReportEvidenceConsole() {
                     </Button>
                   </div>
                 ))}
-              </div>
             </CardContent>
           </Card>
 
