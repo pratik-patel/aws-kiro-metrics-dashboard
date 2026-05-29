@@ -9,8 +9,6 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
-  Target,
-  TrendingDown,
   TriangleAlert,
 } from "lucide-react";
 import {
@@ -151,10 +149,6 @@ export default function PolicySimulationStudio() {
     [advisorMode, levers, resolvedScope],
   );
   const topRecommendation = resolvedScope.recommendations[0];
-  const topUseCase = resolvedScope.useCases[0];
-  const promptPressureRate = resolvedScope.interactions.length
-    ? Math.round((simulation.promptHeavyCount / resolvedScope.interactions.length) * 100)
-    : 0;
   const flaggedReduction = Math.max(0, simulation.flaggedBefore - simulation.flaggedAfter);
 
   const runSimulation = () => setSimulationRunCount((count) => count + 1);
@@ -165,9 +159,12 @@ export default function PolicySimulationStudio() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-blue-200">
             <Beaker className="w-3.5 h-3.5" />
-            Working studio
+            Simulation studio
           </div>
           <h1 className="dashboard-page-title mb-1">Policy & Simulation Studio</h1>
+          <p className="dashboard-page-lead max-w-4xl">
+            Choose a scope, tune the guardrails, and compare projected impact before changing live behavior.
+          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/recommendations">
@@ -187,75 +184,17 @@ export default function PolicySimulationStudio() {
       </div>
 
       <Card className="overflow-hidden border-white/5 bg-[linear-gradient(135deg,rgba(30,41,59,0.95),rgba(15,23,42,0.95)_45%,rgba(15,23,42,0.72))] shadow-[0_24px_80px_rgba(2,6,23,0.35)]">
-        <CardContent className="p-0">
-          <div className="grid gap-0 xl:grid-cols-[1.35fr_0.95fr]">
-            <div className="border-b border-white/5 p-6 md:p-7 xl:border-b-0 xl:border-r">
-              <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Scenario Brief</p>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Badge className="border-blue-400/20 bg-blue-500/10 text-blue-100 hover:bg-blue-500/10">
-                  {resolvedScope.label}
-                </Badge>
-                <Badge className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/5">
-                  {advisorMode}
-                </Badge>
-                <Badge className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/5">
-                  {resolvedScope.interactions.length} interactions
-                </Badge>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-px bg-white/5 sm:grid-cols-3 xl:grid-cols-1">
-              <ScenarioStat
-                label="Lead pressure point"
-                value={topUseCase?.label ?? "Mixed demand"}
-                hint={`${promptPressureRate}% of interactions exceed the prompt threshold`}
-                icon={TrendingDown}
-                tone="text-amber-200"
-              />
-              <ScenarioStat
-                label="Best next action"
-                value={topRecommendation?.title ?? "Review current actions"}
-                hint="Highest-confidence recommendation in this scope"
-                icon={Sparkles}
-                tone="text-violet-200"
-              />
-              <ScenarioStat
-                label="Flags reduced"
-                value={String(flaggedReduction)}
-                hint="High-cost alerts removed by this scenario"
-                icon={ShieldCheck}
-                tone="text-teal-200"
-              />
-            </div>
+        <CardContent className="p-6 md:p-7">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <StudioChip label="Scope" value={resolvedScope.label} />
+            <StudioChip label="Lens" value={advisorMode} />
+            <StudioChip label="Interactions" value={String(resolvedScope.interactions.length)} />
+            <StudioChip label="Runs" value={String(simulationRunCount)} />
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <SignalCard
-          label="Current Scope"
-          value={resolvedScope.label}
-          hint={`${resolvedScope.interactions.length} interactions under review`}
-          icon={Target}
-          tone="text-blue-300"
-        />
-        <SignalCard
-          label="Observed Recommendation Set"
-          value={String(resolvedScope.recommendations.length)}
-          hint="Enterprise and scope-specific actions in view"
-          icon={Sparkles}
-          tone="text-indigo-300"
-        />
-        <SignalCard
-          label="Simulation Runs"
-          value={String(simulationRunCount)}
-          hint="Policy scenarios executed in this session"
-          icon={Beaker}
-          tone="text-teal-300"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-[0.92fr_1.28fr_1fr] gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[0.92fr_1.28fr] gap-6 items-start">
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden xl:sticky xl:top-24">
           <CardHeader className="bg-black/20 border-b border-white/5 pb-5">
             <CardTitle className="dashboard-card-title text-slate-200 flex items-center">
@@ -264,12 +203,15 @@ export default function PolicySimulationStudio() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
-            <div className="grid grid-cols-1 gap-3 rounded-2xl border border-white/5 bg-[#0b1120] p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Execution lens</p>
-                  <p className="mt-2 text-sm font-medium text-slate-100">{advisorMode}</p>
-                </div>
+            <div className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Current simulation</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge className="border-blue-400/20 bg-blue-500/10 text-blue-100 hover:bg-blue-500/10">
+                  {resolvedScope.label}
+                </Badge>
+                <Badge className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/5">
+                  {advisorMode}
+                </Badge>
                 <Badge className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/5">
                   {resolvedScope.affectedScopesLabel}
                 </Badge>
@@ -277,6 +219,7 @@ export default function PolicySimulationStudio() {
             </div>
 
             <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">1. Scope</p>
               <label className="text-xs uppercase tracking-[0.18em] text-slate-400">Scope Type</label>
               <select
                 value={scopeKind}
@@ -306,6 +249,7 @@ export default function PolicySimulationStudio() {
             </div>
 
             <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">2. Lens</p>
               <label className="text-xs uppercase tracking-[0.18em] text-slate-400">Advisor Mode</label>
               <select
                 value={advisorMode}
@@ -321,7 +265,7 @@ export default function PolicySimulationStudio() {
             </div>
 
             <div className="space-y-5 border-t border-white/5 pt-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Policy levers</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">3. Policy levers</p>
               <SliderField
                 label="Model Routing Strictness"
                 value={levers.routingStrictness}
@@ -379,20 +323,71 @@ export default function PolicySimulationStudio() {
                 suffix=" credits"
                 onChange={(value) => setLevers((current) => ({ ...current, overrunAlertThreshold: value }))}
               />
+
+              <Button
+                onClick={runSimulation}
+                className="w-full bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white border-0 shadow-[0_0_24px_rgba(99,102,241,0.24)]"
+              >
+                <PlayCircle className="w-4 h-4 mr-2" />
+                Run Simulation
+              </Button>
             </div>
           </CardContent>
         </Card>
 
         <div className="space-y-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-950/35 to-transparent border-b border-white/5">
+              <CardTitle className="dashboard-card-title text-slate-200 flex items-center">
+                <ShieldCheck className="w-4 h-4 mr-2 text-blue-300" />
+                Projected Outcome
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="grid grid-cols-2 gap-4">
+                <ImpactCard label="Projected Consumption Delta" value={`-${formatConsumption(simulation.totalDelta)}`} hint="Estimated credits avoided" tone="blue" />
+                <ImpactCard label="Projected Overrun Delta" value={`-${formatConsumption(simulation.overrunDelta)}`} hint="Potential overrun avoided" tone="amber" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <ImpactCard label="Flags Reduced" value={String(flaggedReduction)} hint={`${simulation.flaggedAfter} remaining`} tone="violet" />
+                <ImpactCard label="Affected Scopes" value={`${simulation.affectedScopes}`} hint={resolvedScope.affectedScopesLabel} tone="teal" />
+              </div>
+
+              <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-blue-300 mt-0.5 shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-100">Recommended next move</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">
+                      {topRecommendation?.title ??
+                        "Use the current simulation summary to prioritize which recommendation bundle should be reviewed next."}
+                    </p>
+                    {topRecommendation?.recommendedAction && (
+                      <p className="mt-2 text-xs leading-6 text-slate-400">{topRecommendation.recommendedAction}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="dashboard-card-title text-slate-200">Current State vs Proposed Policy</CardTitle>
+              <CardTitle className="dashboard-card-title text-slate-200">Current Baseline</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MetricCard label="Baseline AI Consumption" value={`${formatConsumption(resolvedScope.totalConsumption)} credits`} />
-                <MetricCard label="Baseline Overrun" value={`${formatConsumption(resolvedScope.overrun)} credits`} />
+                <MetricCard label="AI Consumption" value={`${formatConsumption(resolvedScope.totalConsumption)} credits`} />
+                <MetricCard label="Overrun" value={`${formatConsumption(resolvedScope.overrun)} credits`} />
                 <MetricCard label="High-cost Alerts" value={String(simulation.flaggedBefore)} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <MiniMetric label="Prompt-heavy" value={String(simulation.promptHeavyCount)} tone="text-amber-300" />
+                <MiniMetric label="Model Mismatch" value={String(simulation.modelMismatchCount)} tone="text-blue-300" />
+                <MiniMetric label="Plugin-heavy" value={String(simulation.pluginHeavyCount)} tone="text-violet-300" />
+                <MiniMetric label="Low-utilization Seats" value={String(simulation.lowUtilizationSeats)} tone="text-teal-300" />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-5">
@@ -463,75 +458,21 @@ export default function PolicySimulationStudio() {
                   </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <MiniMetric label="Prompt-heavy Interactions" value={String(simulation.promptHeavyCount)} tone="text-amber-300" />
-                <MiniMetric label="Model Mismatch Flows" value={String(simulation.modelMismatchCount)} tone="text-blue-300" />
-                <MiniMetric label="Plugin-enriched Flows" value={String(simulation.pluginHeavyCount)} tone="text-violet-300" />
-                <MiniMetric label="Low-utilization Seats" value={String(simulation.lowUtilizationSeats)} tone="text-teal-300" />
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <InsightStrip
-                  label="Where to intervene first"
-                  value={topUseCase?.label ?? "Mixed demand"}
-                  hint={topUseCase ? `${formatConsumption(topUseCase.totalConsumption)} credits currently concentrated here` : "No dominant use case in scope"}
-                />
-                <InsightStrip
-                  label="Governance framing"
-                  value={topRecommendation?.title ?? "Recommendations distributed across this scope"}
-                  hint="This is the most evidence-backed action currently attached to the selected scope"
-                />
-              </div>
             </CardContent>
           </Card>
-        </div>
 
-        <div className="space-y-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-950/35 to-transparent border-b border-white/5">
-              <CardTitle className="dashboard-card-title text-slate-200 flex items-center">
-                <ShieldCheck className="w-4 h-4 mr-2 text-blue-300" />
-                Projected Impact
-              </CardTitle>
+            <CardHeader className="bg-black/20 border-b border-white/5">
+              <CardTitle className="dashboard-card-title text-slate-200">Advisor Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 pt-6">
-              <div className="grid grid-cols-2 gap-4">
-                <ImpactCard label="Projected Consumption Delta" value={`-${formatConsumption(simulation.totalDelta)}`} hint="Estimated credits avoided" tone="blue" />
-                <ImpactCard label="Projected Overrun Delta" value={`-${formatConsumption(simulation.overrunDelta)}`} hint="Potential overrun avoided" tone="amber" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <ImpactCard label="Flagged Interactions" value={`${simulation.flaggedAfter}`} hint={`${simulation.flaggedBefore} current`} tone="violet" />
-                <ImpactCard label="Affected Scopes" value={`${simulation.affectedScopes}`} hint="Teams or engineers requiring follow-through" tone="teal" />
-              </div>
-
-              <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
-                <h3 className="text-sm uppercase tracking-[0.18em] text-slate-400 mb-3">Advisor Summary</h3>
-                <div className="space-y-3">
-                  {simulation.summary.map((item) => (
-                    <div key={item} className="flex items-start gap-3 text-sm text-slate-300">
-                      <CheckCircle2 className="w-4 h-4 text-teal-300 mt-0.5 shrink-0" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
-                <div className="flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-blue-300 mt-0.5 shrink-0" />
-                  <div>
-                    <h3 className="text-sm font-medium text-blue-100">Recommended next move</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">
-                      {topRecommendation?.title ??
-                        "Use the current simulation summary to prioritize which recommendation bundle should be reviewed next."}
-                    </p>
-                    {topRecommendation?.recommendedAction && (
-                      <p className="mt-2 text-xs leading-6 text-slate-400">{topRecommendation.recommendedAction}</p>
-                    )}
+              <div className="space-y-3">
+                {simulation.summary.map((item) => (
+                  <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/5 bg-black/20 px-4 py-4 text-sm text-slate-300">
+                    <CheckCircle2 className="w-4 h-4 text-teal-300 mt-0.5 shrink-0" />
+                    <span>{item}</span>
                   </div>
-                </div>
+                ))}
               </div>
 
               <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
@@ -541,8 +482,7 @@ export default function PolicySimulationStudio() {
                     <h3 className="text-sm font-medium text-red-200">Caveat</h3>
                     <p className="text-xs text-slate-300 mt-2 leading-relaxed">
                       This simulation uses observed Kiro telemetry for prompts, models, tools, and use cases. Steering,
-                      retrieved context, and instruction overhead remain estimated so the demo stays honest about what the
-                      exports expose today.
+                      retrieved context, and instruction overhead remain estimated.
                     </p>
                   </div>
                 </div>
@@ -557,7 +497,7 @@ export default function PolicySimulationStudio() {
                 </Link>
                 <Link href="/recommendations">
                   <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
-                    Review Evidence-backed Actions
+                    Review Recommendations
                   </Button>
                 </Link>
               </div>
@@ -862,34 +802,12 @@ function SliderField({
   );
 }
 
-function SignalCard({
-  label,
-  value,
-  hint,
-  icon: Icon,
-  tone,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  icon: typeof Beaker;
-  tone: string;
-}) {
+function StudioChip({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="bg-[#111827] border-white/5 shadow-lg">
-      <CardContent className="pt-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
-            <p className="text-2xl font-semibold text-white mt-2">{value}</p>
-            <p className="text-sm text-slate-500 mt-2">{hint}</p>
-          </div>
-          <div className={`rounded-2xl border border-white/5 bg-black/20 p-3 ${tone}`}>
-            <Icon className="w-5 h-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-4">
+      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-2 text-sm font-semibold leading-snug text-white text-balance">{value}</p>
+    </div>
   );
 }
 
@@ -898,35 +816,6 @@ function MetricCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
       <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
       <p className="text-xl font-semibold text-white mt-3">{value}</p>
-    </div>
-  );
-}
-
-function ScenarioStat({
-  label,
-  value,
-  hint,
-  icon: Icon,
-  tone,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  icon: typeof Beaker;
-  tone: string;
-}) {
-  return (
-    <div className="bg-[#0b1120]/80 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">{label}</p>
-          <p className="mt-3 text-lg font-semibold leading-6 text-white">{value}</p>
-          <p className="mt-2 text-sm leading-6 text-slate-400">{hint}</p>
-        </div>
-        <div className={`rounded-2xl border border-white/5 bg-white/5 p-3 ${tone}`}>
-          <Icon className="w-5 h-5" />
-        </div>
-      </div>
     </div>
   );
 }
@@ -963,16 +852,6 @@ function ImpactCard({
       <p className="text-xs uppercase tracking-[0.18em] opacity-80">{label}</p>
       <p className="text-2xl font-semibold mt-2">{value}</p>
       <p className="text-xs opacity-75 mt-2">{hint}</p>
-    </div>
-  );
-}
-
-function InsightStrip({ label, value, hint }: { label: string; value: string; hint: string }) {
-  return (
-    <div className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-3 text-sm font-medium leading-6 text-slate-100">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-400">{hint}</p>
     </div>
   );
 }

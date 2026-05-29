@@ -1,15 +1,11 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  CheckCircle2,
-  Copy,
   Download,
   Eye,
-  FileSignature,
   FileText,
   Loader2,
   Share2,
-  Sparkles,
   X,
 } from "lucide-react";
 
@@ -77,17 +73,6 @@ export default function ReportEvidenceConsole() {
     () => resolveScopedDataset(selectedReport?.scopeType ?? "Enterprise", selectedReport?.scopeId ?? "enterprise"),
     [selectedReport],
   );
-  const reportHighlights = useMemo(() => {
-    const topRecommendation = reportScope.recommendations[0];
-    const leadUseCase = reportScope.useCases[0];
-
-    return [
-      `Consumption at ${formatConsumption(reportScope.totalConsumption)} credits`,
-      `Overrun at ${formatConsumption(reportScope.overrun)} credits`,
-      topRecommendation ? `Priority action: ${topRecommendation.title}` : "No priority action flagged",
-      leadUseCase ? `Busiest flow: ${leadUseCase.label}` : "No dominant workflow flagged",
-    ];
-  }, [reportScope]);
 
   const evidencePacks = useMemo(
     () =>
@@ -222,6 +207,9 @@ export default function ReportEvidenceConsole() {
       <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
         <div>
           <h1 className="dashboard-page-title mb-1">Reports & Evidence</h1>
+          <p className="dashboard-page-lead max-w-4xl">
+            Select a report, read the summary, then open the supporting evidence.
+          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
@@ -238,40 +226,19 @@ export default function ReportEvidenceConsole() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <SignalCard
-          label="Reports"
-          value={String(generatedReports.length)}
-          hint="Completed, processing, and stale artifacts"
-          icon={FileSignature}
-          tone="text-indigo-300"
-        />
-        <SignalCard
-          label="Evidence Packs"
-          value={String(evidencePacks.length)}
-          hint="Ready for interaction review"
-          icon={CheckCircle2}
-          tone="text-teal-300"
-        />
-        <SignalCard
-          label="Prompt Inspections"
-          value={String(promptInspections.length)}
-          hint="Recent high-cost evidence artifacts"
-          icon={Eye}
-          tone="text-blue-300"
-        />
-        <SignalCard
-          label="Scope Consumption"
-          value={`${formatConsumption(reportScope.totalConsumption)} credits`}
-          hint={selectedReport ? selectedReport.scopeLabel : "Selected report scope"}
-          icon={Sparkles}
-          tone="text-amber-300"
-        />
+      <div className="rounded-2xl border border-white/6 bg-[#0d1526] px-4 py-3">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <SummaryChip label="Reports" value={String(generatedReports.length)} />
+          <SummaryChip label="Evidence Packs" value={String(evidencePacks.length)} />
+          <SummaryChip label="Prompt Inspections" value={String(promptInspections.length)} />
+          <SummaryChip label="Scope Consumption" value={`${formatConsumption(reportScope.totalConsumption)} credits`} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.25fr_0.8fr] gap-6">
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
+            <p className="dashboard-eyebrow">1. Select Report</p>
             <CardTitle className="dashboard-card-title text-slate-200">Report Queue</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -312,6 +279,7 @@ export default function ReportEvidenceConsole() {
 
         <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
           <CardHeader className="bg-black/20 border-b border-white/5">
+            <p className="dashboard-eyebrow">2. Read Summary</p>
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
               <div>
                 <CardTitle className="dashboard-card-title text-slate-200">
@@ -320,10 +288,6 @@ export default function ReportEvidenceConsole() {
                 <CardDescription className="text-slate-400">{selectedReport?.scopeLabel ?? "Enterprise"} · {selectedReport?.audience ?? "Executive Sponsor"}</CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Summary
-                </Button>
                 <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-white">
                   <Download className="w-4 h-4 mr-2" />
                   Export PDF
@@ -332,18 +296,8 @@ export default function ReportEvidenceConsole() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
-            <section className="rounded-2xl border border-white/5 bg-[#0b1120] p-4 space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Executive Summary</p>
-                <Badge className="bg-white/5 text-slate-300 border-white/10">Condensed View</Badge>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {reportHighlights.map((highlight) => (
-                  <Badge key={highlight} className="bg-white/5 px-3 py-1 text-slate-200 border-white/10">
-                    {highlight}
-                  </Badge>
-                ))}
-              </div>
+            <section className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
+              <p className="dashboard-eyebrow mb-3">Executive Summary</p>
               <p className="text-sm leading-relaxed text-slate-300">
                 {selectedReport ? selectedReport.executiveSummary : "Select a report to preview the strategic summary."}
               </p>
@@ -357,10 +311,7 @@ export default function ReportEvidenceConsole() {
             </div>
 
             <section className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Recommended Actions</p>
-                <span className="text-xs text-slate-500">Top 2 only</span>
-              </div>
+              <p className="dashboard-eyebrow mb-3">Recommended Actions</p>
               <div className="space-y-3">
                 {reportScope.recommendations.slice(0, 2).map((recommendation) => (
                   <div key={recommendation.id} className="rounded-xl border border-white/5 bg-[#0b1120] p-3">
@@ -377,10 +328,7 @@ export default function ReportEvidenceConsole() {
             </section>
 
             <section className="rounded-2xl border border-white/5 bg-black/20 p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Use-case Signals</p>
-                <span className="text-xs text-slate-500">Top 3 flows</span>
-              </div>
+              <p className="dashboard-eyebrow mb-3">Top Use Cases</p>
               <div className="space-y-3">
                 {reportScope.useCases.slice(0, 3).map((useCase) => (
                   <div key={useCase.key} className="flex items-start justify-between gap-4 border-b border-white/5 pb-3 last:border-b-0 last:pb-0">
@@ -395,16 +343,13 @@ export default function ReportEvidenceConsole() {
                 ))}
               </div>
             </section>
-
-            <p className="text-xs leading-relaxed text-slate-500">
-              Report totals come from observed Kiro telemetry. System prompts, steering, and retrieved context remain estimated.
-            </p>
           </CardContent>
         </Card>
 
         <div className="space-y-6">
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
+              <p className="dashboard-eyebrow">3. Open Evidence</p>
               <CardTitle className="dashboard-card-title text-slate-200">Evidence Packs</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -459,6 +404,15 @@ export default function ReportEvidenceConsole() {
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SummaryChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/6 bg-black/20 px-4 py-3 min-h-[76px]">
+      <p className="dashboard-eyebrow">{label}</p>
+      <p className="mt-2 text-sm md:text-[0.98rem] font-semibold leading-snug text-slate-100 text-balance">{value}</p>
     </div>
   );
 }
@@ -580,37 +534,6 @@ function ModalField({
       <label className="dashboard-body">{label}</label>
       {children}
     </div>
-  );
-}
-
-function SignalCard({
-  label,
-  value,
-  hint,
-  icon: Icon,
-  tone,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  icon: typeof FileText;
-  tone: string;
-}) {
-  return (
-    <Card className="bg-[#111827] border-white/5 shadow-lg">
-      <CardContent className="pt-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="dashboard-eyebrow">{label}</p>
-            <p className="dashboard-stat-value mt-2">{value}</p>
-            <p className="text-sm text-slate-500 mt-2">{hint}</p>
-          </div>
-          <div className={`rounded-2xl border border-white/5 bg-black/20 p-3 ${tone}`}>
-            <Icon className="w-5 h-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 
