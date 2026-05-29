@@ -88,10 +88,6 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Badges */}
             <div className="hidden xl:flex items-center gap-2">
-              <div className="flex items-center px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 animate-pulse" />
-                {KIRO_DATA.meta.mode}
-              </div>
               <div className="flex items-center px-2.5 py-1 rounded-full bg-slate-800 border border-white/5 text-slate-300 text-xs font-medium">
                 {KIRO_DATA.meta.freshness}
               </div>

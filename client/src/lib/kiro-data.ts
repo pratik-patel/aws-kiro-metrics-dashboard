@@ -270,7 +270,7 @@ export interface ReportSummary {
 export interface KiroDataset {
   meta: {
     mode: "Connected Mode";
-    freshness: "Daily Snapshot";
+    freshness: "Last updated: 1 day ago";
     lastUpdated: string;
   };
   kpis: {
@@ -315,9 +315,9 @@ const USE_CASES: Record<
   { label: string; category: string; summary: string; recommendedModelTier: string }
 > = {
   "spec-orchestration": {
-    label: "Spec-driven Development",
+    label: "Specification Design",
     category: "Planning & Architecture",
-    summary: "Drafting, refining, and orchestrating implementation specifications.",
+    summary: "Drafting, refining, and orchestrating business and technical specifications.",
     recommendedModelTier: "Balanced unless the architecture scope is genuinely broad",
   },
   "legacy-modernization": {
@@ -1427,7 +1427,7 @@ function buildDataset(): KiroDataset {
   return {
     meta: {
       mode: "Connected Mode",
-      freshness: "Daily Snapshot",
+      freshness: "Last updated: 1 day ago",
       lastUpdated: latestDate,
     },
     kpis: {
