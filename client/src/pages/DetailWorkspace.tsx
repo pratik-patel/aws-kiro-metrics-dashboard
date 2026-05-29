@@ -454,12 +454,14 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function countAcceptedLines(value?: string) {
+function estimateAcceptedLoc(value?: string) {
   if (!value?.trim()) return 0;
-  return value
+  const nonEmptyLines = value
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean).length;
+  const normalizedChars = value.replace(/\s+/g, " ").trim().length;
+  return Math.max(nonEmptyLines, Math.round(normalizedChars / 30));
 }
 
 function RankingCard({
@@ -561,7 +563,7 @@ function OwnershipPanel({
     const engineerInteractions = getInteractionsForScope({ engineerId: resolved.engineer.userId });
     const sessionCount = new Set(engineerInteractions.map((interaction) => interaction.conversationId)).size;
     const acceptedLines = engineerInteractions.reduce(
-      (sum, interaction) => sum + countAcceptedLines(interaction.evidence.acceptedCompletion),
+      (sum, interaction) => sum + estimateAcceptedLoc(interaction.evidence.acceptedCompletion),
       0,
     );
     const pluginItems = Array.from(
@@ -595,7 +597,7 @@ function OwnershipPanel({
             <MiniMetric label="Primary Model" value={resolved.engineer.topModel} />
             <MiniMetric label="Top Plugin" value={resolved.engineer.topPlugin} />
             <MiniMetric label="Sessions" value={String(sessionCount)} />
-            <MiniMetric label="Accepted LoC" value={String(acceptedLines)} />
+            <MiniMetric label="Accepted LoC (est.)" value={String(acceptedLines)} />
           </div>
           <div className="space-y-4">
             <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
@@ -732,7 +734,7 @@ function resolveScope(entityType: string, entityId: string) {
     const engineerInteractions = getInteractionsForScope({ engineerId: engineer.userId });
     const sessionCount = new Set(engineerInteractions.map((interaction) => interaction.conversationId)).size;
     const acceptedLines = engineerInteractions.reduce(
-      (sum, interaction) => sum + countAcceptedLines(interaction.evidence.acceptedCompletion),
+      (sum, interaction) => sum + estimateAcceptedLoc(interaction.evidence.acceptedCompletion),
       0,
     );
     return {
@@ -751,7 +753,7 @@ function resolveScope(entityType: string, entityId: string) {
       metrics: [
         { label: "AI Consumption", value: `${formatConsumption(engineer.totalConsumption)} credits` },
         { label: "Sessions", value: String(sessionCount) },
-        { label: "Accepted LoC", value: String(acceptedLines) },
+        { label: "Accepted LoC (est.)", value: String(acceptedLines) },
         { label: "Primary Model", value: engineer.topModel, compact: true },
       ],
       tabs: [

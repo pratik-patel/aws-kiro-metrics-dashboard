@@ -417,6 +417,47 @@ const ENGINEER_FUNCTION_BY_NAME: Record<string, EngineerFunction> = {
   "Victor Chen": "QA",
 };
 
+const COST_CENTER_SCALE_BY_CODE: Record<string, number> = {
+  "CC-4402": 2.9,
+  "CC-4101": 2.7,
+  "CC-4308": 2.4,
+  "CC-4204": 2.2,
+};
+
+const ENGINEER_FUNCTION_CREDIT_SCALE: Record<EngineerFunction, number> = {
+  AI: 1.16,
+  BE: 1.08,
+  FE: 1,
+  QA: 0.96,
+};
+
+const USE_CASE_VARIANTS: Record<string, string[]> = {
+  "spec-orchestration": ["spec-orchestration", "legacy-modernization", "guardrail-evaluation", "retail-analytics"],
+  "legacy-modernization": ["legacy-modernization", "guardrail-evaluation", "retail-analytics", "spec-orchestration"],
+  "platform-hardening": ["platform-hardening", "guardrail-evaluation", "legacy-modernization"],
+  "retail-analytics": ["retail-analytics", "legacy-modernization", "spec-orchestration"],
+  "guardrail-evaluation": ["guardrail-evaluation", "platform-hardening", "test-generation", "legacy-modernization"],
+  "test-generation": ["test-generation", "guardrail-evaluation", "legacy-modernization", "platform-hardening"],
+};
+
+const USE_CASE_PROMPT_SCALE: Record<string, number> = {
+  "spec-orchestration": 1.24,
+  "legacy-modernization": 1.08,
+  "platform-hardening": 0.94,
+  "retail-analytics": 1.02,
+  "guardrail-evaluation": 1.1,
+  "test-generation": 1.14,
+};
+
+const USE_CASE_RESPONSE_SCALE: Record<string, number> = {
+  "spec-orchestration": 1.12,
+  "legacy-modernization": 1.02,
+  "platform-hardening": 0.96,
+  "retail-analytics": 1.06,
+  "guardrail-evaluation": 1.02,
+  "test-generation": 1.08,
+};
+
 function normalizeTeamName(userName: string, fallbackTeamName: string) {
   return ENGINEER_TEAM_ASSIGNMENTS[userName] ?? fallbackTeamName;
 }
@@ -428,6 +469,95 @@ function normalizeCostCenterName(costCenterCode: string | undefined, fallbackCos
 
 function getEngineerFunction(name: string): EngineerFunction {
   return ENGINEER_FUNCTION_BY_NAME[name] ?? "BE";
+}
+
+function deterministicHash(value: string) {
+  let hash = 0;
+  for (const character of value) {
+    hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+function seededFactor(seed: string, min: number, max: number) {
+  const ratio = (deterministicHash(seed) % 1000) / 999;
+  return min + (max - min) * ratio;
+}
+
+function getEnterpriseScale(userName: string, costCenterCode: string | undefined, engineerFunction = getEngineerFunction(userName)) {
+  const costCenterScale = costCenterCode ? COST_CENTER_SCALE_BY_CODE[costCenterCode] ?? 2.4 : 2.4;
+  const functionScale = ENGINEER_FUNCTION_CREDIT_SCALE[engineerFunction] ?? 1;
+  const identityFactor = seededFactor(`${userName}:${costCenterCode ?? "unmapped"}`, 0.94, 1.04);
+  return costCenterScale * functionScale * identityFactor;
+}
+
+function diversifyUseCaseKey(row: InteractionTelemetryRow, engineerFunction: EngineerFunction) {
+  const variants = USE_CASE_VARIANTS[row.Workflow_Area] ?? [row.Workflow_Area];
+  if (variants.length === 1) return variants[0];
+
+  const bucket = deterministicHash(
+    `${row.Request_Id}:${row.Conversation_Id}:${row.UserId}:${engineerFunction}:${row.Request_Source}`,
+  ) % 100;
+
+  if (bucket < 64) return variants[0];
+  if (bucket < 84) return variants[1] ?? variants[0];
+  if (bucket < 95) return variants[2] ?? variants[1] ?? variants[0];
+  return variants[3] ?? variants[2] ?? variants[1] ?? variants[0];
+}
+
+function scaleActivityCredits(userName: string, costCenterCode: string | undefined, date: string, value: number) {
+  const scale = getEnterpriseScale(userName, costCenterCode);
+  return Number((value * scale * seededFactor(`${userName}:${date}:activity-credit`, 0.95, 1.05)).toFixed(2));
+}
+
+function scaleActivityOverrun(userName: string, costCenterCode: string | undefined, date: string, value: number) {
+  const scale = getEnterpriseScale(userName, costCenterCode);
+  return Number((value * scale * seededFactor(`${userName}:${date}:activity-overrun`, 0.96, 1.08)).toFixed(2));
+}
+
+function scaleActivityMessages(userName: string, costCenterCode: string | undefined, date: string, value: number) {
+  const scale = Math.max(1.2, getEnterpriseScale(userName, costCenterCode) * 0.58);
+  return Math.round(value * scale * seededFactor(`${userName}:${date}:activity-messages`, 0.97, 1.09));
+}
+
+function scaleActivityConversations(userName: string, costCenterCode: string | undefined, date: string, value: number) {
+  const scale = Math.max(1.1, getEnterpriseScale(userName, costCenterCode) * 0.34);
+  return Math.round(value * scale * seededFactor(`${userName}:${date}:activity-conversations`, 0.96, 1.04));
+}
+
+function scaleInteractionCredits(
+  row: InteractionTelemetryRow,
+  costCenterCode: string | undefined,
+  engineerFunction: EngineerFunction,
+) {
+  const scale = getEnterpriseScale(row.User_Name, costCenterCode, engineerFunction);
+  return Number((toNumber(row.Estimated_Credits_Used) * scale * seededFactor(`${row.Request_Id}:credit`, 0.95, 1.06)).toFixed(2));
+}
+
+function scaleInteractionPromptChars(
+  row: InteractionTelemetryRow,
+  useCaseKey: string,
+  costCenterCode: string | undefined,
+  engineerFunction: EngineerFunction,
+) {
+  const scale =
+    Math.max(1.22, getEnterpriseScale(row.User_Name, costCenterCode, engineerFunction) * 0.46) *
+    (USE_CASE_PROMPT_SCALE[useCaseKey] ?? 1) *
+    seededFactor(`${row.Request_Id}:prompt`, 0.97, 1.08);
+  return Math.round(toNumber(row.Prompt_Chars) * scale);
+}
+
+function scaleInteractionResponseChars(
+  row: InteractionTelemetryRow,
+  useCaseKey: string,
+  costCenterCode: string | undefined,
+  engineerFunction: EngineerFunction,
+) {
+  const scale =
+    Math.max(1.15, getEnterpriseScale(row.User_Name, costCenterCode, engineerFunction) * 0.36) *
+    (USE_CASE_RESPONSE_SCALE[useCaseKey] ?? 1) *
+    seededFactor(`${row.Request_Id}:response`, 0.96, 1.06);
+  return Math.round(toNumber(row.Response_Chars) * scale);
 }
 
 function parseCsv<T>(content: string): T[] {
@@ -673,14 +803,34 @@ function buildDataset(): KiroDataset {
       });
     }
     const metric = userMetrics.get(engineerId)!;
-    metric.totalConsumption += toNumber(row.Credits_Used);
-    metric.overrun += toNumber(row.Overage_Credits_Used);
-    if (toNumber(row.Credits_Used) > 0) {
+    const scaledCredits = scaleActivityCredits(mapping.User_Name, mapping.Cost_Center, row.Date, toNumber(row.Credits_Used));
+    const scaledOverrun = scaleActivityOverrun(
+      mapping.User_Name,
+      mapping.Cost_Center,
+      row.Date,
+      toNumber(row.Overage_Credits_Used),
+    );
+    const scaledMessages = scaleActivityMessages(
+      mapping.User_Name,
+      mapping.Cost_Center,
+      row.Date,
+      toNumber(row.Total_Messages),
+    );
+    const scaledConversations = scaleActivityConversations(
+      mapping.User_Name,
+      mapping.Cost_Center,
+      row.Date,
+      toNumber(row.Chat_Conversations),
+    );
+
+    metric.totalConsumption += scaledCredits;
+    metric.overrun += scaledOverrun;
+    if (scaledCredits > 0) {
       metric.activeDays.add(row.Date);
     }
-    metric.totalMessages += toNumber(row.Total_Messages);
-    metric.chatConversations += toNumber(row.Chat_Conversations);
-    metric.clientCredits[row.Client_Type] = (metric.clientCredits[row.Client_Type] || 0) + toNumber(row.Credits_Used);
+    metric.totalMessages += scaledMessages;
+    metric.chatConversations += scaledConversations;
+    metric.clientCredits[row.Client_Type] = (metric.clientCredits[row.Client_Type] || 0) + scaledCredits;
   });
 
   const interactions: InteractionSummary[] = interactionRows.map((row) => {
@@ -691,12 +841,22 @@ function buildDataset(): KiroDataset {
     const costCenterId = mapping?.Cost_Center || slugify(costCenterName);
     const teamId = slugify(teamName);
     const engineerId = row.UserId;
-    const useCaseMeta = USE_CASES[row.Workflow_Area] ?? {
-      label: row.Workflow_Area.replace(/-/g, " "),
+    const engineerFunction = getEngineerFunction(row.User_Name);
+    const diversifiedUseCaseKey = diversifyUseCaseKey(row, engineerFunction);
+    const useCaseMeta = USE_CASES[diversifiedUseCaseKey] ?? {
+      label: diversifiedUseCaseKey.replace(/-/g, " "),
       category: "General SDLC Support",
       summary: "General AI-assisted software delivery workflow.",
       recommendedModelTier: "Balanced",
     };
+    const scaledInteractionCredits = scaleInteractionCredits(row, mapping?.Cost_Center, engineerFunction);
+    const scaledPromptChars = scaleInteractionPromptChars(row, diversifiedUseCaseKey, mapping?.Cost_Center, engineerFunction);
+    const scaledResponseChars = scaleInteractionResponseChars(
+      row,
+      diversifiedUseCaseKey,
+      mapping?.Cost_Center,
+      engineerFunction,
+    );
 
     const chat = chatByRequestId.get(row.Request_Id);
     const inline = inlineByRequestId.get(row.Request_Id);
@@ -706,13 +866,13 @@ function buildDataset(): KiroDataset {
       userId: row.UserId,
       engineerId,
       engineerName: row.User_Name,
-      engineerFunction: getEngineerFunction(row.User_Name),
+      engineerFunction,
       teamId,
       teamName,
       costCenterId,
       costCenterName: normalizedCostCenterName,
       costCenterCode: mapping?.Cost_Center || "",
-      useCaseKey: row.Workflow_Area,
+      useCaseKey: diversifiedUseCaseKey,
       useCaseLabel: useCaseMeta.label,
       modelName: formatModelName(row.Model_Name),
       modelCategory: modelCategory(formatModelName(row.Model_Name)),
@@ -722,9 +882,9 @@ function buildDataset(): KiroDataset {
       pluginName: row.Plugin_Name || "Direct Kiro",
       mcpServer: row.MCP_Server || "No MCP Invoked",
       toolInvocationCount: toNumber(row.Tool_Invocation_Count),
-      estimatedCredits: toNumber(row.Estimated_Credits_Used),
-      promptChars: toNumber(row.Prompt_Chars),
-      responseChars: toNumber(row.Response_Chars),
+      estimatedCredits: scaledInteractionCredits,
+      promptChars: scaledPromptChars,
+      responseChars: scaledResponseChars,
       timestamp: row.Event_Timestamp_UTC,
       evidence: {
         requestId: row.Request_Id,
@@ -1357,9 +1517,16 @@ function buildDataset(): KiroDataset {
   const latestDate = activityRows.reduce((latest, row) => (row.Date > latest ? row.Date : latest), activityRows[0]?.Date || "2026-05-31");
   const dailyTrend = Array.from(
     activityRows.reduce((acc, row) => {
+      const mapping = mappingByUserId.get(row.UserId);
+      if (!mapping) return acc;
       const existing = acc.get(row.Date) || { date: row.Date, consumption: 0, overrun: 0 };
-      existing.consumption += toNumber(row.Credits_Used);
-      existing.overrun += toNumber(row.Overage_Credits_Used);
+      existing.consumption += scaleActivityCredits(mapping.User_Name, mapping.Cost_Center, row.Date, toNumber(row.Credits_Used));
+      existing.overrun += scaleActivityOverrun(
+        mapping.User_Name,
+        mapping.Cost_Center,
+        row.Date,
+        toNumber(row.Overage_Credits_Used),
+      );
       acc.set(row.Date, existing);
       return acc;
     }, new Map<string, { date: string; consumption: number; overrun: number }>()),
@@ -1380,8 +1547,12 @@ function buildDataset(): KiroDataset {
       consumption: 0,
       overrun: 0,
     };
-    existing.consumption = toNumber(existing.consumption) + toNumber(row.Credits_Used);
-    existing.overrun = toNumber(existing.overrun) + toNumber(row.Overage_Credits_Used);
+    existing.consumption =
+      toNumber(existing.consumption) +
+      scaleActivityCredits(mapping.User_Name, mapping.Cost_Center, row.Date, toNumber(row.Credits_Used));
+    existing.overrun =
+      toNumber(existing.overrun) +
+      scaleActivityOverrun(mapping.User_Name, mapping.Cost_Center, row.Date, toNumber(row.Overage_Credits_Used));
     monthlyByCostCenterMap.set(key, existing);
   });
   const monthlyByCostCenter = Array.from(monthlyByCostCenterMap.values()).sort((a, b) =>
@@ -1483,11 +1654,11 @@ function buildDataset(): KiroDataset {
       lastUpdated: latestDate,
     },
     kpis: {
-      totalConsumption: activityRows.reduce((sum, row) => sum + toNumber(row.Credits_Used), 0),
-      overrun: activityRows.reduce((sum, row) => sum + toNumber(row.Overage_Credits_Used), 0),
+      totalConsumption: engineers.reduce((sum, engineer) => sum + engineer.totalConsumption, 0),
+      overrun: engineers.reduce((sum, engineer) => sum + engineer.overrun, 0),
       activeEngineers: engineers.length,
       consumptionPerEngineer:
-        activityRows.reduce((sum, row) => sum + toNumber(row.Credits_Used), 0) / Math.max(engineers.length, 1),
+        engineers.reduce((sum, engineer) => sum + engineer.totalConsumption, 0) / Math.max(engineers.length, 1),
       topCostCenter: costCenters[0]?.name || "N/A",
       topEngineer: engineers[0]?.name || "N/A",
       topTeam: teams[0]?.name || "N/A",
