@@ -684,7 +684,7 @@ export default function UsageExplorer() {
                     formatter={(value: number, name: string) =>
                       name === "credits" ? [`${formatConsumption(value)} credits`, "Consumption"] : [value, "Active Days"]
                     }
-                    labelFormatter={(_, payload) => payload?.[0]?.payload?.name ?? ""}
+                    labelFormatter={(_, payload: any[]) => payload?.[0]?.payload?.name ?? ""}
                   />
                   <Scatter data={activeDaysScatterData} fill={CHART_BLUE_SOFT}>
                     {activeDaysScatterData.map((engineer) => (
@@ -745,22 +745,19 @@ export default function UsageExplorer() {
         </Card>
       </div>
 
-      <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-        <CardHeader className="bg-black/20 border-b border-white/5">
+      <Card className="dashboard-panel">
+        <CardHeader className="dashboard-panel-header">
           <CardTitle className="dashboard-card-title text-slate-100">Chargeback Detail</CardTitle>
           <CardDescription className="text-slate-400">
             All scoped engineers. The watchlist above is only the flagged subset.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full min-w-[980px]">
-            <thead className="bg-[#0B1120] text-left">
+          <table className="dashboard-table min-w-[980px]">
+            <thead className="dashboard-table-head">
               <tr>
                 {["Engineer", "Cost Center", "Team", "Tier", "Active Days", "Messages", "Credits", "Overrun"].map((header) => (
-                  <th
-                    key={header}
-                    className="px-6 py-4 text-[11px] uppercase tracking-[0.16em] text-slate-500 font-medium"
-                  >
+                  <th key={header} className="dashboard-table-head-cell">
                     {header}
                   </th>
                 ))}
@@ -768,20 +765,20 @@ export default function UsageExplorer() {
             </thead>
             <tbody>
               {chargebackRows.map((engineer) => (
-                <tr key={engineer.userId} className="border-t border-white/5">
-                  <td className="px-6 py-4">
+                <tr key={engineer.userId} className="dashboard-table-row">
+                  <td className="dashboard-table-cell-strong">
                     <div className="flex flex-wrap items-center gap-2 text-slate-200 font-medium">
                       <span>{engineer.name}</span>
                       <FunctionBadge role={engineer.engineerFunction} />
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-slate-400">{engineer.costCenterName}</td>
-                  <td className="px-6 py-4 text-slate-400">{engineer.teamName}</td>
-                  <td className="px-6 py-4 text-slate-400">{engineer.subscriptionTier}</td>
-                  <td className="px-6 py-4 text-slate-300">{engineer.activeDays}</td>
-                  <td className="px-6 py-4 text-slate-300">{engineer.totalMessages.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-slate-100">{formatConsumption(engineer.totalConsumption)}</td>
-                  <td className={`px-6 py-4 ${engineer.overrun > 0 ? "text-amber-300" : "text-slate-500"}`}>
+                  <td className="dashboard-table-cell text-slate-400">{engineer.costCenterName}</td>
+                  <td className="dashboard-table-cell text-slate-400">{engineer.teamName}</td>
+                  <td className="dashboard-table-cell text-slate-400">{engineer.subscriptionTier}</td>
+                  <td className="dashboard-table-cell">{engineer.activeDays}</td>
+                  <td className="dashboard-table-cell">{engineer.totalMessages.toLocaleString()}</td>
+                  <td className="dashboard-table-cell-strong">{formatConsumption(engineer.totalConsumption)}</td>
+                  <td className={`dashboard-table-cell ${engineer.overrun > 0 ? "text-amber-300" : "text-slate-500"}`}>
                     {formatConsumption(engineer.overrun)}
                   </td>
                 </tr>
@@ -792,22 +789,19 @@ export default function UsageExplorer() {
       </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.08fr_0.92fr] gap-6">
-        <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-          <CardHeader className="bg-black/20 border-b border-white/5">
+        <Card className="dashboard-panel">
+          <CardHeader className="dashboard-panel-header">
             <CardTitle className="dashboard-card-title text-slate-100">High-Cost Interactions</CardTitle>
             <CardDescription className="text-slate-400">
               Click a row to inspect prompt evidence and interaction context for the most expensive requests.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
-            <table className="w-full min-w-[900px]">
-              <thead className="bg-[#0B1120] text-left">
+            <table className="dashboard-table min-w-[900px]">
+              <thead className="dashboard-table-head">
                 <tr>
                   {["Request", "Engineer", "Use Case", "Model", "Plugin / MCP", "Credits", "Evidence"].map((header) => (
-                    <th
-                      key={header}
-                      className="px-6 py-4 text-[11px] uppercase tracking-[0.16em] text-slate-500 font-medium"
-                    >
+                    <th key={header} className="dashboard-table-head-cell">
                       {header}
                     </th>
                   ))}
@@ -817,29 +811,27 @@ export default function UsageExplorer() {
                 {highCostInteractions.map((interaction) => (
                   <tr
                     key={interaction.id}
-                    className="border-t border-white/5 cursor-pointer hover:bg-white/[0.03] transition-colors"
+                    className="dashboard-table-row cursor-pointer hover:bg-white/[0.03]"
                     onClick={() => setEvidenceInteractionId(interaction.id)}
                   >
-                    <td className="px-6 py-4">
-                      <p className="text-slate-200 font-medium">{interaction.id}</p>
-                      <p className="text-sm text-slate-500 mt-1">{interaction.conversationId}</p>
+                    <td className="dashboard-table-cell-strong">
+                      <p>{interaction.id}</p>
+                      <p className="dashboard-table-subtext">{interaction.conversationId}</p>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="dashboard-table-cell">
                       <div className="flex flex-wrap items-center gap-2 text-slate-300">
                         <span>{interaction.engineerName}</span>
                         <FunctionBadge role={interaction.engineerFunction} />
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-300">{interaction.useCaseLabel}</td>
-                    <td className="px-6 py-4 text-slate-300">{interaction.modelName}</td>
-                    <td className="px-6 py-4">
+                    <td className="dashboard-table-cell">{interaction.useCaseLabel}</td>
+                    <td className="dashboard-table-cell">{interaction.modelName}</td>
+                    <td className="dashboard-table-cell">
                       <p className="text-slate-300">{interaction.pluginName}</p>
-                      <p className="text-sm text-slate-500 mt-1">{interaction.mcpServer}</p>
+                      <p className="dashboard-table-subtext">{interaction.mcpServer}</p>
                     </td>
-                    <td className="px-6 py-4 text-slate-100 font-medium">
-                      {formatConsumption(interaction.estimatedCredits)}
-                    </td>
-                    <td className="px-6 py-4">
+                    <td className="dashboard-table-cell-strong">{formatConsumption(interaction.estimatedCredits)}</td>
+                    <td className="dashboard-table-cell">
                       <span className="inline-flex items-center rounded-lg border border-white/8 bg-white/[0.04] px-3 py-1.5 text-xs text-slate-300">
                         <Eye className="w-3.5 h-3.5 mr-2 text-blue-300" />
                         {interaction.evidence.chatCount + interaction.evidence.inlineCount} traces
@@ -913,8 +905,8 @@ function ScopeStat({
         <p className="dashboard-metric-label">{label}</p>
         {icon}
       </div>
-      <p className="mt-3 text-[1.05rem] md:text-[1.12rem] font-semibold text-white leading-snug">{value}</p>
-      <p className="text-sm text-slate-400 mt-1">{detail}</p>
+      <p className="mt-3 text-[0.98rem] md:text-[1.04rem] font-semibold text-white leading-snug tracking-[-0.015em]">{value}</p>
+      <p className="mt-1 text-[0.88rem] text-slate-400 leading-relaxed">{detail}</p>
     </div>
   );
 }

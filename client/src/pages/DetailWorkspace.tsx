@@ -337,26 +337,26 @@ export default function DetailWorkspace() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-slate-400 bg-black/40 uppercase border-b border-white/5">
+                <table className="dashboard-table text-left">
+                  <thead className="dashboard-table-head">
                     <tr>
-                      <th className="px-6 py-4 font-medium">Request ID</th>
-                      <th className="px-6 py-4 font-medium">Use Case</th>
-                      <th className="px-6 py-4 font-medium">Model</th>
-                      <th className="px-6 py-4 font-medium text-right">Prompt</th>
-                      <th className="px-6 py-4 font-medium text-right">Response</th>
-                      <th className="px-6 py-4 font-medium text-right">Evidence</th>
+                      <th className="dashboard-table-head-cell">Request ID</th>
+                      <th className="dashboard-table-head-cell">Use Case</th>
+                      <th className="dashboard-table-head-cell">Model</th>
+                      <th className="dashboard-table-head-cell text-right">Prompt</th>
+                      <th className="dashboard-table-head-cell text-right">Response</th>
+                      <th className="dashboard-table-head-cell text-right">Evidence</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody>
                     {interactions.slice(0, 10).map((interaction) => (
-                      <tr key={interaction.id} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-6 py-4 font-mono text-xs text-blue-300">{interaction.id.slice(0, 14)}…</td>
-                        <td className="px-6 py-4 text-slate-300">{interaction.useCaseLabel}</td>
-                        <td className="px-6 py-4 text-slate-400">{interaction.modelName}</td>
-                        <td className="px-6 py-4 text-right text-slate-300">{interaction.promptChars.toLocaleString()}</td>
-                        <td className="px-6 py-4 text-right text-slate-300">{interaction.responseChars.toLocaleString()}</td>
-                        <td className="px-6 py-4 text-right">
+                      <tr key={interaction.id} className="dashboard-table-row hover:bg-white/[0.02]">
+                        <td className="dashboard-table-cell font-mono text-[0.8rem] text-blue-300">{interaction.id.slice(0, 14)}…</td>
+                        <td className="dashboard-table-cell">{interaction.useCaseLabel}</td>
+                        <td className="dashboard-table-cell text-slate-400">{interaction.modelName}</td>
+                        <td className="dashboard-table-cell text-right">{interaction.promptChars.toLocaleString()}</td>
+                        <td className="dashboard-table-cell text-right">{interaction.responseChars.toLocaleString()}</td>
+                        <td className="dashboard-table-cell text-right">
                           <Button
                             variant="ghost"
                             size="sm"

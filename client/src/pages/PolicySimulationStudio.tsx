@@ -150,15 +150,25 @@ export default function PolicySimulationStudio() {
     () => buildSimulation(resolvedScope, advisorMode, levers),
     [advisorMode, levers, resolvedScope],
   );
+  const topRecommendation = resolvedScope.recommendations[0];
+  const topUseCase = resolvedScope.useCases[0];
+  const promptPressureRate = resolvedScope.interactions.length
+    ? Math.round((simulation.promptHeavyCount / resolvedScope.interactions.length) * 100)
+    : 0;
+  const flaggedReduction = Math.max(0, simulation.flaggedBefore - simulation.flaggedAfter);
 
   const runSimulation = () => setSimulationRunCount((count) => count + 1);
 
   return (
-    <div className="p-8 max-w-[1640px] mx-auto space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
+    <div className="p-6 md:p-8 max-w-[1640px] mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col xl:flex-row justify-between xl:items-start gap-5">
         <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-blue-200">
+            <Beaker className="w-3.5 h-3.5" />
+            Working studio
+          </div>
           <h1 className="dashboard-page-title mb-1">Policy & Simulation Studio</h1>
-          <p className="dashboard-page-lead">
+          <p className="dashboard-page-lead max-w-4xl">
             Test model routing, prompt discipline, tool governance, and seat policies against observed Kiro telemetry.
           </p>
         </div>
@@ -178,6 +188,57 @@ export default function PolicySimulationStudio() {
           </Button>
         </div>
       </div>
+
+      <Card className="overflow-hidden border-white/5 bg-[linear-gradient(135deg,rgba(30,41,59,0.95),rgba(15,23,42,0.95)_45%,rgba(15,23,42,0.72))] shadow-[0_24px_80px_rgba(2,6,23,0.35)]">
+        <CardContent className="p-0">
+          <div className="grid gap-0 xl:grid-cols-[1.35fr_0.95fr]">
+            <div className="border-b border-white/5 p-6 md:p-7 xl:border-b-0 xl:border-r">
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Scenario Brief</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Badge className="border-blue-400/20 bg-blue-500/10 text-blue-100 hover:bg-blue-500/10">
+                  {resolvedScope.label}
+                </Badge>
+                <Badge className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/5">
+                  {advisorMode}
+                </Badge>
+                <Badge className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/5">
+                  {resolvedScope.interactions.length} interactions
+                </Badge>
+              </div>
+              <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-300">
+                The current configuration concentrates on <span className="text-white">{topUseCase?.label ?? "the leading use case"}</span>,
+                where prompt-heavy interactions and model-routing mismatches are creating the clearest optimization path.
+                This scenario estimates <span className="text-white">{formatConsumption(simulation.totalDelta)} credits</span> of
+                avoidable consumption if the selected controls are adopted consistently.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-px bg-white/5 sm:grid-cols-3 xl:grid-cols-1">
+              <ScenarioStat
+                label="Lead pressure point"
+                value={topUseCase?.label ?? "Mixed demand"}
+                hint={`${promptPressureRate}% of interactions exceed the prompt threshold`}
+                icon={TrendingDown}
+                tone="text-amber-200"
+              />
+              <ScenarioStat
+                label="Best next action"
+                value={topRecommendation?.title ?? "Review current actions"}
+                hint="Highest-confidence recommendation in this scope"
+                icon={Sparkles}
+                tone="text-violet-200"
+              />
+              <ScenarioStat
+                label="Flags reduced"
+                value={String(flaggedReduction)}
+                hint="High-cost alerts removed by this scenario"
+                icon={ShieldCheck}
+                tone="text-teal-200"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <SignalCard
@@ -203,9 +264,9 @@ export default function PolicySimulationStudio() {
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.25fr_1fr] gap-6 items-start">
-        <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-          <CardHeader className="bg-black/20 border-b border-white/5">
+      <div className="grid grid-cols-1 xl:grid-cols-[0.92fr_1.28fr_1fr] gap-6 items-start">
+        <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden xl:sticky xl:top-24">
+          <CardHeader className="bg-black/20 border-b border-white/5 pb-5">
             <CardTitle className="dashboard-card-title text-slate-200 flex items-center">
               <Settings2 className="w-4 h-4 mr-2 text-slate-400" />
               Scenario Configuration
@@ -215,6 +276,21 @@ export default function PolicySimulationStudio() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
+            <div className="grid grid-cols-1 gap-3 rounded-2xl border border-white/5 bg-[#0b1120] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Execution lens</p>
+                  <p className="mt-2 text-sm font-medium text-slate-100">{advisorMode}</p>
+                </div>
+                <Badge className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/5">
+                  {resolvedScope.affectedScopesLabel}
+                </Badge>
+              </div>
+              <p className="text-sm leading-6 text-slate-400">
+                Tune the thresholds below, then run the simulation to compare today&apos;s usage against a stricter policy posture.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-[0.18em] text-slate-400">Scope Type</label>
               <select
@@ -260,6 +336,12 @@ export default function PolicySimulationStudio() {
             </div>
 
             <div className="space-y-5 border-t border-white/5 pt-5">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Policy levers</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  Balance model choice, prompt discipline, tool usage, and seat hygiene to see how governance changes shift spend.
+                </p>
+              </div>
               <SliderField
                 label="Model Routing Strictness"
                 value={levers.routingStrictness}
@@ -398,6 +480,19 @@ export default function PolicySimulationStudio() {
                 <MiniMetric label="Plugin-enriched Flows" value={String(simulation.pluginHeavyCount)} tone="text-violet-300" />
                 <MiniMetric label="Low-utilization Seats" value={String(simulation.lowUtilizationSeats)} tone="text-teal-300" />
               </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <InsightStrip
+                  label="Where to intervene first"
+                  value={topUseCase?.label ?? "Mixed demand"}
+                  hint={topUseCase ? `${formatConsumption(topUseCase.totalConsumption)} credits currently concentrated here` : "No dominant use case in scope"}
+                />
+                <InsightStrip
+                  label="Governance framing"
+                  value={topRecommendation?.title ?? "Recommendations distributed across this scope"}
+                  hint="This is the most evidence-backed action currently attached to the selected scope"
+                />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -433,6 +528,22 @@ export default function PolicySimulationStudio() {
                       <span>{item}</span>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-blue-300 mt-0.5 shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-100">Recommended next move</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">
+                      {topRecommendation?.title ??
+                        "Use the current simulation summary to prioritize which recommendation bundle should be reviewed next."}
+                    </p>
+                    {topRecommendation?.recommendedAction && (
+                      <p className="mt-2 text-xs leading-6 text-slate-400">{topRecommendation.recommendedAction}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -804,6 +915,35 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ScenarioStat({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  icon: typeof Beaker;
+  tone: string;
+}) {
+  return (
+    <div className="bg-[#0b1120]/80 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">{label}</p>
+          <p className="mt-3 text-lg font-semibold leading-6 text-white">{value}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">{hint}</p>
+        </div>
+        <div className={`rounded-2xl border border-white/5 bg-white/5 p-3 ${tone}`}>
+          <Icon className="w-5 h-5" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MiniMetric({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
     <div className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
@@ -836,6 +976,16 @@ function ImpactCard({
       <p className="text-xs uppercase tracking-[0.18em] opacity-80">{label}</p>
       <p className="text-2xl font-semibold mt-2">{value}</p>
       <p className="text-xs opacity-75 mt-2">{hint}</p>
+    </div>
+  );
+}
+
+function InsightStrip({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div className="rounded-2xl border border-white/5 bg-[#0b1120] p-4">
+      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="mt-3 text-sm font-medium leading-6 text-slate-100">{value}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-400">{hint}</p>
     </div>
   );
 }
