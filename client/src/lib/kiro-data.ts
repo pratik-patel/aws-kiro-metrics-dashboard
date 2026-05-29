@@ -318,39 +318,39 @@ const USE_CASES: Record<
   { label: string; category: string; summary: string; recommendedModelTier: string }
 > = {
   "spec-orchestration": {
-    label: "Specification Design",
-    category: "Planning & Architecture",
-    summary: "Drafting, refining, and orchestrating business and technical specifications.",
+    label: "Impact Analysis",
+    category: "Requirements & Architecture",
+    summary: "Assessing business, policy, and technical change impact before implementation work begins.",
     recommendedModelTier: "Balanced unless the architecture scope is genuinely broad",
   },
   "legacy-modernization": {
-    label: "Code Generation & Refactoring",
-    category: "Code Transformation",
-    summary: "Transforming legacy codebases, API surfaces, and migration pathways.",
-    recommendedModelTier: "Balanced for focused change sets, escalate only for multi-service reasoning",
+    label: "Implementation & Refactoring",
+    category: "Implementation",
+    summary: "Implementing code changes, refactoring services, and modernizing delivery components.",
+    recommendedModelTier: "Balanced for focused change sets, escalate only for cross-service reasoning",
   },
   "platform-hardening": {
-    label: "CI/CD, Hooks & Config Validation",
-    category: "Platform & Reliability",
-    summary: "Infra, reliability, automation, and environment-hardening tasks.",
-    recommendedModelTier: "Balanced with tool-first workflows and deterministic hooks",
+    label: "Static Quality Gates",
+    category: "Release & Reliability",
+    summary: "Validating deterministic quality gates, hooks, policy checks, and configuration controls before release.",
+    recommendedModelTier: "Balanced with tool-first workflows and deterministic automation",
   },
   "retail-analytics": {
-    label: "Analytics & Documentation",
-    category: "Data & Reporting",
-    summary: "Analytics reasoning, dashboard shaping, and decision-support documentation.",
-    recommendedModelTier: "Balanced for summaries, higher tier for cross-source synthesis",
+    label: "RCA & Bug Fixes",
+    category: "Delivery Reporting",
+    summary: "Investigating root causes, debugging production issues, and driving corrective fixes through delivery teams.",
+    recommendedModelTier: "Balanced for summaries, escalate only for cross-source synthesis",
   },
   "guardrail-evaluation": {
-    label: "Code Review & Validation",
-    category: "Governance & QA",
-    summary: "Testing guardrails, reviewing constraints, and validating quality signals.",
+    label: "Code Review & Control Validation",
+    category: "Governance & Quality",
+    summary: "Reviewing code changes, validating controls, and checking quality or compliance guardrails.",
     recommendedModelTier: "Lower or balanced reasoning is usually sufficient before escalation",
   },
   "test-generation": {
-    label: "Test Generation & Code Coverage",
-    category: "Testing",
-    summary: "Generating tests, improving code coverage, and refining unit or integration test scaffolds.",
+    label: "Test Generation & Coverage Expansion",
+    category: "Quality Engineering",
+    summary: "Generating tests, expanding coverage, and refining unit or integration test scaffolds.",
     recommendedModelTier: "Lower-cost coder models first, escalate only for unusual fixture design",
   },
 };
@@ -1052,20 +1052,20 @@ function buildDataset(): KiroDataset {
     if (useCase.key === "spec-orchestration" && (useCase.avgPromptChars > 4500 || useCase.dominantAgentPattern === "spec-driven")) {
       addRecommendation({
         id: `rec-spec-steering-${useCase.key}`,
-        title: "Break spec-heavy workflows into smaller, tighter stages",
+        title: "Break requirements-heavy workflows into scoped delivery stages",
         type: "Steering Scope",
         severity: useCase.avgPromptChars > 6000 ? "High" : "Medium",
         scopeType: "Use Case",
         scopeId: useCase.key,
         scopeLabel: useCase.label,
-        whyItMatters: "Spec-driven workflows are carrying a large amount of planning and requirements context before execution work even begins.",
+        whyItMatters: "Requirements and specification threads are carrying large planning context before implementation work even begins.",
         supportingSignals: [
           `Average prompt size: ${useCase.avgPromptChars.toLocaleString()} chars`,
           `Dominant agent pattern: ${useCase.dominantAgentPattern}`,
           `Top request source: ${useCase.topRequestSource}`,
         ],
-        recommendedAction: "Keep specs for planning, then hand off focused implementation slices. Trim repeated steering, avoid replaying the entire spec, and summarize previous decisions before continuing a long thread.",
-        expectedImpact: "Reduces input bloat and keeps spec-driven work from inflating every downstream interaction.",
+        recommendedAction: "Keep the specification thread for planning, then hand off focused implementation packets. Avoid replaying the full requirements history into each downstream interaction.",
+        expectedImpact: "Reduces input bloat and keeps specification work from inflating every downstream delivery interaction.",
         evidenceInteractionIds: interactions
           .filter((interaction) => interaction.useCaseKey === useCase.key)
           .sort((a, b) => b.promptChars - a.promptChars)
@@ -1080,13 +1080,13 @@ function buildDataset(): KiroDataset {
     ) {
       addRecommendation({
         id: `rec-usecase-${useCase.key}`,
-        title: "Route unit-test generation to a lighter model tier",
+        title: "Route test generation and coverage expansion to a lighter model tier",
         type: "Model Routing",
         severity: "Medium",
         scopeType: "Use Case",
         scopeId: useCase.key,
         scopeLabel: useCase.label,
-        whyItMatters: "Test-generation tasks rarely need the most expensive reasoning tier.",
+        whyItMatters: "Test generation and coverage expansion rarely need the most expensive reasoning tier.",
         supportingSignals: [
           `Dominant model: ${useCase.dominantModel}`,
           `Average prompt size: ${useCase.avgPromptChars.toLocaleString()} chars`,
@@ -1103,9 +1103,9 @@ function buildDataset(): KiroDataset {
     if (["test-generation", "guardrail-evaluation", "platform-hardening"].includes(useCase.key) && useCase.deterministicShare >= 0.35) {
       const deterministicTitle =
         useCase.key === "platform-hardening"
-          ? "Automate deterministic CI/CD and validation steps"
+          ? "Automate deterministic CI/CD and release validation steps"
           : useCase.key === "guardrail-evaluation"
-            ? "Automate deterministic review and validation checks"
+            ? "Automate deterministic review and control checks"
             : "Automate deterministic test-generation steps";
 
       addRecommendation({
@@ -1122,8 +1122,8 @@ function buildDataset(): KiroDataset {
           `Top request source: ${useCase.topRequestSource}`,
           `Dominant plugin/MCP: ${useCase.dominantPlugin} / ${useCase.dominantMcp}`,
         ],
-        recommendedAction: "Move repeatable checks into hooks, scripts, or workflow automation for steps such as CI validation, security gates, quality checks, and test execution. Keep Kiro focused on interpretation, exception handling, and deciding what to fix next.",
-        expectedImpact: "Reduces chat-driven spend and produces more repeatable, policy-controlled validation behavior.",
+        recommendedAction: "Move repeatable checks into hooks, scripts, or workflow automation for steps such as CI validation, security gates, quality checks, and test execution. Keep Kiro focused on interpretation, exception handling, and remediation choices.",
+        expectedImpact: "Reduces chat-driven spend and produces more repeatable, policy-controlled delivery behavior.",
         evidenceInteractionIds: interactions
           .filter((interaction) => interaction.useCaseKey === useCase.key)
           .sort((a, b) => b.estimatedCredits - a.estimatedCredits)
@@ -1135,7 +1135,7 @@ function buildDataset(): KiroDataset {
     if ((useCase.key === "guardrail-evaluation" || REVIEW_DRIVEN_SOURCES.has(useCase.topRequestSource)) && useCase.highReasoningShare > 0) {
       addRecommendation({
         id: `rec-review-routing-${useCase.key}`,
-        title: "Keep code review and validation on balanced reasoning before escalation",
+        title: "Keep code review and control validation on balanced reasoning before escalation",
         type: "Model Routing",
         severity: "Medium",
         scopeType: "Use Case",
@@ -1148,7 +1148,7 @@ function buildDataset(): KiroDataset {
           `Recommended tier: ${useCase.recommendedModelTier}`,
         ],
         recommendedAction: "Start code review, validation, and guardrail checks on balanced or lower-cost models, then escalate only when the findings need architectural interpretation or non-deterministic reasoning.",
-        expectedImpact: "Lowers review cost while preserving high-value escalation paths for complex reasoning.",
+        expectedImpact: "Lowers review cost while preserving escalation paths for truly complex reasoning.",
         evidenceInteractionIds: interactions
           .filter((interaction) => interaction.useCaseKey === useCase.key)
           .sort((a, b) => b.estimatedCredits - a.estimatedCredits)
@@ -1187,7 +1187,7 @@ function buildDataset(): KiroDataset {
     ) {
       addRecommendation({
         id: `rec-plugin-workflow-${useCase.key}`,
-        title: `Reduce plugin-driven loops in ${useCase.label}`,
+        title: `Reduce tool-driven loops in ${useCase.label}`,
         type: "Plugin Governance",
         severity: "Medium",
         scopeType: "Use Case",
