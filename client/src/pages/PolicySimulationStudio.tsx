@@ -44,6 +44,13 @@ interface SimulationLevers {
   toolOutputTruncation: number;
 }
 
+interface AppliedScenario {
+  scopeKind: ScopeKind;
+  scopeId: string;
+  advisorMode: AdvisorMode;
+  levers: SimulationLevers;
+}
+
 const advisorModes: AdvisorMode[] = [
   "Executive Summary",
   "Cost Concentration Review",
@@ -111,42 +118,73 @@ const MODEL_TIER_LABELS: Record<SimulationLevers["modelTierCeiling"], string> = 
 };
 
 export default function PolicySimulationStudio() {
-  const [scopeKind, setScopeKind] = useState<ScopeKind>("Cost Center");
-  const [scopeId, setScopeId] = useState(KIRO_DATA.costCenters[0]?.id ?? "enterprise");
-  const [advisorMode, setAdvisorMode] = useState<AdvisorMode>("Optimization Recommendations");
-  const [simulationRunCount, setSimulationRunCount] = useState(0);
-  const [levers, setLevers] = useState<SimulationLevers>(defaultLevers["Optimization Recommendations"]);
+  const initialScopeId = KIRO_DATA.costCenters[0]?.id ?? "enterprise";
+  const initialAdvisorMode: AdvisorMode = "Optimization Recommendations";
+  const initialLevers = defaultLevers[initialAdvisorMode];
 
-  const scopeOptions = useMemo(() => getScopeOptions(scopeKind), [scopeKind]);
+  const [draftScopeKind, setDraftScopeKind] = useState<ScopeKind>("Cost Center");
+  const [draftScopeId, setDraftScopeId] = useState(initialScopeId);
+  const [draftAdvisorMode, setDraftAdvisorMode] = useState<AdvisorMode>(initialAdvisorMode);
+  const [draftLevers, setDraftLevers] = useState<SimulationLevers>(initialLevers);
+  const [appliedScenario, setAppliedScenario] = useState<AppliedScenario>(() => ({
+    scopeKind: "Cost Center" as ScopeKind,
+    scopeId: initialScopeId,
+    advisorMode: initialAdvisorMode,
+    levers: { ...initialLevers },
+  }));
+  const [simulationRunCount, setSimulationRunCount] = useState(1);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [lastRunAt, setLastRunAt] = useState(() => formatRunTime(new Date()));
+
+  const scopeOptions = useMemo(() => getScopeOptions(draftScopeKind), [draftScopeKind]);
 
   useEffect(() => {
-    setLevers(defaultLevers[advisorMode]);
-  }, [advisorMode]);
+    setDraftLevers(defaultLevers[draftAdvisorMode]);
+  }, [draftAdvisorMode]);
 
   useEffect(() => {
-    if (!scopeOptions.find((option) => option.id === scopeId)) {
-      setScopeId(scopeOptions[0]?.id ?? "enterprise");
+    if (!scopeOptions.find((option) => option.id === draftScopeId)) {
+      setDraftScopeId(scopeOptions[0]?.id ?? "enterprise");
     }
-  }, [scopeId, scopeOptions]);
+  }, [draftScopeId, scopeOptions]);
+
+  const draftResolvedScope = useMemo(
+    () => resolveScope(draftScopeKind, draftScopeId),
+    [draftScopeId, draftScopeKind],
+  );
+  const previewSimulation = useMemo(
+    () => buildSimulation(draftResolvedScope, draftAdvisorMode, draftLevers),
+    [draftAdvisorMode, draftLevers, draftResolvedScope],
+  );
 
   const resolvedScope = useMemo(
-    () => resolveScope(scopeKind, scopeId),
-    [scopeId, scopeKind],
+    () => resolveScope(appliedScenario.scopeKind, appliedScenario.scopeId),
+    [appliedScenario],
   );
 
   const simulation = useMemo(
-    () => buildSimulation(resolvedScope, advisorMode, levers),
-    [advisorMode, levers, resolvedScope],
+    () => buildSimulation(resolvedScope, appliedScenario.advisorMode, appliedScenario.levers),
+    [appliedScenario, resolvedScope],
   );
   const topRecommendation = resolvedScope.recommendations[0];
   const flaggedReduction = Math.max(0, simulation.flaggedBefore - simulation.flaggedAfter);
   const projectedConsumption = Math.max(0, resolvedScope.totalConsumption - simulation.totalDelta);
   const projectedOverrun = Math.max(0, resolvedScope.overrun - simulation.overrunDelta);
+  const hasPendingChanges = useMemo(
+    () =>
+      appliedScenario.scopeKind !== draftScopeKind ||
+      appliedScenario.scopeId !== draftScopeId ||
+      appliedScenario.advisorMode !== draftAdvisorMode ||
+      !areLeversEqual(appliedScenario.levers, draftLevers),
+    [appliedScenario, draftAdvisorMode, draftLevers, draftScopeId, draftScopeKind],
+  );
   const headerStats = [
     {
       label: "Scenario Scope",
       value: resolvedScope.label,
-      note: `${resolvedScope.interactions.length} interactions are informing this simulation.`,
+      note: hasPendingChanges
+        ? `${draftResolvedScope.interactions.length} pending interactions are ready to simulate.`
+        : `${resolvedScope.interactions.length} interactions are informing this simulation.`,
     },
     {
       label: "Projected Consumption",
@@ -187,7 +225,20 @@ export default function PolicySimulationStudio() {
     },
   ];
 
-  const runSimulation = () => setSimulationRunCount((count) => count + 1);
+  const runSimulation = () => {
+    setIsSimulating(true);
+    window.setTimeout(() => {
+      setAppliedScenario({
+        scopeKind: draftScopeKind,
+        scopeId: draftScopeId,
+        advisorMode: draftAdvisorMode,
+        levers: { ...draftLevers },
+      });
+      setSimulationRunCount((count) => count + 1);
+      setLastRunAt(formatRunTime(new Date()));
+      setIsSimulating(false);
+    }, 350);
+  };
 
   return (
     <div className="p-6 md:p-8 max-w-[1640px] mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
@@ -207,10 +258,11 @@ export default function PolicySimulationStudio() {
             </Link>
             <Button
               onClick={runSimulation}
+              disabled={isSimulating}
               className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white border-0 shadow-[0_0_24px_rgba(99,102,241,0.24)]"
             >
               <PlayCircle className="w-4 h-4 mr-2" />
-              Run Simulation
+              {isSimulating ? "Running Simulation..." : hasPendingChanges ? "Run Simulation" : "Re-run Simulation"}
             </Button>
           </>
         }
@@ -218,12 +270,18 @@ export default function PolicySimulationStudio() {
 
       <Card className="overflow-hidden border-white/5 bg-[linear-gradient(135deg,rgba(30,41,59,0.95),rgba(15,23,42,0.95)_45%,rgba(15,23,42,0.72))] shadow-[0_24px_80px_rgba(2,6,23,0.35)]">
         <CardContent className="p-6 md:p-7">
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
             <StudioChip label="Scope" value={resolvedScope.label} />
-            <StudioChip label="Lens" value={advisorMode} />
+            <StudioChip label="Lens" value={appliedScenario.advisorMode} />
             <StudioChip label="Interactions" value={String(resolvedScope.interactions.length)} />
             <StudioChip label="Runs" value={String(simulationRunCount)} />
+            <StudioChip label="Last Run" value={lastRunAt} />
           </div>
+          {hasPendingChanges ? (
+            <div className="mt-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-slate-300">
+              Pending changes are ready: {draftResolvedScope.label} · {draftAdvisorMode}. Run the simulation to refresh the forecast.
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -240,13 +298,13 @@ export default function PolicySimulationStudio() {
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Current simulation</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge className="border-blue-400/20 bg-blue-500/10 text-blue-100 hover:bg-blue-500/10">
-                  {resolvedScope.label}
+                  {draftResolvedScope.label}
                 </Badge>
                 <Badge className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/5">
-                  {advisorMode}
+                  {draftAdvisorMode}
                 </Badge>
                 <Badge className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/5">
-                  {resolvedScope.affectedScopesLabel}
+                  {draftResolvedScope.affectedScopesLabel}
                 </Badge>
               </div>
             </div>
@@ -255,8 +313,8 @@ export default function PolicySimulationStudio() {
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">1. Scope</p>
               <label className="text-xs uppercase tracking-[0.18em] text-slate-400">Scope Type</label>
               <select
-                value={scopeKind}
-                onChange={(event) => setScopeKind(event.target.value as ScopeKind)}
+                value={draftScopeKind}
+                onChange={(event) => setDraftScopeKind(event.target.value as ScopeKind)}
                 className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="Enterprise">Enterprise</option>
@@ -269,8 +327,8 @@ export default function PolicySimulationStudio() {
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-[0.18em] text-slate-400">Scope</label>
               <select
-                value={scopeId}
-                onChange={(event) => setScopeId(event.target.value)}
+                value={draftScopeId}
+                onChange={(event) => setDraftScopeId(event.target.value)}
                 className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 {scopeOptions.map((option) => (
@@ -285,8 +343,8 @@ export default function PolicySimulationStudio() {
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">2. Lens</p>
               <label className="text-xs uppercase tracking-[0.18em] text-slate-400">Advisor Mode</label>
               <select
-                value={advisorMode}
-                onChange={(event) => setAdvisorMode(event.target.value as AdvisorMode)}
+                value={draftAdvisorMode}
+                onChange={(event) => setDraftAdvisorMode(event.target.value as AdvisorMode)}
                 className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 {advisorModes.map((mode) => (
@@ -302,16 +360,16 @@ export default function PolicySimulationStudio() {
               <SliderField
                 section="Per-request cost"
                 label="Model tier ceiling"
-                value={4 - levers.modelTierCeiling}
+                value={4 - draftLevers.modelTierCeiling}
                 min={1}
                 max={3}
                 minLabel="Opus"
                 maxLabel="Qwen3 Coder Next"
-                displayValue={MODEL_TIER_LABELS[levers.modelTierCeiling]}
+                displayValue={MODEL_TIER_LABELS[draftLevers.modelTierCeiling]}
                 description="Routes task types to the highest model tier allowed for a single request."
                 badge="Highest leverage"
                 onChange={(value) =>
-                  setLevers((current) => ({
+                  setDraftLevers((current) => ({
                     ...current,
                     modelTierCeiling: Math.max(1, Math.min(3, 4 - value)) as 1 | 2 | 3,
                   }))
@@ -319,74 +377,75 @@ export default function PolicySimulationStudio() {
               />
               <SliderField
                 label="Prompt token ceiling"
-                value={levers.promptTokenCeiling}
+                value={draftLevers.promptTokenCeiling}
                 min={1000}
                 max={32000}
                 step={500}
                 minLabel="1K"
                 maxLabel="32K"
-                displayValue={`${levers.promptTokenCeiling.toLocaleString()} tokens`}
+                displayValue={`${draftLevers.promptTokenCeiling.toLocaleString()} tokens`}
                 description="Hard cap on input size per request. This is measured in tokens, not characters."
-                badge={`${simulation.promptHeavyCount} offenders`}
-                onChange={(value) => setLevers((current) => ({ ...current, promptTokenCeiling: value }))}
+                badge={`${previewSimulation.promptHeavyCount} offenders`}
+                onChange={(value) => setDraftLevers((current) => ({ ...current, promptTokenCeiling: value }))}
               />
               <SliderField
                 label="Max active MCP servers"
-                value={levers.maxActiveMcpServers}
+                value={draftLevers.maxActiveMcpServers}
                 min={1}
                 max={12}
                 minLabel="1"
                 maxLabel="12"
-                displayValue={`${levers.maxActiveMcpServers} servers`}
+                displayValue={`${draftLevers.maxActiveMcpServers} servers`}
                 description="Limits how many MCP servers can stay active before request context starts inflating."
-                badge={`${simulation.mcpHeavyCount} requests`}
-                onChange={(value) => setLevers((current) => ({ ...current, maxActiveMcpServers: value }))}
+                badge={`${previewSimulation.mcpHeavyCount} requests`}
+                onChange={(value) => setDraftLevers((current) => ({ ...current, maxActiveMcpServers: value }))}
               />
               <SliderField
                 section="Session-level cost"
                 label="Context compaction trigger"
-                value={levers.contextCompactionTrigger}
+                value={draftLevers.contextCompactionTrigger}
                 min={50}
                 max={95}
                 minLabel="50%"
                 maxLabel="95%"
-                displayValue={`${levers.contextCompactionTrigger}%`}
+                displayValue={`${draftLevers.contextCompactionTrigger}%`}
                 description="Determines when long sessions should compact before they become expensive to reload."
                 badge="Session control"
-                onChange={(value) => setLevers((current) => ({ ...current, contextCompactionTrigger: value }))}
+                onChange={(value) => setDraftLevers((current) => ({ ...current, contextCompactionTrigger: value }))}
               />
               <SliderField
                 label="Max agentic steps"
-                value={levers.maxAgenticSteps}
+                value={draftLevers.maxAgenticSteps}
                 min={3}
                 max={30}
                 minLabel="3"
                 maxLabel="30"
-                displayValue={`${levers.maxAgenticSteps} steps`}
+                displayValue={`${draftLevers.maxAgenticSteps} steps`}
                 description="Caps how many autonomous steps an agentic workflow can take before it should stop or hand off."
-                badge={`${simulation.agenticCount} agentic`}
-                onChange={(value) => setLevers((current) => ({ ...current, maxAgenticSteps: value }))}
+                badge={`${previewSimulation.agenticCount} agentic`}
+                onChange={(value) => setDraftLevers((current) => ({ ...current, maxAgenticSteps: value }))}
               />
               <SliderField
                 label="Tool output truncation"
-                value={levers.toolOutputTruncation}
+                value={draftLevers.toolOutputTruncation}
                 min={500}
                 max={10000}
                 step={250}
                 minLabel="500"
                 maxLabel="10K"
-                displayValue={`${levers.toolOutputTruncation.toLocaleString()} tokens`}
+                displayValue={`${draftLevers.toolOutputTruncation.toLocaleString()} tokens`}
                 description="Caps how much tool output can return into context before it starts inflating downstream requests."
-                badge={`${simulation.toolOutputHeavyCount} oversized`}
-                onChange={(value) => setLevers((current) => ({ ...current, toolOutputTruncation: value }))}
+                badge={`${previewSimulation.toolOutputHeavyCount} oversized`}
+                onChange={(value) => setDraftLevers((current) => ({ ...current, toolOutputTruncation: value }))}
               />
 
               <Button
                 onClick={runSimulation}
+                disabled={isSimulating}
                 className="w-full bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white border-0 shadow-[0_0_24px_rgba(99,102,241,0.24)]"
               >
                 <PlayCircle className="w-4 h-4 mr-2" />
-                Run Simulation
+                {isSimulating ? "Running Simulation..." : hasPendingChanges ? "Apply Scenario" : "Re-run Simulation"}
               </Button>
             </div>
           </CardContent>
@@ -401,6 +460,12 @@ export default function PolicySimulationStudio() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
+              <div className={`rounded-2xl border px-4 py-3 text-sm ${hasPendingChanges ? "border-amber-500/20 bg-amber-500/5 text-slate-300" : "border-teal-500/20 bg-teal-500/5 text-slate-300"}`}>
+                {hasPendingChanges
+                  ? `Showing the last applied forecast from ${lastRunAt}. Run the simulation to apply your latest draft changes.`
+                  : `Forecast refreshed at ${lastRunAt}. The outcome below matches the current scenario settings.`}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <ImpactCard label="Projected Consumption Delta" value={`-${formatConsumption(simulation.totalDelta)}`} hint="Estimated credits avoided" tone="blue" />
                 <ImpactCard label="Projected Overrun Delta" value={`-${formatConsumption(simulation.overrunDelta)}`} hint="Potential overrun avoided" tone="amber" />
@@ -570,6 +635,24 @@ export default function PolicySimulationStudio() {
       </div>
     </div>
   );
+}
+
+function areLeversEqual(left: SimulationLevers, right: SimulationLevers) {
+  return (
+    left.modelTierCeiling === right.modelTierCeiling &&
+    left.promptTokenCeiling === right.promptTokenCeiling &&
+    left.maxActiveMcpServers === right.maxActiveMcpServers &&
+    left.contextCompactionTrigger === right.contextCompactionTrigger &&
+    left.maxAgenticSteps === right.maxAgenticSteps &&
+    left.toolOutputTruncation === right.toolOutputTruncation
+  );
+}
+
+function formatRunTime(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function getScopeOptions(scopeKind: ScopeKind) {

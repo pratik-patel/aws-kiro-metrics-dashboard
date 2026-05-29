@@ -9,7 +9,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
 import { ExperienceHeader } from "@/components/experience/ExperienceHeader";
@@ -78,18 +78,25 @@ export default function Recommendations() {
     [recommendationInsights],
   );
 
-  const [selectedRecommendationId, setSelectedRecommendationId] = useState(recommendationInsights[0]?.recommendation.id ?? "");
-  const [evidenceInteractionId, setEvidenceInteractionId] = useState<string | null>(null);
+  const [location] = useLocation();
+  const routeState = useMemo(() => parseRecommendationsUrlState(), [location]);
+  const selectedRecommendationId = routeState.recId ?? recommendationInsights[0]?.recommendation.id ?? "";
+  const evidenceInteractionId = routeState.evidenceId;
 
   const selectedInsight =
     insightById.get(selectedRecommendationId) ?? recommendationInsights[0];
   const selectedRecommendation = selectedInsight?.recommendation;
 
   useEffect(() => {
-    if (!selectedRecommendationId && recommendationInsights[0]) {
-      setSelectedRecommendationId(recommendationInsights[0].recommendation.id);
+    if (!recommendationInsights[0]) return;
+    if (!routeState.recId || !insightById.has(routeState.recId)) {
+      navigateRecommendationsState({
+        recId: recommendationInsights[0].recommendation.id,
+        evidenceId: routeState.evidenceId,
+        replace: true,
+      });
     }
-  }, [selectedRecommendationId, recommendationInsights]);
+  }, [insightById, recommendationInsights, routeState.evidenceId, routeState.recId]);
 
   const recommendationSections = useMemo(
     () => [
@@ -437,6 +444,36 @@ export default function Recommendations() {
                   <SummaryChip label="Next Horizon" value={selectedInsight.horizon} />
                 </div>
 
+                {selectedInsight.evidence.length ? (
+                  <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="dashboard-eyebrow">Evidence Links</p>
+                        <p className="mt-2 text-sm text-slate-400">
+                          Open the exact traces backing this recommendation without hunting through the page.
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1 text-xs text-slate-400">
+                        {selectedInsight.evidence.length} linked traces
+                      </span>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {selectedInsight.evidence.map((interaction, index) => (
+                        <Button
+                          key={interaction.id}
+                          variant="outline"
+                          size="sm"
+                          className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white"
+                          onClick={() => setEvidenceInteractionId(interaction.id)}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Trace {index + 1}: {interaction.useCaseLabel}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="grid gap-4 xl:grid-cols-[1.12fr_0.88fr]">
                   <div className="space-y-4">
                     <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
@@ -468,12 +505,35 @@ export default function Recommendations() {
                         <span className="dashboard-eyebrow">{topSignals.length}</span>
                       </div>
                       <div className="space-y-3">
-                        {topSignals.map((signal) => (
-                          <div key={signal} className="flex items-start gap-3 rounded-xl border border-white/5 bg-black/20 px-3 py-3">
-                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-300" />
-                            <span className="dashboard-body">{signal}</span>
-                          </div>
-                        ))}
+                        {topSignals.map((signal, index) => {
+                          const linkedEvidence = selectedInsight.evidence[index] ?? selectedInsight.evidence[0] ?? null;
+                          return (
+                            <div key={signal} className="rounded-xl border border-white/5 bg-black/20 px-3 py-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-3">
+                                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-300" />
+                                  <span className="dashboard-body">{signal}</span>
+                                </div>
+                                {linkedEvidence ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="shrink-0 text-slate-300 hover:text-white hover:bg-white/5"
+                                    onClick={() => setEvidenceInteractionId(linkedEvidence.id)}
+                                  >
+                                    <ExternalLink className="w-4 h-4 mr-2" />
+                                    View trace
+                                  </Button>
+                                ) : null}
+                              </div>
+                              {linkedEvidence ? (
+                                <p className="mt-3 text-xs text-slate-500">
+                                  {linkedEvidence.useCaseLabel} · {linkedEvidence.engineerName} · {formatConsumption(linkedEvidence.estimatedCredits)} credits
+                                </p>
+                              ) : null}
+                            </div>
+                          );
+                        })}
                         {!topSignals.length ? (
                           <div className="flex items-start gap-3 rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3">
                             <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
@@ -485,38 +545,10 @@ export default function Recommendations() {
                   </div>
 
                   <div className="space-y-4 2xl:hidden">
-                    <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-                      <CardHeader className="bg-black/20 border-b border-white/5">
-                        <CardTitle className="dashboard-card-title text-slate-100">Proof Chain</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3 pt-5">
-                        {selectedInsight.evidence.map((interaction) => (
-                          <button
-                            key={interaction.id}
-                            type="button"
-                            onClick={() => setEvidenceInteractionId(interaction.id)}
-                            className="w-full rounded-2xl border border-white/6 bg-[#0b1120] p-4 text-left transition-colors hover:bg-white/[0.03]"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-slate-100">{interaction.useCaseLabel}</p>
-                                <p className="mt-1 text-xs text-slate-400">
-                                  {interaction.engineerName} · {interaction.modelName} · {interaction.requestSource}
-                                </p>
-                              </div>
-                              <span className="whitespace-nowrap text-sm font-medium text-slate-200">
-                                {formatConsumption(interaction.estimatedCredits)}
-                              </span>
-                            </div>
-                            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
-                              <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">{interaction.evidence.chatCount} chat traces</span>
-                              <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">{interaction.evidence.inlineCount} inline traces</span>
-                              <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">{interaction.promptChars.toLocaleString()} prompt chars</span>
-                            </div>
-                          </button>
-                        ))}
-                      </CardContent>
-                    </Card>
+                    <ProofChainCard
+                      evidence={selectedInsight.evidence}
+                      onOpenEvidence={setEvidenceInteractionId}
+                    />
 
                     <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
                       <CardHeader className="bg-black/20 border-b border-white/5">
@@ -613,6 +645,11 @@ export default function Recommendations() {
             </div>
           ) : null}
 
+          <ProofChainCard
+            evidence={selectedInsight.evidence}
+            onOpenEvidence={setEvidenceInteractionId}
+          />
+
           <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
             <CardHeader className="bg-black/20 border-b border-white/5">
               <CardTitle className="dashboard-card-title text-slate-100">Relevant Decision Runs</CardTitle>
@@ -635,6 +672,62 @@ export default function Recommendations() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ProofChainCard({
+  evidence,
+  onOpenEvidence,
+}: {
+  evidence: InteractionSummary[];
+  onOpenEvidence: (interactionId: string) => void;
+}) {
+  return (
+    <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+      <CardHeader className="bg-black/20 border-b border-white/5">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="dashboard-card-title text-slate-100">Proof Chain</CardTitle>
+          <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1 text-xs text-slate-400">
+            {evidence.length} traces
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-5">
+        {evidence.map((interaction, index) => (
+          <button
+            key={interaction.id}
+            type="button"
+            onClick={() => onOpenEvidence(interaction.id)}
+            className="w-full rounded-2xl border border-white/6 bg-[#0b1120] p-4 text-left transition-colors hover:bg-white/[0.03]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-slate-100">
+                  Trace {index + 1}: {interaction.useCaseLabel}
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  {interaction.engineerName} · {interaction.modelName} · {interaction.requestSource}
+                </p>
+              </div>
+              <span className="whitespace-nowrap text-sm font-medium text-slate-200">
+                {formatConsumption(interaction.estimatedCredits)}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
+              <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                {interaction.evidence.chatCount} chat traces
+              </span>
+              <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                {interaction.evidence.inlineCount} inline traces
+              </span>
+              <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                {interaction.promptChars.toLocaleString()} prompt chars
+              </span>
+            </div>
+          </button>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
