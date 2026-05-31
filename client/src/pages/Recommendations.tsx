@@ -1,20 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  CheckCircle2,
-  CircleDashed,
-  ExternalLink,
-  Eye,
-  PlayCircle,
-  Sparkles,
-  Target,
-  Zap,
-} from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { ArrowRight, BarChart3, CheckCircle2, ExternalLink, Eye, PlayCircle, Sparkles, Target, Zap } from "lucide-react";
+import { Link } from "wouter";
+import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { EvidenceDrawer } from "@/components/EvidenceDrawer";
 import { ExperienceHeader } from "@/components/experience/ExperienceHeader";
-import { LollipopRanking } from "@/components/experience/LollipopRanking";
-import { SignalRing } from "@/components/experience/SignalRing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,23 +17,66 @@ const severityStyles = {
   Low: "bg-blue-500/10 text-blue-300 border-blue-500/20",
 } as const;
 
-const statusStyles = {
-  Completed: "bg-teal-500/10 text-teal-300 border-teal-500/20",
-  Running: "bg-blue-500/10 text-blue-300 border-blue-500/20",
-  Queued: "bg-amber-500/10 text-amber-300 border-amber-500/20",
-} as const;
-
 const severityOrder = {
   High: 0,
   Medium: 1,
   Low: 2,
 } as const;
 
-const confidenceStyles = {
-  High: "bg-teal-500/10 text-teal-300 border-teal-500/20",
-  Medium: "bg-amber-500/10 text-amber-300 border-amber-500/20",
-  Low: "bg-slate-500/10 text-slate-300 border-slate-500/20",
+const severityMeta = {
+  High: {
+    label: "Leadership",
+    accent: "border-red-500/20 bg-red-500/10 text-red-200",
+    muted: "text-red-200",
+  },
+  Medium: {
+    label: "Program",
+    accent: "border-amber-500/20 bg-amber-500/10 text-amber-200",
+    muted: "text-amber-200",
+  },
+  Low: {
+    label: "Background",
+    accent: "border-blue-500/20 bg-blue-500/10 text-blue-200",
+    muted: "text-blue-200",
+  },
 } as const;
+
+const recommendationClusters: Array<{
+  key: string;
+  label: string;
+  description: string;
+  types: Recommendation["type"][];
+  accent: string;
+}> = [
+  {
+    key: "policy",
+    label: "Policy",
+    description: "Model, prompt, and steering adjustments.",
+    types: ["Model Routing", "Prompt Discipline", "Steering Scope"],
+    accent: "border-blue-500/18 bg-blue-500/10 text-blue-200",
+  },
+  {
+    key: "workflow",
+    label: "Workflow",
+    description: "Behavior, delivery, and coaching actions.",
+    types: ["Use Case Optimization", "Team Coaching"],
+    accent: "border-teal-500/18 bg-teal-500/10 text-teal-200",
+  },
+  {
+    key: "controls",
+    label: "Controls",
+    description: "Plugin and MCP governance decisions.",
+    types: ["Plugin Governance", "MCP Governance"],
+    accent: "border-violet-500/18 bg-violet-500/10 text-violet-200",
+  },
+  {
+    key: "spend",
+    label: "Spend",
+    description: "Overrun, concentration, and license actions.",
+    types: ["Spend Concentration", "Overrun Risk", "License Hygiene"],
+    accent: "border-amber-500/18 bg-amber-500/10 text-amber-200",
+  },
+] as const;
 
 type RecommendationInsight = {
   recommendation: Recommendation;
@@ -60,6 +93,13 @@ type RecommendationInsight = {
   priorityScore: number;
   relevantRuns: AdvisorRun[];
 };
+
+type RecommendationsUrlState = {
+  recId: string | null;
+  evidenceId: string | null;
+};
+
+const RECOMMENDATIONS_ROUTE_EVENT = "recommendations:route-change";
 
 export default function Recommendations() {
   const recommendationInsights = useMemo(
@@ -78,14 +118,31 @@ export default function Recommendations() {
     [recommendationInsights],
   );
 
-  const [location] = useLocation();
-  const routeState = useMemo(() => parseRecommendationsUrlState(), [location]);
+  const [routeState, setRouteState] = useState<RecommendationsUrlState>(() => parseRecommendationsUrlState());
   const selectedRecommendationId = routeState.recId ?? recommendationInsights[0]?.recommendation.id ?? "";
   const evidenceInteractionId = routeState.evidenceId;
 
   const selectedInsight =
     insightById.get(selectedRecommendationId) ?? recommendationInsights[0];
   const selectedRecommendation = selectedInsight?.recommendation;
+  const selectedEvidence =
+    selectedInsight?.evidence.find((interaction) => interaction.id === evidenceInteractionId) ?? null;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const syncRouteState = () => {
+      setRouteState(parseRecommendationsUrlState());
+    };
+
+    window.addEventListener("popstate", syncRouteState);
+    window.addEventListener(RECOMMENDATIONS_ROUTE_EVENT, syncRouteState);
+
+    return () => {
+      window.removeEventListener("popstate", syncRouteState);
+      window.removeEventListener(RECOMMENDATIONS_ROUTE_EVENT, syncRouteState);
+    };
+  }, []);
 
   useEffect(() => {
     if (!recommendationInsights[0]) return;
@@ -98,51 +155,71 @@ export default function Recommendations() {
     }
   }, [insightById, recommendationInsights, routeState.evidenceId, routeState.recId]);
 
-  const recommendationSections = useMemo(
-    () => [
-      {
-        title: "Leadership",
-        recommendations: recommendationInsights.filter((insight) => insight.recommendation.severity === "High"),
-      },
-      {
-        title: "Program",
-        recommendations: recommendationInsights.filter((insight) => insight.recommendation.severity === "Medium"),
-      },
-      {
-        title: "Background",
-        recommendations: recommendationInsights.filter((insight) => insight.recommendation.severity === "Low"),
-      },
-    ].filter((section) => section.recommendations.length > 0),
-    [recommendationInsights],
-  );
+  useEffect(() => {
+    if (!routeState.evidenceId || !selectedInsight) return;
+    if (!selectedEvidence) {
+      navigateRecommendationsState({
+        recId: selectedInsight.recommendation.id,
+        replace: true,
+      });
+    }
+  }, [routeState.evidenceId, selectedEvidence, selectedInsight]);
 
-  const actionTypeCount = useMemo(
-    () => new Set(recommendationInsights.map((insight) => insight.recommendation.type)).size,
-    [recommendationInsights],
-  );
+  const selectRecommendation = (recommendationId: string) => {
+    navigateRecommendationsState({
+      recId: recommendationId,
+      replace: true,
+    });
+  };
 
-  const severityMix = useMemo(
-    () => [
-      { name: "High", value: recommendationInsights.filter((item) => item.recommendation.severity === "High").length, color: "#f97316" },
-      { name: "Medium", value: recommendationInsights.filter((item) => item.recommendation.severity === "Medium").length, color: "#f59e0b" },
-      { name: "Low", value: recommendationInsights.filter((item) => item.recommendation.severity === "Low").length, color: "#3b82f6" },
-    ].filter((item) => item.value > 0),
-    [recommendationInsights],
-  );
+  const openEvidence = (interactionId: string) => {
+    if (!selectedInsight) return;
+    navigateRecommendationsState({
+      recId: selectedInsight.recommendation.id,
+      evidenceId: interactionId,
+      replace: false,
+    });
+  };
 
-  const actionMix = useMemo(
+  const closeEvidence = () => {
+    if (!selectedInsight) return;
+    navigateRecommendationsState({
+      recId: selectedInsight.recommendation.id,
+      replace: true,
+    });
+  };
+
+  const recommendationLandscape = useMemo(
     () =>
-      Array.from(
-        recommendationInsights.reduce((acc, insight) => {
-          acc.set(insight.recommendation.type, (acc.get(insight.recommendation.type) || 0) + 1);
-          return acc;
-        }, new Map<string, number>()),
-      )
-        .map(([type, count]) => ({ type, count }))
-        .sort((left, right) => right.count - left.count)
-        .slice(0, 6),
+      recommendationClusters.map((cluster) => ({
+        ...cluster,
+        total: recommendationInsights.filter((insight) => cluster.types.includes(insight.recommendation.type)).length,
+        rows: (["High", "Medium", "Low"] as const).map((severity) => ({
+          severity,
+          items: recommendationInsights.filter(
+            (insight) =>
+              insight.recommendation.severity === severity && cluster.types.includes(insight.recommendation.type),
+          ),
+        })),
+      })),
     [recommendationInsights],
   );
+  const ownerGroups = useMemo(() => {
+    const groups = new Map<string, RecommendationInsight[]>();
+
+    for (const insight of recommendationInsights) {
+      const bucket = groups.get(insight.owner) ?? [];
+      bucket.push(insight);
+      groups.set(insight.owner, bucket);
+    }
+
+    return Array.from(groups.entries())
+      .map(([owner, items]: [string, RecommendationInsight[]]) => ({
+        owner,
+        items: items.sort((left: RecommendationInsight, right: RecommendationInsight) => right.priorityScore - left.priorityScore),
+      }))
+      .sort((left, right) => right.items.length - left.items.length || left.owner.localeCompare(right.owner));
+  }, [recommendationInsights]);
 
   const totalEvidenceLinks = useMemo(
     () => recommendationInsights.reduce((sum, insight) => sum + insight.evidence.length, 0),
@@ -151,8 +228,30 @@ export default function Recommendations() {
   const maxEvidenceLinks = recommendationInsights.reduce((max, insight) => Math.max(max, insight.evidence.length), 0);
   const primaryEvidence = selectedInsight?.evidence[0] ?? null;
   const highSeverityCount = recommendationInsights.filter((insight) => insight.recommendation.severity === "High").length;
-  const topSignals = selectedRecommendation?.supportingSignals.slice(0, 3) ?? [];
-  const relevantRuns = selectedInsight?.relevantRuns ?? [];
+  const priorityChartData = useMemo(
+    () =>
+      [...recommendationInsights]
+        .sort((left, right) => right.priorityScore - left.priorityScore)
+        .slice(0, 8)
+        .map((insight) => ({
+          id: insight.recommendation.id,
+          label: insight.recommendation.title,
+          shortLabel: truncateLabel(insight.recommendation.title, 28),
+          score: insight.priorityScore,
+          severity: insight.recommendation.severity,
+          scopeLabel: insight.recommendation.scopeLabel,
+        })),
+    [recommendationInsights],
+  );
+  const severityMix = useMemo(
+    () =>
+      (["High", "Medium", "Low"] as const).map((severity) => ({
+        name: severityMeta[severity].label,
+        value: recommendationInsights.filter((insight) => insight.recommendation.severity === severity).length,
+        severity,
+      })),
+    [recommendationInsights],
+  );
   const headerStats = [
     {
       label: "Decision Queue",
@@ -160,50 +259,57 @@ export default function Recommendations() {
       note: `${highSeverityCount} items are in leadership focus right now.`,
     },
     {
-      label: "Protected Scope",
+      label: "Scope Credits",
       value: `${formatConsumption(selectedInsight?.scopeExposure ?? 0)} credits`,
       note: selectedInsight ? `${selectedInsight.owner} owns the next move for the active recommendation.` : "Select a recommendation to inspect scope exposure.",
     },
     {
-      label: "Proof Coverage",
+      label: "Linked Traces",
       value: `${totalEvidenceLinks} direct traces`,
       note: `${maxEvidenceLinks} linked traces back the most heavily evidenced recommendation.`,
     },
     {
-      label: "Intervention Breadth",
-      value: `${actionTypeCount} action types`,
-      note: `${actionMix[0]?.type ?? "Model Routing"} appears most often in the current queue.`,
+      label: "Lead Action",
+      value: selectedRecommendation?.type ?? "Select a recommendation",
+      note: selectedInsight?.nextStep ?? "Select a recommendation to see the next operator move.",
     },
   ];
   const journey = [
     {
       label: "Prioritize",
-      detail: "Separate leadership actions from background optimization noise.",
+      detail: "Open the recommendation board and choose the highest-impact action.",
       state: "active" as const,
+      href: "/recommendations",
     },
     {
       label: "Inspect",
-      detail: "Open the recommendation, then validate it against concrete signals and evidence.",
+      detail: "Jump to the proof traces for the selected recommendation.",
       state: "upcoming" as const,
+      href: "/recommendations#proofs",
     },
     {
       label: "Simulate",
-      detail: "Send the selected action into the policy studio before rollout.",
+      detail: "Test the selected action in Policy Studio before rollout.",
       state: "upcoming" as const,
+      href: "/studio",
     },
     {
       label: "Execute",
       detail: "Publish the decision path into reports and operating handoffs.",
       state: "upcoming" as const,
+      href: "/reports",
     },
   ];
 
   return (
     <div className="p-8 max-w-[1760px] mx-auto space-y-6 animate-in fade-in duration-500">
       <EvidenceDrawer
-        open={Boolean(evidenceInteractionId)}
-        onOpenChange={(open) => !open && setEvidenceInteractionId(null)}
-        interactionId={evidenceInteractionId}
+        open={Boolean(selectedEvidence)}
+        onOpenChange={(open) => !open && closeEvidence()}
+        interactionId={selectedEvidence?.id ?? null}
+        contextTitle={selectedRecommendation?.title}
+        contextSummary={selectedRecommendation ? `${selectedRecommendation.recommendedAction} ${selectedInsight ? `${selectedInsight.evidence.length} direct traces are linked to this action.` : ""}` : undefined}
+        contextSeverity={selectedRecommendation?.severity}
       />
 
       <ExperienceHeader
@@ -236,168 +342,115 @@ export default function Recommendations() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(320px,0.88fr)_minmax(0,1.12fr)] 2xl:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.1fr)_minmax(280px,0.76fr)]">
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 2xl:hidden">
-            <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-              <CardHeader className="bg-black/20 border-b border-white/5">
-                <CardTitle className="dashboard-card-title text-slate-100">Priority Pressure</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-5">
-                <SignalRing
-                  title="Severity distribution"
-                  centerLabel="total actions"
-                  centerValue={String(recommendationInsights.length)}
-                  items={severityMix.map((item) => ({
-                    label: item.name,
-                    value: item.value,
-                    color: item.color,
-                  }))}
-                />
-                <div className="grid gap-3 md:grid-cols-3">
-                  <SummaryChip label="Leadership" value={`${highSeverityCount} immediate`} />
-                  <SummaryChip label="Program" value={String(recommendationSections.find((section) => section.title === "Program")?.recommendations.length ?? 0)} />
-                  <SummaryChip label="Background" value={String(recommendationSections.find((section) => section.title === "Background")?.recommendations.length ?? 0)} />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-            <CardHeader className="bg-black/20 border-b border-white/5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <CardTitle className="dashboard-card-title text-slate-100">Recommendation Queue</CardTitle>
-                  <p className="mt-2 text-sm text-slate-400">Scan by urgency, then confirm scope exposure, proof coverage, and owner before taking action.</p>
-                </div>
-                <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendationInsights.length}</Badge>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
+          <CardHeader className="bg-black/20 border-b border-white/5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="dashboard-card-title text-slate-100">Priority Queue</CardTitle>
+                <p className="mt-2 text-sm text-slate-400">Higher bars mean higher priority. Select a bar to inspect the recommendation.</p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-5 pt-5">
-              {recommendationSections.map((section) => (
-                <div key={section.title} className="space-y-3">
-                  <div className="flex items-end justify-between gap-3">
-                    <p className="dashboard-section-title">{section.title}</p>
-                    <Badge className="bg-white/5 text-slate-300 border-white/10">{section.recommendations.length}</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {section.recommendations.map((insight) => {
-                      const recommendation = insight.recommendation;
-                      const proofCoverageWidth = maxEvidenceLinks
-                        ? Math.max(16, (insight.evidence.length / maxEvidenceLinks) * 100)
-                        : 16;
+              <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendationInsights.length}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5 pt-5">
+            <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
+              <div className="rounded-[28px] border border-white/6 bg-[#0b1120] p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="dashboard-eyebrow">Priority Score</p>
+                  <span className="text-xs text-slate-500">Top 8 recommendations</span>
+                </div>
+                <div className="h-[420px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={priorityChartData}
+                      layout="vertical"
+                      margin={{ top: 8, right: 18, bottom: 4, left: 8 }}
+                    >
+                      <XAxis type="number" hide />
+                      <YAxis
+                        type="category"
+                        dataKey="shortLabel"
+                        width={220}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "#cbd5e1", fontSize: 12 }}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                        contentStyle={{
+                          background: "#0b1120",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: "16px",
+                          color: "#e2e8f0",
+                          boxShadow: "0 24px 60px rgba(2,6,23,0.34)",
+                        }}
+                        formatter={(value: number, _name, props) => [
+                          `${formatConsumption(value)}`,
+                          `${props.payload.scopeLabel} · ${props.payload.severity}`,
+                        ]}
+                      />
+                      <Bar dataKey="score" radius={[0, 14, 14, 0]} onClick={(data: unknown) => {
+                        const payload = (data as { id?: string }).id;
+                        if (payload) selectRecommendation(payload);
+                      }}>
+                        {priorityChartData.map((entry) => (
+                          <Cell
+                            key={entry.id}
+                            fill={entry.severity === "High" ? "#ef4444" : entry.severity === "Medium" ? "#f59e0b" : "#3b82f6"}
+                            cursor="pointer"
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
 
-                      return (
-                        <button
-                          key={recommendation.id}
-                          type="button"
-                          onClick={() => setSelectedRecommendationId(recommendation.id)}
-                          className={`w-full rounded-2xl border p-4 text-left transition-all ${
-                            recommendation.id === selectedRecommendation?.id
-                              ? "border-blue-500/40 bg-blue-500/10 shadow-[0_0_0_1px_rgba(59,130,246,0.16)]"
-                              : "border-white/6 bg-[#0b1120] hover:bg-white/[0.03]"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1 space-y-3">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <Badge className={severityStyles[recommendation.severity]}>{recommendation.severity}</Badge>
-                                <Badge className="bg-white/5 text-slate-300 border-white/10">{recommendation.type}</Badge>
-                                <Badge className={confidenceStyles[insight.confidence]}>{insight.confidence} confidence</Badge>
-                              </div>
-                              <p className="dashboard-item-title">{recommendation.title}</p>
-                              <p className="dashboard-muted-body">{recommendation.whyItMatters}</p>
-                              <div className="flex flex-wrap gap-2 text-xs text-slate-400">
-                                <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">{insight.scopeSummary}</span>
-                                <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">{insight.owner}</span>
-                                <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">{insight.horizon}</span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/6">
-                                  <div
-                                    className="h-full rounded-full bg-[linear-gradient(90deg,#3b82f6,#8b5cf6)]"
-                                    style={{ width: `${proofCoverageWidth}%` }}
-                                  />
-                                </div>
-                                <span className="whitespace-nowrap text-xs text-slate-500">{insight.proofSummary}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
+              <div className="space-y-4">
+                <div className="rounded-[28px] border border-white/6 bg-[#0b1120] p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="dashboard-eyebrow">Severity Mix</p>
+                    <span className="text-xs text-slate-500">Queue composition</span>
+                  </div>
+                  <div className="h-[180px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={severityMix} dataKey="value" nameKey="name" innerRadius={48} outerRadius={74} paddingAngle={3}>
+                          {severityMix.map((entry) => (
+                            <Cell
+                              key={entry.severity}
+                              fill={entry.severity === "High" ? "#ef4444" : entry.severity === "Medium" ? "#f59e0b" : "#3b82f6"}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            background: "#0b1120",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: "16px",
+                            color: "#e2e8f0",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="grid gap-2">
+                    {severityMix.map((item) => (
+                      <div key={item.severity} className="flex items-center justify-between rounded-xl border border-white/6 bg-black/20 px-3 py-2">
+                        <span className="text-sm text-slate-200">{item.name}</span>
+                        <span className="text-sm text-slate-400">{item.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {selectedRecommendation && selectedInsight ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 2xl:hidden">
-              <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-                <CardHeader className="bg-black/20 border-b border-white/5">
-                  <CardTitle className="dashboard-card-title text-slate-100">Intervention Spectrum</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-5">
-                  <LollipopRanking
-                    title="Action coverage ladder"
-                    description="Shows which intervention types dominate the queue right now."
-                    items={actionMix.map((item) => ({
-                      label: item.type,
-                      value: item.count,
-                      displayValue: `${item.count}`,
-                    }))}
-                  />
-                </CardContent>
-              </Card>
-
-              {primaryEvidence ? (
-                <div className="rounded-2xl border border-white/6 bg-[#111827] p-5 shadow-lg">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="dashboard-eyebrow">Primary Evidence Anchor</p>
-                      <p className="mt-2 text-sm font-medium text-slate-200">
-                        {primaryEvidence.useCaseLabel} · {primaryEvidence.engineerName}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-slate-300 hover:text-white hover:bg-white/5"
-                      onClick={() => setEvidenceInteractionId(primaryEvidence.id)}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Inspect
-                    </Button>
-                  </div>
-                  <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                    <MiniMetric label="Credits" value={`${formatConsumption(primaryEvidence.estimatedCredits)}`} />
-                    <MiniMetric label="Model" value={primaryEvidence.modelName} />
-                    <MiniMetric label="Source" value={primaryEvidence.requestSource} />
-                  </div>
-                </div>
-              ) : (
-                <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-                  <CardHeader className="bg-black/20 border-b border-white/5">
-                    <CardTitle className="dashboard-card-title text-slate-100">Intervention Spectrum</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-5">
-                    <LollipopRanking
-                      title="Action coverage ladder"
-                      description="Shows which intervention types dominate the queue right now."
-                      items={actionMix.map((item) => ({
-                        label: item.type,
-                        value: item.count,
-                        displayValue: `${item.count}`,
-                      }))}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
             <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
               <CardHeader className="bg-black/20 border-b border-white/5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -406,10 +459,9 @@ export default function Recommendations() {
                       <Badge className={severityStyles[selectedRecommendation.severity]}>{selectedRecommendation.severity}</Badge>
                       <Badge className="bg-white/5 text-slate-300 border-white/10">{selectedRecommendation.type}</Badge>
                       <Badge className="bg-white/5 text-slate-300 border-white/10">{selectedRecommendation.scopeType}</Badge>
-                      <Badge className={confidenceStyles[selectedInsight.confidence]}>{selectedInsight.confidence} confidence</Badge>
                     </div>
                     <div>
-                      <CardTitle className="text-[1.45rem] leading-tight text-white">{selectedRecommendation.title}</CardTitle>
+                      <CardTitle className="text-[1.15rem] leading-tight text-white md:text-[1.3rem]">{selectedRecommendation.title}</CardTitle>
                       <p className="mt-2 text-sm text-slate-400">{selectedRecommendation.scopeLabel}</p>
                     </div>
                   </div>
@@ -418,7 +470,7 @@ export default function Recommendations() {
                       <Button
                         variant="outline"
                         className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white"
-                        onClick={() => setEvidenceInteractionId(primaryEvidence.id)}
+                        onClick={() => openEvidence(primaryEvidence.id)}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Open Evidence
@@ -433,249 +485,141 @@ export default function Recommendations() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-5 pt-6">
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <SummaryChip label="Scope Exposure" value={`${formatConsumption(selectedInsight.scopeExposure)} credits`} />
-                  <SummaryChip
-                    label="Overrun Pressure"
-                    value={selectedInsight.overrunExposure > 0 ? `${formatConsumption(selectedInsight.overrunExposure)} credits` : "Within current plan"}
+              <CardContent className="space-y-6 pt-6">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <HeroMetricCard
+                    label="Pressure"
+                    value={selectedInsight.overrunExposure > 0 ? `${formatConsumption(selectedInsight.overrunExposure)} credits` : "Within plan"}
+                    note="Current overrun signal."
+                    tone="blue"
                   />
-                  <SummaryChip label="Decision Owner" value={selectedInsight.owner} />
-                  <SummaryChip label="Next Horizon" value={selectedInsight.horizon} />
+                  <HeroMetricCard
+                    label="Confidence"
+                    value={selectedInsight.confidence}
+                    note="Based on captured proof items."
+                    tone="amber"
+                  />
+                  <HeroMetricCard
+                    label="Owner"
+                    value={selectedInsight.owner}
+                    note="Responsible for the next move."
+                    tone="teal"
+                  />
                 </div>
 
-                {selectedInsight.evidence.length ? (
-                  <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-4">
+                  <CompactNarrativeCard label="Why now" value={selectedRecommendation.whyItMatters} />
+                  <CompactNarrativeCard label="Recommended move" value={selectedRecommendation.recommendedAction} tone="blue" />
+                </div>
+
+                <EvidenceTraceGrid evidence={selectedInsight.evidence} onOpenEvidence={openEvidence} />
+
+                {primaryEvidence ? (
+                  <div className="rounded-[28px] border border-white/6 bg-[#0b1120] p-5">
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="dashboard-eyebrow">Evidence Links</p>
-                        <p className="mt-2 text-sm text-slate-400">
-                          Open the exact traces backing this recommendation without hunting through the page.
+                        <p className="dashboard-eyebrow">Lead Trace</p>
+                        <p className="mt-2 text-sm font-medium text-slate-100">
+                          {primaryEvidence.useCaseLabel} · {primaryEvidence.engineerName}
                         </p>
                       </div>
-                      <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1 text-xs text-slate-400">
-                        {selectedInsight.evidence.length} linked traces
-                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-slate-300 hover:text-white hover:bg-white/5"
+                        onClick={() => openEvidence(primaryEvidence.id)}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Inspect
+                      </Button>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {selectedInsight.evidence.map((interaction, index) => (
-                        <Button
-                          key={interaction.id}
-                          variant="outline"
-                          size="sm"
-                          className="bg-black/20 border-white/10 hover:bg-white/5 hover:text-white"
-                          onClick={() => setEvidenceInteractionId(interaction.id)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Trace {index + 1}: {interaction.useCaseLabel}
-                        </Button>
-                      ))}
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <MiniMetric label="Model" value={primaryEvidence.modelName} />
+                      <MiniMetric label="Source" value={primaryEvidence.requestSource} />
+                      <MiniMetric label="Prompt size" value={`${primaryEvidence.promptChars.toLocaleString()} chars`} />
+                      <MiniMetric label="Artifacts" value={`${primaryEvidence.evidence.chatCount + primaryEvidence.evidence.inlineCount}`} />
                     </div>
                   </div>
                 ) : null}
 
-                <div className="grid gap-4 xl:grid-cols-[1.12fr_0.88fr]">
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
-                      <p className="mb-3 dashboard-eyebrow">Why It Matters</p>
-                      <p className="dashboard-body text-slate-100">{selectedRecommendation.whyItMatters}</p>
-                    </div>
-
-                    <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
-                      <p className="mb-3 dashboard-eyebrow">Action</p>
-                      <p className="dashboard-body text-slate-100">{selectedRecommendation.recommendedAction}</p>
-                    </div>
-
-                    <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
-                      <div className="mb-4 flex items-center justify-between gap-3">
-                        <h3 className="dashboard-section-title">Expected Outcome</h3>
-                        <span className="dashboard-eyebrow">{selectedInsight.scopeSummary}</span>
-                      </div>
-                      <p className="dashboard-body text-slate-200">{selectedRecommendation.expectedImpact}</p>
-                      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                        <MiniMetric label="Proof Coverage" value={selectedInsight.proofSummary} />
-                        <MiniMetric label="Next Step" value={selectedInsight.nextStep} />
-                        <MiniMetric label="Escalation Window" value={selectedInsight.horizon} />
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-white/6 bg-[#0b1120] p-5">
-                      <div className="mb-4 flex items-center justify-between gap-3">
-                        <h3 className="dashboard-section-title">Evidence Signals</h3>
-                        <span className="dashboard-eyebrow">{topSignals.length}</span>
-                      </div>
-                      <div className="space-y-3">
-                        {topSignals.map((signal, index) => {
-                          const linkedEvidence = selectedInsight.evidence[index] ?? selectedInsight.evidence[0] ?? null;
-                          return (
-                            <div key={signal} className="rounded-xl border border-white/5 bg-black/20 px-3 py-3">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex items-start gap-3">
-                                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-300" />
-                                  <span className="dashboard-body">{signal}</span>
-                                </div>
-                                {linkedEvidence ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="shrink-0 text-slate-300 hover:text-white hover:bg-white/5"
-                                    onClick={() => setEvidenceInteractionId(linkedEvidence.id)}
-                                  >
-                                    <ExternalLink className="w-4 h-4 mr-2" />
-                                    View trace
-                                  </Button>
-                                ) : null}
-                              </div>
-                              {linkedEvidence ? (
-                                <p className="mt-3 text-xs text-slate-500">
-                                  {linkedEvidence.useCaseLabel} · {linkedEvidence.engineerName} · {formatConsumption(linkedEvidence.estimatedCredits)} credits
-                                </p>
-                              ) : null}
-                            </div>
-                          );
-                        })}
-                        {!topSignals.length ? (
-                          <div className="flex items-start gap-3 rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3">
-                            <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                            <span className="dashboard-muted-body">No stronger-than-baseline signals were attached to this recommendation.</span>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
+                <div className="rounded-[28px] border border-white/6 bg-[#0b1120] p-5">
+                  <p className="dashboard-eyebrow">Next Move</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <MiniMetric label="Owner" value={selectedInsight.owner} />
+                    <MiniMetric label="Timing" value={selectedInsight.horizon} />
+                    <MiniMetric label="Route" value={selectedInsight.nextStep} />
                   </div>
-
-                  <div className="space-y-4 2xl:hidden">
-                    <ProofChainCard
-                      evidence={selectedInsight.evidence}
-                      onOpenEvidence={setEvidenceInteractionId}
-                    />
-
-                    <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-                      <CardHeader className="bg-black/20 border-b border-white/5">
-                        <CardTitle className="dashboard-card-title text-slate-100">Relevant Decision Runs</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3 pt-5">
-                        {relevantRuns.map((run) => (
-                          <div key={run.id} className="rounded-2xl border border-white/6 bg-[#0b1120] p-4">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-sm font-medium text-slate-100">{run.title}</p>
-                                <p className="mt-1 text-sm text-slate-400">{run.scopeLabel}</p>
-                                <p className="mt-2 text-xs leading-relaxed text-slate-500">{run.summary}</p>
-                              </div>
-                              <Badge className={statusStyles[run.status]}>{run.status}</Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <Link href="/studio">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/40">
+                        <Zap className="w-4 h-4 mr-2" />
+                        Open Simulation
+                      </Button>
+                    </Link>
+                    <Link href="/reports">
+                      <Button variant="outline" className="w-full bg-black/20 border-white/10 hover:bg-white/5 hover:text-white">
+                        <CheckCircle2 className="w-4 h-4 mr-2 text-slate-300" />
+                        Send to Reports
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
         ) : null}
-
-        <div className="hidden space-y-6 2xl:block">
-          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-            <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="dashboard-card-title text-slate-100">Priority Pressure</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-5">
-                <SignalRing
-                  title="Severity distribution"
-                  centerLabel="total actions"
-                  centerValue={String(recommendationInsights.length)}
-                items={severityMix.map((item) => ({
-                  label: item.name,
-                  value: item.value,
-                  color: item.color,
-                }))}
-              />
-              <div className="grid gap-3">
-                <SummaryChip label="Leadership" value={`${highSeverityCount} immediate`} />
-                <SummaryChip label="Program" value={String(recommendationSections.find((section) => section.title === "Program")?.recommendations.length ?? 0)} />
-                <SummaryChip label="Background" value={String(recommendationSections.find((section) => section.title === "Background")?.recommendations.length ?? 0)} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-            <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="dashboard-card-title text-slate-100">Intervention Spectrum</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-5">
-              <LollipopRanking
-                title="Action coverage ladder"
-                description="Shows which intervention types dominate the queue right now."
-                items={actionMix.map((item) => ({
-                  label: item.type,
-                  value: item.count,
-                  displayValue: `${item.count}`,
-                }))}
-              />
-            </CardContent>
-          </Card>
-
-          {primaryEvidence ? (
-            <div className="rounded-2xl border border-white/6 bg-[#111827] p-5 shadow-lg">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="dashboard-eyebrow">Primary Evidence Anchor</p>
-                  <p className="mt-2 text-sm font-medium text-slate-200">
-                    {primaryEvidence.useCaseLabel} · {primaryEvidence.engineerName}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-slate-300 hover:text-white hover:bg-white/5"
-                  onClick={() => setEvidenceInteractionId(primaryEvidence.id)}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Inspect
-                </Button>
-              </div>
-              <div className="mt-4 grid grid-cols-1 gap-3">
-                <MiniMetric label="Credits" value={`${formatConsumption(primaryEvidence.estimatedCredits)}`} />
-                <MiniMetric label="Model" value={primaryEvidence.modelName} />
-                <MiniMetric label="Source" value={primaryEvidence.requestSource} />
-                <MiniMetric label="Proof Coverage" value={selectedInsight.proofSummary} />
-              </div>
-            </div>
-          ) : null}
-
-          <ProofChainCard
-            evidence={selectedInsight.evidence}
-            onOpenEvidence={setEvidenceInteractionId}
-          />
-
-          <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-            <CardHeader className="bg-black/20 border-b border-white/5">
-              <CardTitle className="dashboard-card-title text-slate-100">Relevant Decision Runs</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-5">
-              {relevantRuns.map((run) => (
-                <div key={run.id} className="rounded-2xl border border-white/6 bg-[#0b1120] p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium text-slate-100">{run.title}</p>
-                      <p className="mt-1 text-sm text-slate-400">{run.scopeLabel}</p>
-                      <p className="mt-2 text-xs leading-relaxed text-slate-500">{run.summary}</p>
-                    </div>
-                    <Badge className={statusStyles[run.status]}>{run.status}</Badge>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
 }
 
-function ProofChainCard({
+function HeroMetricCard({
+  label,
+  value,
+  note,
+  tone,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  tone: "blue" | "amber" | "violet" | "teal";
+}) {
+  const toneClass =
+    tone === "blue"
+      ? "border-blue-500/18 bg-blue-500/10"
+      : tone === "amber"
+        ? "border-amber-500/18 bg-amber-500/10"
+        : tone === "violet"
+          ? "border-violet-500/18 bg-violet-500/10"
+          : "border-teal-500/18 bg-teal-500/10";
+
+  return (
+    <div className={`rounded-2xl border p-4 ${toneClass}`}>
+      <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">{label}</p>
+      <p className="mt-3 text-lg font-semibold leading-tight text-white">{value}</p>
+      <p className="mt-2 text-xs leading-relaxed text-slate-400">{note}</p>
+    </div>
+  );
+}
+
+function CompactNarrativeCard({
+  label,
+  value,
+  tone = "slate",
+}: {
+  label: string;
+  value: string;
+  tone?: "slate" | "blue";
+}) {
+  return (
+    <div className={`rounded-2xl border p-4 ${tone === "blue" ? "border-blue-500/18 bg-blue-500/10" : "border-white/8 bg-black/20"}`}>
+      <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">{label}</p>
+      <p className="mt-3 text-sm leading-7 text-slate-100">{value}</p>
+    </div>
+  );
+}
+
+function EvidenceTraceGrid({
   evidence,
   onOpenEvidence,
 }: {
@@ -683,61 +627,265 @@ function ProofChainCard({
   onOpenEvidence: (interactionId: string) => void;
 }) {
   return (
-    <Card className="bg-[#111827] border-white/5 shadow-lg overflow-hidden">
-      <CardHeader className="bg-black/20 border-b border-white/5">
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="dashboard-card-title text-slate-100">Proof Chain</CardTitle>
-          <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1 text-xs text-slate-400">
-            {evidence.length} traces
-          </span>
+    <div
+      id="proofs"
+      className="scroll-mt-28 rounded-[28px] border border-white/6 bg-[#0b1120] p-5 shadow-[0_20px_60px_rgba(2,6,23,0.3)]"
+    >
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-blue-300" />
+            <p className="dashboard-section-title text-slate-100">Observed Proof</p>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-slate-400">Open a captured trace without leaving the current recommendation.</p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3 pt-5">
+        <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-xs text-slate-400">
+          {evidence.length} linked traces
+        </span>
+      </div>
+
+      <div className="space-y-3">
         {evidence.map((interaction, index) => (
           <button
             key={interaction.id}
             type="button"
             onClick={() => onOpenEvidence(interaction.id)}
-            className="w-full rounded-2xl border border-white/6 bg-[#0b1120] p-4 text-left transition-colors hover:bg-white/[0.03]"
+            className="group rounded-[24px] border border-white/6 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_30%),linear-gradient(180deg,rgba(14,22,38,0.95),rgba(9,15,27,0.98))] p-4 text-left transition-all hover:border-blue-500/20"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-100">
-                  Trace {index + 1}: {interaction.useCaseLabel}
-                </p>
-                <p className="mt-1 text-xs text-slate-400">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-blue-200">
+                    Trace {index + 1}
+                  </div>
+                  <p className="text-base font-semibold leading-snug text-white">{interaction.useCaseLabel}</p>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-slate-400">
                   {interaction.engineerName} · {interaction.modelName} · {interaction.requestSource}
                 </p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-400">
+                  <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                    {interaction.promptChars.toLocaleString()} prompt chars
+                  </span>
+                  <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                    {interaction.toolInvocationCount} tool calls
+                  </span>
+                  <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
+                    {interaction.evidence.chatCount + interaction.evidence.inlineCount} artifacts
+                  </span>
+                </div>
               </div>
-              <span className="whitespace-nowrap text-sm font-medium text-slate-200">
-                {formatConsumption(interaction.estimatedCredits)}
-              </span>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
-              <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
-                {interaction.evidence.chatCount} chat traces
-              </span>
-              <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
-                {interaction.evidence.inlineCount} inline traces
-              </span>
-              <span className="rounded-full border border-white/8 bg-black/20 px-3 py-1">
-                {interaction.promptChars.toLocaleString()} prompt chars
-              </span>
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
+                Open
+                <ArrowRight className="h-4 w-4 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-200" />
+              </div>
             </div>
           </button>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
-function SummaryChip({ label, value }: { label: string; value: string }) {
+function RecommendationTile({
+  insight,
+  selected,
+  onSelect,
+}: {
+  insight: RecommendationInsight;
+  selected: boolean;
+  onSelect: (recommendationId: string) => void;
+}) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-4">
-      <p className="dashboard-eyebrow">{label}</p>
-      <p className="mt-2 text-sm font-semibold leading-snug text-white text-balance">{value}</p>
+    <button
+      type="button"
+      onClick={() => onSelect(insight.recommendation.id)}
+      className={`group rounded-[22px] border p-4 text-left transition-all ${
+        selected
+          ? "border-blue-500/40 bg-blue-500/10 shadow-[0_0_0_1px_rgba(59,130,246,0.16)]"
+          : "border-white/6 bg-black/20 hover:border-white/12 hover:bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className={severityStyles[insight.recommendation.severity]}>{insight.recommendation.severity}</Badge>
+            <span className="text-[11px] uppercase tracking-[0.22em] text-slate-500">{insight.recommendation.type}</span>
+          </div>
+          <p className="mt-3 line-clamp-2 text-[14px] font-medium leading-5 text-slate-100">{insight.recommendation.title}</p>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">{insight.recommendation.scopeLabel}</p>
+        </div>
+        <ArrowRight className={`mt-1 h-4 w-4 shrink-0 ${selected ? "text-blue-300" : "text-slate-500"}`} />
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+        <span className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1">{formatConsumption(insight.scopeExposure)} credits</span>
+        <span className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1">{insight.evidence.length} traces</span>
+      </div>
+    </button>
+  );
+}
+
+function PriorityMosaicTile({
+  insight,
+  selected,
+  colSpan,
+  rowSpan,
+  onSelect,
+}: {
+  insight: RecommendationInsight;
+  selected: boolean;
+  colSpan: number;
+  rowSpan: number;
+  onSelect: (recommendationId: string) => void;
+}) {
+  const toneClass =
+    insight.recommendation.severity === "High"
+      ? "border-red-500/20 bg-[radial-gradient(circle_at_top_left,rgba(239,68,68,0.24),transparent_36%),linear-gradient(180deg,rgba(24,10,14,0.98),rgba(11,17,32,0.98))]"
+      : insight.recommendation.severity === "Medium"
+        ? "border-amber-500/20 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.2),transparent_36%),linear-gradient(180deg,rgba(24,18,8,0.98),rgba(11,17,32,0.98))]"
+        : "border-blue-500/20 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.2),transparent_36%),linear-gradient(180deg,rgba(9,18,32,0.98),rgba(11,17,32,0.98))]";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(insight.recommendation.id)}
+      style={{
+        gridColumn: `span ${colSpan}`,
+        gridRow: `span ${rowSpan}`,
+      }}
+      className={`rounded-[22px] border p-4 text-left transition-all ${toneClass} ${
+        selected
+          ? "shadow-[0_0_0_1px_rgba(96,165,250,0.45)] ring-1 ring-blue-400/30"
+          : "hover:border-white/12 hover:brightness-[1.02]"
+      }`}
+    >
+      <div className="flex h-full flex-col justify-between gap-4">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className={severityStyles[insight.recommendation.severity]}>{insight.recommendation.severity}</Badge>
+            <span className="text-[11px] uppercase tracking-[0.22em] text-slate-400">{insight.recommendation.type}</span>
+          </div>
+          <p className="text-[14px] font-semibold leading-5 text-white">{insight.recommendation.title}</p>
+          <p className="text-xs leading-relaxed text-slate-400">{insight.recommendation.scopeLabel}</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
+          <span className="rounded-full border border-white/8 bg-black/20 px-2.5 py-1">{formatConsumption(insight.scopeExposure)} credits</span>
+          <span className="rounded-full border border-white/8 bg-black/20 px-2.5 py-1">{insight.evidence.length} traces</span>
+          <span className="rounded-full border border-white/8 bg-black/20 px-2.5 py-1">{insight.owner}</span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function DomainClusterCard({
+  cluster,
+  selectedRecommendationId,
+  onSelect,
+}: {
+  cluster: {
+    key: string;
+    label: string;
+    description: string;
+    accent: string;
+    total: number;
+    rows: Array<{ severity: "High" | "Medium" | "Low"; items: RecommendationInsight[] }>;
+  };
+  selectedRecommendationId: string;
+  onSelect: (recommendationId: string) => void;
+}) {
+  const previewItems = cluster.rows.flatMap((row) => row.items).slice(0, 3);
+
+  return (
+    <div className="rounded-[24px] border border-white/6 bg-[#0b1120] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-white">{cluster.label}</p>
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.22em] ${cluster.accent}`}>{cluster.total}</span>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">{cluster.description}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {previewItems.length ? (
+          previewItems.map((insight) => (
+            <button
+              key={insight.recommendation.id}
+              type="button"
+              onClick={() => onSelect(insight.recommendation.id)}
+              className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left transition-all ${
+                selectedRecommendationId === insight.recommendation.id
+                  ? "border-blue-500/35 bg-blue-500/10"
+                  : "border-white/6 bg-black/20 hover:bg-white/[0.03]"
+              }`}
+            >
+              <span className="min-w-0 flex-1 truncate text-sm text-slate-100">{insight.recommendation.title}</span>
+              <span className="shrink-0 text-[11px] uppercase tracking-[0.2em] text-slate-500">{insight.recommendation.severity}</span>
+            </button>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed border-white/8 bg-black/10 px-3 py-6 text-center text-xs text-slate-600">
+            No actions
+          </div>
+        )}
+      </div>
     </div>
   );
+}
+
+function OwnerGroupCard({
+  owner,
+  items,
+  selectedRecommendationId,
+  onSelect,
+}: {
+  owner: string;
+  items: RecommendationInsight[];
+  selectedRecommendationId: string;
+  onSelect: (recommendationId: string) => void;
+}) {
+  const topItems = items.slice(0, 3);
+
+  return (
+    <div className="rounded-[24px] border border-white/6 bg-[#0b1120] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-white">{owner}</p>
+          <p className="mt-2 text-xs text-slate-500">{items.length} recommendation{items.length === 1 ? "" : "s"} routed here</p>
+        </div>
+        <span className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] text-slate-400">
+          Owner
+        </span>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {topItems.map((insight) => (
+          <button
+            key={insight.recommendation.id}
+            type="button"
+            onClick={() => onSelect(insight.recommendation.id)}
+            className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left transition-all ${
+              selectedRecommendationId === insight.recommendation.id
+                ? "border-blue-500/35 bg-blue-500/10"
+                : "border-white/6 bg-black/20 hover:bg-white/[0.03]"
+            }`}
+          >
+            <span className="min-w-0 flex-1 truncate text-sm text-slate-100">{insight.recommendation.title}</span>
+            <span className="shrink-0 text-[11px] uppercase tracking-[0.2em] text-slate-500">{insight.recommendation.severity}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function truncateLabel(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 function MiniMetric({ label, value }: { label: string; value: string }) {
@@ -747,6 +895,50 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
       <p className="mt-2 text-sm font-medium text-slate-200">{value}</p>
     </div>
   );
+}
+
+function parseRecommendationsUrlState(): RecommendationsUrlState {
+  if (typeof window === "undefined") {
+    return { recId: null, evidenceId: null };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  return {
+    recId: params.get("rec"),
+    evidenceId: params.get("evidence"),
+  };
+}
+
+function navigateRecommendationsState({
+  recId,
+  evidenceId,
+  replace,
+}: {
+  recId: string;
+  evidenceId?: string | null;
+  replace: boolean;
+}) {
+  if (typeof window === "undefined") return;
+
+  const params = new URLSearchParams(window.location.search);
+  params.set("rec", recId);
+
+  if (evidenceId) {
+    params.set("evidence", evidenceId);
+  } else {
+    params.delete("evidence");
+  }
+
+  const query = params.toString();
+  const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+  const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+  if (nextUrl === currentUrl) return;
+
+  const stateMethod = replace ? "replaceState" : "pushState";
+  window.history[stateMethod](window.history.state, "", nextUrl);
+  window.dispatchEvent(new Event(RECOMMENDATIONS_ROUTE_EVENT));
 }
 
 function deriveRecommendationInsight(recommendation: Recommendation): RecommendationInsight {

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CheckCircle2, CircleDotDashed, Sparkles } from "lucide-react";
+import { Link } from "wouter";
 
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ type JourneyStep = {
   label: string;
   detail: string;
   state?: JourneyState;
+  href?: string;
 };
 
 interface ExperienceHeaderProps {
@@ -75,14 +77,8 @@ export function ExperienceHeader({
         <div className="mt-6 grid gap-3 lg:grid-cols-4">
           {journey.map((step, index) => {
             const state = step.state ?? "upcoming";
-            return (
-              <div
-                key={`${step.label}-${index}`}
-                className={cn(
-                  "rounded-2xl border px-4 py-4 transition-colors",
-                  journeyStateStyles[state],
-                )}
-              >
+            const content = (
+              <>
                 <div className="flex items-center gap-2">
                   {state === "complete" ? (
                     <CheckCircle2 className="h-4 w-4" />
@@ -92,7 +88,32 @@ export function ExperienceHeader({
                   <p className="text-sm font-semibold tracking-[-0.01em]">{step.label}</p>
                 </div>
                 <p className="mt-2 text-sm leading-relaxed text-slate-300">{step.detail}</p>
-              </div>
+              </>
+            );
+
+            return (
+              step.href ? (
+                <Link
+                  key={`${step.label}-${index}`}
+                  href={step.href}
+                  className={cn(
+                    "rounded-2xl border px-4 py-4 transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(2,6,23,0.28)]",
+                    journeyStateStyles[state],
+                  )}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div
+                  key={`${step.label}-${index}`}
+                  className={cn(
+                    "rounded-2xl border px-4 py-4 transition-colors",
+                    journeyStateStyles[state],
+                  )}
+                >
+                  {content}
+                </div>
+              )
             );
           })}
         </div>
